@@ -295,6 +295,18 @@
     .trt-item:hover { background: var(--bg); }
     .trt-item .os-split-label { display: none; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
     .trt-item .os-pct-badge { display: none; font-size: 10px; font-weight: 700; color: #0891b2; white-space: nowrap; }
+
+    /* Estilos para tarjetas de obras sociales */
+    .os-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    @media (max-width: 768px) {
+      .os-card-header { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+    }
   </style>
 </head>
 <body>
@@ -352,7 +364,7 @@
       <button class="sidebar-item" data-view="liquidaciones_os"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg><span class="sb-txt">Liquidaciones OS</span></button>
       <button class="sidebar-item" data-view="inventario"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg><span class="sb-txt">Inventario</span></button>
       <button class="sidebar-item" data-view="proveedores"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="sb-txt">Proveedores</span></button>
-      <button class="sidebar-item active" data-view="tratamientos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg><span class="sb-txt">Tratamientos</span></button>
+      <button class="sidebar-item" data-view="tratamientos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg><span class="sb-txt">Tratamientos</span></button>
       <button class="sidebar-item" data-view="especialidades"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5S7 9.76 7 7a5 5 0 0 1 5-5z"/><path d="M3 21c0-4.42 4.03-8 9-8s9 3.58 9 8"/><path d="M15 7h2m-1-1v2"/></svg><span class="sb-txt">Especialidades</span></button>
       <button class="sidebar-item" data-view="web"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span class="sb-txt">Web</span></button>
       <button class="sidebar-item" data-view="whatsapp"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span class="sb-txt">WhatsApp</span></button>
@@ -480,7 +492,7 @@
   }
 
   // ============================================================
-  // DASHBOARD
+  // DASHBOARD (sin cambios)
   // ============================================================
   function renderDashboard() {
     const el = $('view-dashboard');
@@ -514,7 +526,7 @@
   }
 
   // ============================================================
-  // AGENDA (con navegación semanal y carga desde Firestore)
+  // AGENDA (sin cambios)
   // ============================================================
   let semanaActual = new Date();
 
@@ -662,11 +674,10 @@
   }
 
   // ============================================================
-  // NUEVO TURNO - MODAL COMPLETO
+  // NUEVO TURNO (sin cambios)
   // ============================================================
   let currentPlanId = 0;
   const DUR_PRESETS = [15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240];
-  // Datos de cobertura de ejemplo (los puedes cargar desde Firestore)
   const COBERTURAS = {
     9: { 2: 50, 1: 30, 3: 20, 4: 50 },
     2: { 1: 40, 2: 60 },
@@ -1102,7 +1113,7 @@
   };
 
   // ============================================================
-  // PACIENTES (CRUD)
+  // PACIENTES (sin cambios)
   // ============================================================
   function renderPacientes() {
     const el = $('view-pacientes');
@@ -1182,7 +1193,7 @@
   };
 
   // ============================================================
-  // PROFESIONALES (CRUD)
+  // PROFESIONALES (sin cambios)
   // ============================================================
   function renderProfesionales() {
     const el = $('view-profesionales');
@@ -1262,7 +1273,7 @@
   };
 
   // ============================================================
-  // LIQUIDACIONES
+  // LIQUIDACIONES (sin cambios)
   // ============================================================
   function renderLiquidaciones() {
     const el = $('view-liquidaciones');
@@ -1303,7 +1314,7 @@
   };
 
   // ============================================================
-  // AUTOMATIZACIONES
+  // AUTOMATIZACIONES (sin cambios)
   // ============================================================
   function renderAutomatizaciones() {
     const el = $('view-automatizaciones');
@@ -1332,7 +1343,7 @@
   }
 
   // ============================================================
-  // CAJA
+  // CAJA (sin cambios)
   // ============================================================
   function renderCaja() {
     const el = $('view-caja');
@@ -1373,7 +1384,7 @@
   };
 
   // ============================================================
-  // PRESUPUESTOS
+  // PRESUPUESTOS (sin cambios)
   // ============================================================
   function renderPresupuestos() {
     const el = $('view-presupuestos');
@@ -1412,7 +1423,7 @@
   };
 
   // ============================================================
-  // PRODUCTIVIDAD
+  // PRODUCTIVIDAD (sin cambios)
   // ============================================================
   function renderProductividad() {
     $('view-productividad').innerHTML = `
@@ -1428,52 +1439,358 @@
   }
 
   // ============================================================
-  // OBRAS SOCIALES
+  // OBRAS SOCIALES – VISTA ESTILO DENTALSOFT
   // ============================================================
   function renderObrasSociales() {
     const el = $('view-obras_sociales');
     el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Obras sociales</div><div class="page-subtitle">Listado</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevaObraSocial()">+ Nueva obra social</button>
+      <div class="page-header">
+        <div>
+          <div class="page-title">Obras sociales</div>
+          <div class="page-subtitle" id="os-count">Cargando...</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModalNuevaObraSocial()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          + Nueva obra social
+        </button>
       </div>
-      <div class="card"><div id="os-list"><p class="text-muted">Cargando...</p></div></div>
+
+      <div id="os-list-container" style="display:flex;flex-direction:column;gap:12px;">
+        <p class="text-muted">Cargando obras sociales...</p>
+      </div>
     `;
+
     db.collection('obras_sociales').orderBy('nombre').onSnapshot(snap => {
-      let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Código</th><th></th></tr></thead><tbody>';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<tr><td>${data.nombre||''}</td><td>${data.codigo||''}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="eliminarObraSocial('${d.id}')">Eliminar</button></td></tr>`;
+      const container = $('os-list-container');
+      const countEl = $('os-count');
+
+      if (snap.empty) {
+        container.innerHTML = '<div class="card"><p class="text-muted">No hay obras sociales registradas.</p></div>';
+        if (countEl) countEl.textContent = '0 registradas';
+        return;
+      }
+
+      let html = '';
+      let totalOS = 0;
+
+      snap.forEach(doc => {
+        const data = doc.data();
+        const id = doc.id;
+        totalOS++;
+
+        const planes = data.planes || [];
+        const cantidadPlanes = planes.length;
+
+        let detalles = [];
+        if (data.codigo) detalles.push(`<span>Cód: ${data.codigo}</span>`);
+        if (data.email) detalles.push(`<span>${data.email}</span>`);
+        detalles.push(`<span>${cantidadPlanes} ${cantidadPlanes === 1 ? 'plan' : 'planes'}</span>`);
+
+        html += `
+          <div class="card" style="padding:0;overflow:hidden;">
+            <!-- Cabecera -->
+            <div class="os-card-header">
+              <div style="display:flex;align-items:center;gap:14px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:15px;font-weight:700;color:var(--text);">${data.nombre || 'Sin nombre'}</div>
+                  <div style="font-size:12px;color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap;margin-top:2px;">
+                    ${detalles.join(' · ')}
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button class="btn btn-sm btn-secondary" onclick="openModalNuevoPlan('${id}')">+ Plan</button>
+                <button class="btn btn-sm btn-secondary" onclick="openModalEditarObraSocial('${id}')">Editar</button>
+                <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;" onclick="eliminarObraSocial('${id}')">Eliminar</button>
+              </div>
+            </div>
+
+            <!-- Planes -->
+            <div style="padding:10px 20px 12px;">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:8px;">Planes</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        `;
+
+        if (cantidadPlanes === 0) {
+          html += `<span style="font-size:13px;color:var(--text-muted);">Sin planes cargados</span>`;
+        } else {
+          planes.forEach(plan => {
+            html += `
+              <div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;">
+                <div>
+                  <span style="font-size:13px;font-weight:600;color:var(--text);">${plan.nombre || 'Plan sin nombre'}</span>
+                  ${plan.descripcion ? `<div style="font-size:11px;color:var(--text-muted);">${plan.descripcion}</div>` : ''}
+                </div>
+                <div style="display:flex;gap:4px;margin-left:4px;">
+                  <button class="btn btn-sm btn-secondary" style="padding:2px 8px;font-size:11px;" onclick="openModalEditarPlan('${id}', '${plan.id || ''}')">Editar</button>
+                  <button class="btn btn-sm" style="padding:2px 8px;font-size:11px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;" onclick="eliminarPlan('${id}', '${plan.id || ''}')">✕</button>
+                </div>
+              </div>
+            `;
+          });
+        }
+
+        html += `
+              </div>
+            </div>
+          </div>
+        `;
       });
-      html += '</tbody></table></div>';
-      $('os-list').innerHTML = html || '<p class="text-muted">Sin obras sociales</p>';
+
+      container.innerHTML = html;
+      if (countEl) countEl.textContent = `${totalOS} ${totalOS === 1 ? 'registrada' : 'registradas'}`;
+    }, error => {
+      console.error('Error cargando obras sociales:', error);
+      $('os-list-container').innerHTML = '<div class="card"><p class="text-muted">Error al cargar los datos.</p></div>';
     });
   }
 
+  // ============================================================
+  // CRUD OBRAS SOCIALES Y PLANES
+  // ============================================================
+
+  // ---- NUEVA OBRA SOCIAL (con planes dinámicos) ----
+  let planCounter = 1;
+
   window.openModalNuevaObraSocial = function() {
+    planCounter = 1;
     openModal(`
-      <div class="modal-title">Nueva obra social</div>
-      <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-os-nombre"></div>
-      <div class="form-group"><label class="form-label">Código</label><input class="form-control" id="f-os-codigo"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarObraSocial()">Guardar</button></div>
+      <div class="modal-title">➕ Nueva obra social</div>
+
+      <div class="form-group">
+        <label class="form-label">Nombre *</label>
+        <input class="form-control" id="f-os-nombre" placeholder="Ej: OSDE" autofocus>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Código</label>
+        <input class="form-control" id="f-os-codigo" placeholder="Ej: OSDE123">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-control" id="f-os-email" type="email" placeholder="contacto@os.com">
+      </div>
+
+      <div style="margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+        <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Planes (opcional)</div>
+        <div id="planes-container">
+          <div style="display:flex;gap:8px;margin-bottom:6px;">
+            <input class="form-control" id="f-plan-1" placeholder="Nombre del plan" style="flex:1;">
+            <input class="form-control" id="f-plan-desc-1" placeholder="Descripción" style="flex:1;">
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="agregarCampoPlan()" style="margin-top:4px;">
+          + Agregar otro plan
+        </button>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarObraSocialCompleta()">Guardar obra social</button>
+      </div>
     `);
   };
 
-  window.guardarObraSocial = function() {
-    const nombre = $('f-os-nombre').value.trim();
-    const codigo = $('f-os-codigo').value.trim();
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('obras_sociales').add({ nombre, codigo })
-      .then(() => { closeModal(); showToast('Guardado'); });
+  window.agregarCampoPlan = function() {
+    planCounter++;
+    const container = document.getElementById('planes-container');
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.gap = '8px';
+    div.style.marginBottom = '6px';
+    div.innerHTML = `
+      <input class="form-control" id="f-plan-${planCounter}" placeholder="Nombre del plan" style="flex:1;">
+      <input class="form-control" id="f-plan-desc-${planCounter}" placeholder="Descripción" style="flex:1;">
+      <button type="button" class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:4px 8px;" onclick="this.parentElement.remove()">✕</button>
+    `;
+    container.appendChild(div);
   };
 
+  window.guardarObraSocialCompleta = function() {
+    const nombre = document.getElementById('f-os-nombre').value.trim();
+    const codigo = document.getElementById('f-os-codigo').value.trim();
+    const email = document.getElementById('f-os-email').value.trim();
+
+    if (!nombre) return alert('El nombre es obligatorio.');
+
+    const planes = [];
+    for (let i = 1; i <= planCounter; i++) {
+      const nombrePlan = document.getElementById(`f-plan-${i}`);
+      const descPlan = document.getElementById(`f-plan-desc-${i}`);
+      if (nombrePlan && nombrePlan.value.trim()) {
+        planes.push({
+          id: Date.now().toString() + i,
+          nombre: nombrePlan.value.trim(),
+          descripcion: descPlan ? descPlan.value.trim() : ''
+        });
+      }
+    }
+
+    db.collection('obras_sociales').add({
+      nombre,
+      codigo,
+      email,
+      planes: planes,
+      creado: new Date().toISOString()
+    }).then(() => {
+      closeModal();
+      planCounter = 1;
+      showToast('✅ Obra social creada exitosamente.');
+    }).catch(err => alert('❌ Error: ' + err.message));
+  };
+
+  // ---- EDITAR OBRA SOCIAL ----
+  window.openModalEditarObraSocial = function(id) {
+    db.collection('obras_sociales').doc(id).get().then(doc => {
+      if (!doc.exists) return alert('No encontrada');
+      const data = doc.data();
+      openModal(`
+        <div class="modal-title">✏️ Editar obra social</div>
+        <div class="form-group">
+          <label class="form-label">Nombre *</label>
+          <input class="form-control" id="f-os-edit-nombre" value="${data.nombre || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Código</label>
+          <input class="form-control" id="f-os-edit-codigo" value="${data.codigo || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-control" id="f-os-edit-email" type="email" value="${data.email || ''}">
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarEdicionObraSocial('${id}')">Actualizar</button>
+        </div>
+      `);
+    });
+  };
+
+  window.guardarEdicionObraSocial = function(id) {
+    const nombre = $('f-os-edit-nombre').value.trim();
+    const codigo = $('f-os-edit-codigo').value.trim();
+    const email = $('f-os-edit-email').value.trim();
+    if (!nombre) return alert('El nombre es obligatorio.');
+
+    db.collection('obras_sociales').doc(id).update({ nombre, codigo, email })
+      .then(() => { closeModal(); showToast('✅ Actualizada.'); })
+      .catch(err => alert('❌ Error: ' + err.message));
+  };
+
+  // ---- ELIMINAR OBRA SOCIAL ----
   window.eliminarObraSocial = function(id) {
-    if (!confirm('¿Eliminar?')) return;
-    db.collection('obras_sociales').doc(id).delete().then(() => showToast('Eliminado'));
+    if (!confirm('¿Eliminar esta obra social y todos sus planes?')) return;
+    db.collection('obras_sociales').doc(id).delete()
+      .then(() => showToast('🗑 Eliminada.'))
+      .catch(err => alert('❌ Error: ' + err.message));
+  };
+
+  // ---- NUEVO PLAN ----
+  window.openModalNuevoPlan = function(osId) {
+    openModal(`
+      <div class="modal-title">➕ Nuevo plan</div>
+      <div class="form-group">
+        <label class="form-label">Nombre del plan *</label>
+        <input class="form-control" id="f-plan-nombre" placeholder="Ej: OSDE 210">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <input class="form-control" id="f-plan-desc" placeholder="Breve descripción">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarPlan('${osId}')">Guardar</button>
+      </div>
+    `);
+  };
+
+  window.guardarPlan = function(osId) {
+    const nombre = $('f-plan-nombre').value.trim();
+    const descripcion = $('f-plan-desc').value.trim();
+    if (!nombre) return alert('El nombre del plan es obligatorio.');
+
+    const plan = {
+      id: Date.now().toString(),
+      nombre,
+      descripcion
+    };
+
+    db.collection('obras_sociales').doc(osId).update({
+      planes: firebase.firestore.FieldValue.arrayUnion(plan)
+    }).then(() => {
+      closeModal();
+      showToast('✅ Plan agregado.');
+    }).catch(err => alert('❌ Error: ' + err.message));
+  };
+
+  // ---- EDITAR PLAN ----
+  window.openModalEditarPlan = function(osId, planId) {
+    db.collection('obras_sociales').doc(osId).get().then(doc => {
+      if (!doc.exists) return alert('No encontrada');
+      const data = doc.data();
+      const planes = data.planes || [];
+      const plan = planes.find(p => p.id === planId);
+      if (!plan) return alert('Plan no encontrado');
+
+      openModal(`
+        <div class="modal-title">✏️ Editar plan</div>
+        <div class="form-group">
+          <label class="form-label">Nombre *</label>
+          <input class="form-control" id="f-plan-edit-nombre" value="${plan.nombre || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <input class="form-control" id="f-plan-edit-desc" value="${plan.descripcion || ''}">
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarEdicionPlan('${osId}', '${planId}')">Actualizar</button>
+        </div>
+      `);
+    });
+  };
+
+  window.guardarEdicionPlan = function(osId, planId) {
+    const nombre = $('f-plan-edit-nombre').value.trim();
+    const descripcion = $('f-plan-edit-desc').value.trim();
+    if (!nombre) return alert('El nombre es obligatorio.');
+
+    db.collection('obras_sociales').doc(osId).get().then(doc => {
+      if (!doc.exists) return alert('No encontrada');
+      const data = doc.data();
+      const planes = data.planes || [];
+      const index = planes.findIndex(p => p.id === planId);
+      if (index === -1) return alert('Plan no encontrado');
+
+      planes[index] = { ...planes[index], nombre, descripcion };
+      return db.collection('obras_sociales').doc(osId).update({ planes });
+    }).then(() => {
+      closeModal();
+      showToast('✅ Plan actualizado.');
+    }).catch(err => alert('❌ Error: ' + err.message));
+  };
+
+  // ---- ELIMINAR PLAN ----
+  window.eliminarPlan = function(osId, planId) {
+    if (!confirm('¿Eliminar este plan?')) return;
+
+    db.collection('obras_sociales').doc(osId).get().then(doc => {
+      if (!doc.exists) return alert('No encontrada');
+      const data = doc.data();
+      const planes = data.planes || [];
+      const nuevosPlanes = planes.filter(p => p.id !== planId);
+      return db.collection('obras_sociales').doc(osId).update({ planes: nuevosPlanes });
+    }).then(() => {
+      showToast('🗑 Plan eliminado.');
+    }).catch(err => alert('❌ Error: ' + err.message));
   };
 
   // ============================================================
-  // LIQUIDACIONES OS
+  // LIQUIDACIONES OS (placeholder)
   // ============================================================
   function renderLiquidacionesOS() {
     $('view-liquidaciones_os').innerHTML = `
@@ -1485,7 +1802,7 @@
   }
 
   // ============================================================
-  // INVENTARIO
+  // INVENTARIO (sin cambios)
   // ============================================================
   function renderInventario() {
     const el = $('view-inventario');
@@ -1532,7 +1849,7 @@
   };
 
   // ============================================================
-  // PROVEEDORES
+  // PROVEEDORES (sin cambios)
   // ============================================================
   function renderProveedores() {
     const el = $('view-proveedores');
@@ -1577,7 +1894,7 @@
   };
 
   // ============================================================
-  // TRATAMIENTOS – VISTA ESTILO DENTALSOFT (pills, filtros, tabla con etiquetas)
+  // TRATAMIENTOS – VISTA ESTILO DENTALSOFT
   // ============================================================
   let filterCategoria = 'Todos';
   let filterEstado = 'Todos';
@@ -1598,7 +1915,7 @@
         </button>
       </div>
 
-      <!-- Pills de categorías (con contadores) -->
+      <!-- Pills de categorías -->
       <div id="categoria-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;"></div>
 
       <!-- Filtros rápidos -->
@@ -1612,7 +1929,7 @@
         </button>
       </div>
 
-      <!-- Tabla de tratamientos -->
+      <!-- Tabla -->
       <div class="table-wrap" id="tabla-tratamientos">
         <table>
           <thead>
@@ -1632,7 +1949,6 @@
       </div>
     `;
 
-    // Escuchar cambios en Firestore (sin orderBy múltiple para evitar índice)
     db.collection('tratamientos').onSnapshot(snap => {
       allTratamientosData = [];
       snap.forEach(doc => {
@@ -1650,18 +1966,16 @@
     const countEl = $('tratamientos-count');
     const pillsContainer = $('categoria-pills');
 
-    // ---- 1. Pills de categorías ----
+    // ---- Pills ----
     const categoriasSet = new Set();
     allTratamientosData.forEach(item => {
       if (item.categoria) categoriasSet.add(item.categoria);
     });
-    // Contar por categoría
     const counts = {};
     allTratamientosData.forEach(item => {
       const cat = item.categoria || 'sin-categoria';
       counts[cat] = (counts[cat] || 0) + 1;
     });
-    // Ordenar alfabéticamente
     const cats = ['Todos', ...Array.from(categoriasSet).sort()];
     let pillsHtml = '';
     cats.forEach(cat => {
@@ -1671,9 +1985,8 @@
     });
     pillsContainer.innerHTML = pillsHtml;
 
-    // ---- 2. Aplicar filtros ----
+    // ---- Filtrar ----
     let filtered = allTratamientosData;
-
     if (filterCategoria !== 'Todos') {
       filtered = filtered.filter(item => item.categoria === filterCategoria);
     }
@@ -1685,22 +1998,18 @@
     if (filterAgendaVirtual) {
       filtered = filtered.filter(item => item.agenda_virtual === true);
     }
-
-    // Ordenar alfabéticamente por nombre
     filtered.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
 
-    // Actualizar contador
     if (countEl) {
       countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'tratamiento' : 'tratamientos'}`;
     }
 
-    // ---- 3. Generar filas de la tabla ----
     if (filtered.length === 0) {
       container.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;">No hay tratamientos que coincidan con los filtros.</td></tr>`;
       return;
     }
 
-    // Mapeo de colores para badges de categoría (igual que en dentalsoft.com.ar)
+    // ---- Colores de categoría ----
     const coloresCategoria = {
       'cirugia': 'badge-red',
       'consulta': 'badge-teal',
@@ -1723,7 +2032,6 @@
       const estadoTexto  = activo ? 'Activo' : 'Inactivo';
       const nombreCategoria = (item.categoria || 'sin categoría').charAt(0).toUpperCase() + (item.categoria || '').slice(1);
 
-      // Etiquetas adicionales (Agenda virtual y Requiere laboratorio)
       let etiquetas = '';
       if (item.agenda_virtual) {
         etiquetas += `<span class="badge-etiqueta azul"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle"><rect x="3" y="3" width="18" height="14" rx="3"/><path d="M8 21l4-4 4 4"/></svg> Agenda virtual</span> `;
@@ -1760,7 +2068,7 @@
     container.innerHTML = htmlFilas;
   }
 
-  // ---- Funciones de filtro (llamadas desde los botones) ----
+  // ---- Filtros ----
   function setFilterCategoria(cat) {
     filterCategoria = cat;
     actualizarVistaTratamientos();
@@ -1769,7 +2077,6 @@
   function setFilterEstado(estado) {
     filterEstado = estado;
     if (estado !== 'AgendaVirtual') filterAgendaVirtual = false;
-    // Actualizar estilo de botones de filtro rápido
     document.querySelectorAll('[data-filter]').forEach(btn => {
       btn.classList.remove('btn-primary');
       btn.classList.add('btn-secondary');
@@ -1791,21 +2098,17 @@
     actualizarVistaTratamientos();
   }
 
-  // ---- Toggle estado (desde el badge) ----
+  // ---- Toggle estado ----
   function toggleEstado(id) {
     const trat = allTratamientosData.find(t => t.id === id);
     if (!trat) return;
     const nuevoEstado = !trat.activo;
     db.collection('tratamientos').doc(id).update({ activo: nuevoEstado })
-      .then(() => {
-        showToast(`Estado cambiado a ${nuevoEstado ? 'Activo' : 'Inactivo'}`);
-      })
+      .then(() => showToast(`Estado cambiado a ${nuevoEstado ? 'Activo' : 'Inactivo'}`))
       .catch(err => alert('❌ Error: ' + err.message));
   }
 
-  // ============================================================
-  // MODAL: NUEVO TRATAMIENTO
-  // ============================================================
+  // ---- CRUD Tratamientos ----
   window.openModalNuevoTratamiento = function() {
     const categorias = ['cirugia','consulta','diagnostico','endodoncia','estetica','implante','limpieza','odontopediatria','ortodoncia','protesis','restauracion'];
     const opts = categorias.map(c => `<option value="${c}">${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('');
@@ -1861,7 +2164,7 @@
 
     db.collection('tratamientos').add({
       nombre, codigo, categoria, precio_base, duracion, activo,
-      precio_os: precio_base, // valor inicial igual al base
+      precio_os: precio_base,
       creado: new Date().toISOString()
     }).then(() => {
       closeModal();
@@ -1869,9 +2172,6 @@
     }).catch(err => alert('❌ Error: ' + err.message));
   };
 
-  // ============================================================
-  // MODAL: EDITAR TRATAMIENTO
-  // ============================================================
   window.openModalEditarTratamiento = function(id) {
     db.collection('tratamientos').doc(id).get().then(doc => {
       if (!doc.exists) return alert('Tratamiento no encontrado');
@@ -1939,9 +2239,6 @@
     }).catch(err => alert('❌ Error: ' + err.message));
   };
 
-  // ============================================================
-  // MODAL: ACTUALIZAR PRECIO OS (OBRA SOCIAL)
-  // ============================================================
   window.openModalOS = function(id) {
     db.collection('tratamientos').doc(id).get().then(doc => {
       if (!doc.exists) return alert('Tratamiento no encontrado');
@@ -1979,9 +2276,6 @@
     }).catch(err => alert('❌ Error: ' + err.message));
   };
 
-  // ============================================================
-  // ELIMINAR TRATAMIENTO
-  // ============================================================
   window.eliminarTratamiento = function(id) {
     if (!confirm('¿Eliminar este tratamiento de forma permanente?')) return;
     db.collection('tratamientos').doc(id).delete()
@@ -1990,7 +2284,7 @@
   };
 
   // ============================================================
-  // ESPECIALIDADES
+  // ESPECIALIDADES (sin cambios)
   // ============================================================
   function renderEspecialidades() {
     const el = $('view-especialidades');
@@ -2033,7 +2327,7 @@
   };
 
   // ============================================================
-  // WEB
+  // WEB (sin cambios)
   // ============================================================
   function renderWeb() {
     $('view-web').innerHTML = `
@@ -2061,7 +2355,7 @@
   };
 
   // ============================================================
-  // WHATSAPP
+  // WHATSAPP (sin cambios)
   // ============================================================
   function renderWhatsApp() {
     $('view-whatsapp').innerHTML = `
@@ -2092,7 +2386,7 @@
   };
 
   // ============================================================
-  // CONFIGURACIÓN
+  // CONFIGURACIÓN (sin cambios)
   // ============================================================
   function renderConfiguracion() {
     $('view-configuracion').innerHTML = `
