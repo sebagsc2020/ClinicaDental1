@@ -161,6 +161,7 @@
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
 
+    /* Badges base */
     .badge {
       display: inline-block; padding: 2px 10px; border-radius: 20px;
       font-size: 12px; font-weight: 600;
@@ -170,7 +171,58 @@
     .badge-red { background: #fee2e2; color: #b91c1c; }
     .badge-amber { background: #fef3c7; color: #b45309; }
     .badge-gray { background: #f1f5f9; color: #4b5563; }
+    .badge-teal { background: #ccfbf1; color: #0f766e; }
 
+    /* Badges de estado (activo/inactivo) */
+    .badge-estado-activo   { background: #dcfce7; color: #15803d; }
+    .badge-estado-inactivo { background: #f1f5f9; color: #4b5563; }
+
+    /* Etiquetas adicionales (Agenda virtual, Requiere laboratorio) */
+    .badge-etiqueta {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .badge-etiqueta.azul   { background: #dbeafe; color: #1d4ed8; }
+    .badge-etiqueta.ambar  { background: #fef3c7; color: #b45309; }
+
+    /* Pills de categoría */
+    .pill-categoria {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #1e2d3a;
+      cursor: pointer;
+      transition: 0.15s;
+      text-decoration: none;
+      background: none;
+    }
+    .pill-categoria:hover { background: #f1f5f9; }
+    .pill-categoria .contador {
+      background: #f1f5f9;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .pill-categoria.activa {
+      background: #4285F4;
+      border-color: #4285F4;
+      color: #fff;
+    }
+    .pill-categoria.activa .contador { background: rgba(255,255,255,0.2); color: #fff; }
+
+    /* Tabla */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { text-align: left; padding: 10px 12px; background: var(--bg); font-weight: 600; color: var(--text-muted); border-bottom: 2px solid var(--border); }
@@ -1525,7 +1577,7 @@
   };
 
   // ============================================================
-  // TRATAMIENTOS - VISTA PRINCIPAL (con diseño exacto de la maqueta)
+  // TRATAMIENTOS – VISTA ESTILO DENTALSOFT (pills, filtros, tabla con etiquetas)
   // ============================================================
   let filterCategoria = 'Todos';
   let filterEstado = 'Todos';
@@ -1540,29 +1592,47 @@
           <div class="page-title">Catálogo de tratamientos</div>
           <div class="page-subtitle" id="tratamientos-count">Cargando...</div>
         </div>
-        <button class="btn btn-primary" onclick="openModalNuevoTratamiento()">+ Nuevo tratamiento</button>
+        <button class="btn btn-primary" onclick="openModalNuevoTratamiento()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuevo tratamiento
+        </button>
       </div>
 
-      <!-- Tabs de categorías -->
-      <div id="categoria-tabs" class="tabs" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:4px;border-bottom:2px solid var(--border);">
-        <button class="tab active" data-cat="Todos" onclick="setFilterCategoria('Todos')">Todos</button>
-      </div>
+      <!-- Pills de categorías (con contadores) -->
+      <div id="categoria-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;"></div>
 
       <!-- Filtros rápidos -->
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;">
+      <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
         <button class="btn btn-sm btn-primary" data-filter="Todos" onclick="setFilterEstado('Todos')">Todos</button>
         <button class="btn btn-sm btn-secondary" data-filter="Activos" onclick="setFilterEstado('Activos')">Activos</button>
         <button class="btn btn-sm btn-secondary" data-filter="Inactivos" onclick="setFilterEstado('Inactivos')">Inactivos</button>
-        <button class="btn btn-sm btn-secondary" data-filter="AgendaVirtual" onclick="toggleAgendaVirtual()">Agenda virtual</button>
+        <button class="btn btn-sm btn-secondary" data-filter="AgendaVirtual" onclick="toggleAgendaVirtual()" style="border-color:var(--accent-light);">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:3px;"><rect x="3" y="3" width="18" height="14" rx="3"/><path d="M8 21l4-4 4 4"/></svg>
+          Agenda virtual
+        </button>
       </div>
 
-      <!-- Lista de tratamientos -->
-      <div id="tratamientos-list-container">
-        <div class="card"><p class="text-muted">Cargando tratamientos...</p></div>
+      <!-- Tabla de tratamientos -->
+      <div class="table-wrap" id="tabla-tratamientos">
+        <table>
+          <thead>
+            <tr>
+              <th>Tratamiento</th>
+              <th>Categoría</th>
+              <th>Precio base</th>
+              <th>Duración</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-tratamientos">
+            <!-- Generado por JS -->
+          </tbody>
+        </table>
       </div>
     `;
 
-    // Escuchar cambios en Firestore (SIN orderBy múltiple para evitar índice)
+    // Escuchar cambios en Firestore (sin orderBy múltiple para evitar índice)
     db.collection('tratamientos').onSnapshot(snap => {
       allTratamientosData = [];
       snap.forEach(doc => {
@@ -1576,100 +1646,121 @@
   }
 
   function actualizarVistaTratamientos() {
-    const container = $('tratamientos-list-container');
+    const container = $('tbody-tratamientos');
     const countEl = $('tratamientos-count');
+    const pillsContainer = $('categoria-pills');
 
-    // Obtener categorías únicas y ordenarlas
+    // ---- 1. Pills de categorías ----
     const categoriasSet = new Set();
     allTratamientosData.forEach(item => {
       if (item.categoria) categoriasSet.add(item.categoria);
     });
-    const categorias = ['Todos', ...Array.from(categoriasSet).sort()];
-    const tabsContainer = $('categoria-tabs');
-    if (tabsContainer) {
-      tabsContainer.innerHTML = categorias.map(cat =>
-        `<button class="tab ${filterCategoria === cat ? 'active' : ''}" data-cat="${cat}" onclick="setFilterCategoria('${cat}')">${cat.charAt(0).toUpperCase() + cat.slice(1)}</button>`
-      ).join('');
-    }
+    // Contar por categoría
+    const counts = {};
+    allTratamientosData.forEach(item => {
+      const cat = item.categoria || 'sin-categoria';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    // Ordenar alfabéticamente
+    const cats = ['Todos', ...Array.from(categoriasSet).sort()];
+    let pillsHtml = '';
+    cats.forEach(cat => {
+      const count = cat === 'Todos' ? allTratamientosData.length : counts[cat] || 0;
+      const activa = filterCategoria === cat ? 'activa' : '';
+      pillsHtml += `<button class="pill-categoria ${activa}" onclick="setFilterCategoria('${cat}')">${cat === 'Todos' ? 'Todos' : cat.charAt(0).toUpperCase() + cat.slice(1)} <span class="contador">${count}</span></button>`;
+    });
+    pillsContainer.innerHTML = pillsHtml;
 
-    // Aplicar filtros
+    // ---- 2. Aplicar filtros ----
     let filtered = allTratamientosData;
 
     if (filterCategoria !== 'Todos') {
       filtered = filtered.filter(item => item.categoria === filterCategoria);
     }
-
     if (filterEstado === 'Activos') {
       filtered = filtered.filter(item => item.activo !== false);
     } else if (filterEstado === 'Inactivos') {
       filtered = filtered.filter(item => item.activo === false);
     }
-
     if (filterAgendaVirtual) {
       filtered = filtered.filter(item => item.agenda_virtual === true);
     }
 
-    // Ordenar alfabéticamente por nombre dentro de la lista filtrada
+    // Ordenar alfabéticamente por nombre
     filtered.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
 
+    // Actualizar contador
     if (countEl) {
       countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'tratamiento' : 'tratamientos'}`;
     }
 
+    // ---- 3. Generar filas de la tabla ----
     if (filtered.length === 0) {
-      container.innerHTML = `<div class="card"><p class="text-muted">No hay tratamientos que coincidan con los filtros.</p></div>`;
+      container.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;">No hay tratamientos que coincidan con los filtros.</td></tr>`;
       return;
     }
 
-    let html = `
-      <div class="card" style="padding:0;overflow:hidden;">
-        <div class="table-wrap">
-          <table class="table" style="margin-bottom:0;">
-            <thead style="background:var(--bg);border-bottom:2px solid var(--border);">
-              <tr>
-                <th style="width:5%;">#</th>
-                <th style="width:30%;">TRATAMIENTO</th>
-                <th style="width:15%;">CATEGORÍA</th>
-                <th style="width:15%;">PRECIO BASE</th>
-                <th style="width:10%;">DURACIÓN</th>
-                <th style="width:10%;">ESTADO</th>
-                <th style="width:15%;">ACCIONES</th>
-              </tr>
-            </thead>
-            <tbody>
-    `;
+    // Mapeo de colores para badges de categoría (igual que en dentalsoft.com.ar)
+    const coloresCategoria = {
+      'cirugia': 'badge-red',
+      'consulta': 'badge-teal',
+      'diagnostico': 'badge-gray',
+      'endodoncia': 'badge-amber',
+      'estetica': 'badge-teal',
+      'implante': 'badge-gray',
+      'limpieza': 'badge-blue',
+      'odontopediatria': 'badge-gray',
+      'ortodoncia': 'badge-blue',
+      'protesis': 'badge-gray',
+      'restauracion': 'badge-green'
+    };
+    const getColorCategoria = (cat) => coloresCategoria[cat] || 'badge-gray';
 
-    filtered.forEach((item, index) => {
+    let htmlFilas = '';
+    filtered.forEach((item) => {
       const activo = item.activo !== undefined ? item.activo : true;
-      const estadoBadge = activo ? 'badge-green' : 'badge-gray';
-      const estadoTexto = activo ? 'Activado' : 'Inactivo';
-      const nombreCategoria = (item.categoria || 'Sin categoría').charAt(0).toUpperCase() + (item.categoria || 'sin').slice(1);
+      const estadoBadge = activo ? 'badge-estado-activo' : 'badge-estado-inactivo';
+      const estadoTexto  = activo ? 'Activo' : 'Inactivo';
+      const nombreCategoria = (item.categoria || 'sin categoría').charAt(0).toUpperCase() + (item.categoria || '').slice(1);
 
-      html += `
+      // Etiquetas adicionales (Agenda virtual y Requiere laboratorio)
+      let etiquetas = '';
+      if (item.agenda_virtual) {
+        etiquetas += `<span class="badge-etiqueta azul"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle"><rect x="3" y="3" width="18" height="14" rx="3"/><path d="M8 21l4-4 4 4"/></svg> Agenda virtual</span> `;
+      }
+      if (item.requiere_lab) {
+        etiquetas += `<span class="badge-etiqueta ambar">Requiere laboratorio</span> `;
+      }
+
+      htmlFilas += `
         <tr>
-          <td>${index + 1}</td>
           <td>
-            <strong>${item.nombre || ''}</strong>
-            <br><small class="text-muted">Cód. ${item.codigo || '—'}</small>
+            <div style="font-weight:600">${item.nombre || ''}</div>
+            <div style="font-size:11px;color:#64748b;">Cód. ${item.codigo || '—'}</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${etiquetas}</div>
           </td>
-          <td>${nombreCategoria}</td>
-          <td class="text-end">$${Number(item.precio_base || 0).toLocaleString()}</td>
-          <td>${item.duracion || '30 min'}</td>
-          <td><span class="badge ${estadoBadge}">${estadoTexto}</span></td>
+          <td><span class="badge ${getColorCategoria(item.categoria)}">${nombreCategoria}</span></td>
+          <td style="font-weight:600">$ ${Number(item.precio_base || 0).toLocaleString()}</td>
+          <td style="font-size:13px;color:#64748b;">${item.duracion || '30 min'}</td>
           <td>
-            <button class="btn btn-sm btn-secondary" onclick="openModalEditarTratamiento('${item.id}')" style="margin-right:4px;">✏️ Editar</button>
-            <button class="btn btn-sm btn-primary" onclick="openModalOS('${item.id}')">🏥 OS</button>
-            <button class="btn btn-sm btn-danger" onclick="eliminarTratamiento('${item.id}')" style="margin-left:4px;">🗑</button>
+            <button class="badge ${estadoBadge}" style="border:none;cursor:pointer;font-size:11px;" onclick="toggleEstado('${item.id}')">
+              ${estadoTexto}
+            </button>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-secondary btn-sm" onclick="openModalEditarTratamiento('${item.id}')">Editar</button>
+              <button class="btn btn-secondary btn-sm" onclick="openModalOS('${item.id}')" title="Configurar cobertura por obra social">🏥 OS</button>
+              <button class="btn btn-danger btn-sm" onclick="eliminarTratamiento('${item.id}')">🗑</button>
+            </div>
           </td>
         </tr>
       `;
     });
-
-    html += `</tbody></table></div></div>`;
-    container.innerHTML = html;
+    container.innerHTML = htmlFilas;
   }
 
-  // Funciones de filtro
+  // ---- Funciones de filtro (llamadas desde los botones) ----
   function setFilterCategoria(cat) {
     filterCategoria = cat;
     actualizarVistaTratamientos();
@@ -1678,6 +1769,7 @@
   function setFilterEstado(estado) {
     filterEstado = estado;
     if (estado !== 'AgendaVirtual') filterAgendaVirtual = false;
+    // Actualizar estilo de botones de filtro rápido
     document.querySelectorAll('[data-filter]').forEach(btn => {
       btn.classList.remove('btn-primary');
       btn.classList.add('btn-secondary');
@@ -1697,6 +1789,18 @@
       btn.classList.toggle('btn-secondary', !filterAgendaVirtual);
     }
     actualizarVistaTratamientos();
+  }
+
+  // ---- Toggle estado (desde el badge) ----
+  function toggleEstado(id) {
+    const trat = allTratamientosData.find(t => t.id === id);
+    if (!trat) return;
+    const nuevoEstado = !trat.activo;
+    db.collection('tratamientos').doc(id).update({ activo: nuevoEstado })
+      .then(() => {
+        showToast(`Estado cambiado a ${nuevoEstado ? 'Activo' : 'Inactivo'}`);
+      })
+      .catch(err => alert('❌ Error: ' + err.message));
   }
 
   // ============================================================
