@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clínica Dental · Panel Completo</title>
 
-  <!-- Estilos base (iguales a los originales) -->
   <style>
     /* ===== Variables y reset ===== */
     :root {
@@ -369,28 +368,23 @@
   function navigateTo(view) {
     if (!views.includes(view)) return;
     currentView = view;
-    // Sidebar
     qsa('.sidebar .sidebar-item[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === view));
-    // Top nav
     qsa('.topnav .nav-links a[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === view));
-    // Views
     qsa('.view').forEach(el => el.classList.remove('active'));
     const target = $('view-'+view);
     if (target) target.classList.add('active');
-    // Cargar contenido si está vacío
     if (target && target.innerHTML.trim() === '') {
       loadView(view);
     }
   }
 
-  // Sidebar clicks
   document.querySelectorAll('.sidebar .sidebar-item[data-view]').forEach(btn => {
     btn.addEventListener('click', () => navigateTo(btn.dataset.view));
   });
   document.querySelectorAll('.topnav .nav-links a[data-view]').forEach(btn => {
     btn.addEventListener('click', (e) => { e.preventDefault(); navigateTo(btn.dataset.view); });
   });
-  // User dropdown
+
   function toggleUserMenu() {
     const dd = $('user-dropdown');
     dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
@@ -400,7 +394,7 @@
   });
 
   // ============================================================
-  // CARGA DE VISTAS (cada una se renderiza con su contenido)
+  // CARGA DE VISTAS
   // ============================================================
   function loadView(view) {
     switch(view) {
@@ -450,7 +444,8 @@
       $('dash-ingresos').textContent = '$'+total.toLocaleString();
     });
     db.collection('turnos').where('estado','==','pendiente').get().then(snap => { $('dash-turnos-pendientes').textContent = snap.size; });
-    db.collection('turnos').orderBy('fecha').orderBy('hora').limit(5).get().then(snap => {
+    // Próximos turnos (sin orderBy para evitar índices compuestos)
+    db.collection('turnos').limit(5).get().then(snap => {
       let html = '';
       snap.forEach(d => {
         const data = d.data();
@@ -461,50 +456,155 @@
   }
 
   // ============================================================
-  // AGENDA
+  // AGENDA (con navegación semanal y carga desde Firestore)
   // ============================================================
+  let semanaActual = new Date();
+
+  function obtenerLunes(fecha) {
+    const d = new Date(fecha);
+    const dia = d.getDay();
+    const diff = dia === 0 ? -6 : 1 - dia;
+    d.setDate(d.getDate() + diff);
+    return d;
+  }
+  semanaActual = obtenerLunes(new Date());
+
   function renderAgenda() {
     const el = $('view-agenda');
+
+    const fechas = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(semanaActual);
+      d.setDate(semanaActual.getDate() + i);
+      fechas.push(d.toISOString().slice(0,10));
+    }
+
+    const diasSemana = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+    let headerHtml = `<div></div>`;
+    fechas.forEach((f, idx) => {
+      const diaNum = new Date(f+'T00:00:00').getDate();
+      const esHoy = f === new Date().toISOString().slice(0,10);
+      headerHtml += `<div style="padding:10px 8px;text-align:center;${esHoy?'background:var(--accent-light);':''}border-left:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--text-muted);font-weight:500">${diasSemana[idx]}</div>
+        <div style="font-size:20px;font-weight:800;${esHoy?'color:var(--primary);':''}">${diaNum}</div>
+      </div>`;
+    });
+
+    const horas = Array.from({length:12}, (_,i) => 8+i);
+    let bodyHtml = '';
+    bodyHtml += `<div style="position:relative;height:${horas.length*64}px">`;
+    horas.forEach((h, idx) => {
+      bodyHtml += `<div style="position:absolute;top:${idx*64}px;right:6px;font-size:10px;color:var(--text-muted);">${h}:00</div>`;
+    });
+    bodyHtml += `</div>`;
+
+    fechas.forEach((fecha) => {
+      bodyHtml += `<div data-fecha="${fecha}" style="position:relative;height:${horas.length*64}px;border-left:1px solid var(--border);">`;
+      horas.forEach((h, rowIdx) => {
+        const top = rowIdx * 64;
+        if (rowIdx % 2 === 0) {
+          bodyHtml += `<div style="position:absolute;top:${top}px;left:0;right:0;height:64px;background:#f0f7ff;pointer-events:none;"></div>`;
+        }
+        bodyHtml += `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:1px solid #dde8f0;pointer-events:none;"></div>`;
+      });
+      bodyHtml += `<div class="day-turnos" data-fecha="${fecha}" style="position:absolute;inset:0;z-index:2;"></div>`;
+      bodyHtml += `</div>`;
+    });
+
+    const semanaStr = `${fechas[0]} al ${fechas[6]}`;
+
     el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Agenda</div><div class="page-subtitle">Semana actual</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevoTurno()">+ Nuevo turno</button>
+      <div class="page-header">
+        <div>
+          <div class="page-title">Agenda</div>
+          <div class="page-subtitle">Semana del ${semanaStr}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="cambiarSemana(-1)">← Anterior</button>
+          <button class="btn btn-secondary btn-sm" onclick="cambiarSemana(0)">Hoy</button>
+          <button class="btn btn-secondary btn-sm" onclick="cambiarSemana(1)">Siguiente →</button>
+          <button class="btn btn-primary" onclick="openModalNuevoTurno()">+ Nuevo turno</button>
+        </div>
       </div>
-      <div class="card"><div id="agenda-grid" style="display:grid;grid-template-columns:60px repeat(7,1fr);gap:2px;font-size:12px">
-        <div></div>
-        ${['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d => `<div style="font-weight:700;text-align:center;padding:6px 0">${d}</div>`).join('')}
-        ${Array.from({length:12}, (_,i) => {
-          const hora = 8+i;
-          let row = `<div style="padding:4px 0;font-weight:600;color:var(--text-muted);text-align:right;padding-right:6px">${hora}:00</div>`;
-          for(let j=0;j<7;j++) row += `<div style="border:1px solid var(--border);min-height:40px;cursor:pointer;background:var(--white);" onclick="openModalNuevoTurno()"></div>`;
-          return row;
-        }).join('')}
-      </div></div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:60px repeat(7,1fr);gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12px;">
+          ${headerHtml}
+          ${bodyHtml}
+        </div>
+      </div>
     `;
+
+    const fechaInicio = fechas[0];
+    const fechaFin = fechas[6];
+
+    db.collection('turnos')
+      .where('fecha', '>=', fechaInicio)
+      .where('fecha', '<=', fechaFin)
+      .onSnapshot((snapshot) => {
+        document.querySelectorAll('.day-turnos').forEach(col => {
+          while (col.firstChild) col.removeChild(col.firstChild);
+        });
+
+        snapshot.forEach(doc => {
+          const turno = doc.data();
+          const fecha = turno.fecha;
+          const hora = turno.hora;
+          if (!fecha || !hora) return;
+
+          const [h, m] = hora.split(':').map(Number);
+          if (isNaN(h) || isNaN(m)) return;
+          const minutosDesdeInicio = (h - 8) * 60 + m;
+          const top = (minutosDesdeInicio / 60) * 64;
+          const duracion = turno.duracion || 30;
+          const height = (duracion / 60) * 64;
+
+          const columna = document.querySelector(`.day-turnos[data-fecha="${fecha}"]`);
+          if (!columna) return;
+
+          const bloque = document.createElement('div');
+          bloque.style.cssText = `
+            position:absolute; top:${top}px; left:2px; right:2px; height:${height-2}px;
+            background:${turno.color || '#355063'}; border-radius:5px; padding:2px 4px;
+            overflow:hidden; z-index:3; cursor:pointer;
+            font-size:10px; color:#fff; font-weight:600; white-space:nowrap; text-overflow:ellipsis;
+          `;
+          bloque.textContent = `${hora} ${turno.paciente || 'Sin paciente'}`;
+          bloque.title = `${turno.paciente} - ${turno.tratamiento || ''}`;
+          bloque.onclick = () => alert(`Turno de ${turno.paciente}\n${turno.fecha} ${turno.hora}\nEstado: ${turno.estado || 'Pendiente'}`);
+          columna.appendChild(bloque);
+        });
+
+        document.querySelectorAll('.day-turnos').forEach((col, idx) => {
+          const count = col.children.length;
+          const headerDiv = document.querySelectorAll(`[style*="text-align:center;"]`)[idx+1];
+          if (headerDiv) {
+            let existing = headerDiv.querySelector('.turnos-count');
+            if (!existing) {
+              existing = document.createElement('div');
+              existing.className = 'turnos-count';
+              existing.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;';
+              headerDiv.appendChild(existing);
+            }
+            existing.textContent = count + ' turnos';
+          }
+        });
+      }, (error) => {
+        console.error('Error cargando turnos:', error);
+      });
   }
 
-  window.openModalNuevoTurno = function() {
-    openModal(`
-      <div class="modal-title">Nuevo turno</div>
-      <div class="form-group"><label class="form-label">Paciente</label><input class="form-control" id="f-turno-paciente" placeholder="Nombre"></div>
-      <div class="form-group"><label class="form-label">Fecha</label><input class="form-control" id="f-turno-fecha" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
-      <div class="form-group"><label class="form-label">Hora</label><input class="form-control" id="f-turno-hora" type="time" value="09:00"></div>
-      <div class="form-group"><label class="form-label">Profesional</label><input class="form-control" id="f-turno-profesional" placeholder="Opcional"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarTurno()">Guardar</button></div>
-    `);
-  };
-  window.guardarTurno = function() {
-    const paciente = $('f-turno-paciente').value.trim();
-    const fecha = $('f-turno-fecha').value;
-    const hora = $('f-turno-hora').value;
-    const profesional = $('f-turno-profesional').value.trim();
-    if (!paciente || !fecha || !hora) return alert('Completá todos los campos');
-    db.collection('turnos').add({ paciente, fecha, hora, profesional, estado:'pendiente', creado: new Date().toISOString() })
-      .then(() => { closeModal(); showToast('Turno creado'); renderAgenda(); })
-      .catch(err => alert('Error: '+err.message));
-  };
+  function cambiarSemana(direccion) {
+    if (direccion === 0) {
+      semanaActual = obtenerLunes(new Date());
+    } else {
+      semanaActual.setDate(semanaActual.getDate() + direccion * 7);
+    }
+    renderAgenda();
+  }
 
   // ============================================================
-  // PACIENTES (CRUD completo)
+  // PACIENTES (CRUD)
   // ============================================================
   function renderPacientes() {
     const el = $('view-pacientes');
@@ -527,6 +627,7 @@
       });
     });
   }
+
   window.openModalNuevoPaciente = function() {
     openModal(`
       <div class="modal-title">Nuevo paciente</div>
@@ -539,6 +640,7 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarPaciente()">Guardar</button></div>
     `);
   };
+
   window.guardarPaciente = function() {
     const nombre = $('f-pac-nombre').value.trim();
     const apellido = $('f-pac-apellido').value.trim();
@@ -546,13 +648,14 @@
     const email = $('f-pac-email').value.trim();
     if (!nombre) return alert('Nombre requerido');
     db.collection('pacientes').add({ nombre, apellido, telefono, email, fecha_creacion: new Date().toISOString().slice(0,10) })
-      .then(() => { closeModal(); showToast('Paciente creado'); })
-      .catch(err => alert('Error: '+err.message));
+      .then(() => { closeModal(); showToast('Paciente creado'); });
   };
+
   window.eliminarPaciente = function(id) {
     if (!confirm('¿Eliminar este paciente?')) return;
     db.collection('pacientes').doc(id).delete().then(() => showToast('Eliminado'));
   };
+
   window.editarPaciente = function(id) {
     db.collection('pacientes').doc(id).get().then(doc => {
       if (!doc.exists) return;
@@ -569,6 +672,7 @@
       `);
     });
   };
+
   window.actualizarPaciente = function(id) {
     const nombre = $('f-pac-edit-nombre').value.trim();
     const apellido = $('f-pac-edit-apellido').value.trim();
@@ -603,6 +707,7 @@
       });
     });
   }
+
   window.openModalNuevoProfesional = function() {
     openModal(`
       <div class="modal-title">Nuevo profesional</div>
@@ -615,6 +720,7 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarProfesional()">Guardar</button></div>
     `);
   };
+
   window.guardarProfesional = function() {
     const nombre = $('f-prof-nombre').value.trim();
     const apellido = $('f-prof-apellido').value.trim();
@@ -624,10 +730,12 @@
     db.collection('profesionales').add({ nombre, apellido, especialidad, email })
       .then(() => { closeModal(); showToast('Profesional creado'); });
   };
+
   window.eliminarProfesional = function(id) {
     if (!confirm('¿Eliminar?')) return;
     db.collection('profesionales').doc(id).delete().then(() => showToast('Eliminado'));
   };
+
   window.editarProfesional = function(id) {
     db.collection('profesionales').doc(id).get().then(doc => {
       if (!doc.exists) return;
@@ -644,6 +752,7 @@
       `);
     });
   };
+
   window.actualizarProfesional = function(id) {
     const nombre = $('f-prof-edit-nombre').value.trim();
     const apellido = $('f-prof-edit-apellido').value.trim();
@@ -655,7 +764,7 @@
   };
 
   // ============================================================
-  // LIQUIDACIONES (simple)
+  // LIQUIDACIONES
   // ============================================================
   function renderLiquidaciones() {
     const el = $('view-liquidaciones');
@@ -675,6 +784,7 @@
       $('liquidaciones-list').innerHTML = html || '<p class="text-muted">Sin liquidaciones</p>';
     });
   }
+
   window.openModalNuevaLiquidacion = function() {
     openModal(`
       <div class="modal-title">Nueva liquidación</div>
@@ -684,6 +794,7 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarLiquidacion()">Guardar</button></div>
     `);
   };
+
   window.guardarLiquidacion = function() {
     const profesional = $('f-liq-prof').value.trim();
     const periodo = $('f-liq-periodo').value.trim();
@@ -743,6 +854,7 @@
       $('pagos-list').innerHTML = html || '<p class="text-muted">Sin pagos</p>';
     });
   }
+
   window.openModalNuevoPago = function() {
     openModal(`
       <div class="modal-title">Registrar pago</div>
@@ -752,6 +864,7 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarPago()">Guardar</button></div>
     `);
   };
+
   window.guardarPago = function() {
     const paciente = $('f-pago-paciente').value.trim();
     const monto = parseFloat($('f-pago-monto').value);
@@ -782,6 +895,7 @@
       $('presupuestos-list').innerHTML = html || '<p class="text-muted">Sin presupuestos</p>';
     });
   }
+
   window.openModalNuevoPresupuesto = function() {
     openModal(`
       <div class="modal-title">Nuevo presupuesto</div>
@@ -790,6 +904,7 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarPresupuesto()">Guardar</button></div>
     `);
   };
+
   window.guardarPresupuesto = function() {
     const paciente = $('f-pres-paciente').value.trim();
     const total = parseFloat($('f-pres-total').value);
@@ -799,7 +914,7 @@
   };
 
   // ============================================================
-  // PRODUCTIVIDAD (estático)
+  // PRODUCTIVIDAD
   // ============================================================
   function renderProductividad() {
     $('view-productividad').innerHTML = `
@@ -836,6 +951,7 @@
       $('os-list').innerHTML = html || '<p class="text-muted">Sin obras sociales</p>';
     });
   }
+
   window.openModalNuevaObraSocial = function() {
     openModal(`
       <div class="modal-title">Nueva obra social</div>
@@ -844,6 +960,7 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarObraSocial()">Guardar</button></div>
     `);
   };
+
   window.guardarObraSocial = function() {
     const nombre = $('f-os-nombre').value.trim();
     const codigo = $('f-os-codigo').value.trim();
@@ -851,6 +968,7 @@
     db.collection('obras_sociales').add({ nombre, codigo })
       .then(() => { closeModal(); showToast('Guardado'); });
   };
+
   window.eliminarObraSocial = function(id) {
     if (!confirm('¿Eliminar?')) return;
     db.collection('obras_sociales').doc(id).delete().then(() => showToast('Eliminado'));
@@ -890,6 +1008,7 @@
       $('inventario-list').innerHTML = html || '<p class="text-muted">Sin productos</p>';
     });
   }
+
   window.openModalNuevoProducto = function() {
     openModal(`
       <div class="modal-title">Nuevo producto</div>
@@ -899,6 +1018,7 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarProducto()">Guardar</button></div>
     `);
   };
+
   window.guardarProducto = function() {
     const nombre = $('f-inv-nombre').value.trim();
     const stock = parseInt($('f-inv-stock').value)||0;
@@ -907,6 +1027,7 @@
     db.collection('inventario').add({ nombre, stock, precio })
       .then(() => { closeModal(); showToast('Producto guardado'); });
   };
+
   window.eliminarProducto = function(id) {
     if (!confirm('¿Eliminar?')) return;
     db.collection('inventario').doc(id).delete().then(() => showToast('Eliminado'));
@@ -934,6 +1055,7 @@
       $('proveedores-list').innerHTML = html || '<p class="text-muted">Sin proveedores</p>';
     });
   }
+
   window.openModalNuevoProveedor = function() {
     openModal(`
       <div class="modal-title">Nuevo proveedor</div>
@@ -942,6 +1064,7 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarProveedor()">Guardar</button></div>
     `);
   };
+
   window.guardarProveedor = function() {
     const nombre = $('f-prov-nombre').value.trim();
     const contacto = $('f-prov-contacto').value.trim();
@@ -949,6 +1072,7 @@
     db.collection('proveedores').add({ nombre, contacto })
       .then(() => { closeModal(); showToast('Guardado'); });
   };
+
   window.eliminarProveedor = function(id) {
     if (!confirm('¿Eliminar?')) return;
     db.collection('proveedores').doc(id).delete().then(() => showToast('Eliminado'));
@@ -976,6 +1100,7 @@
       $('tratamientos-list').innerHTML = html || '<p class="text-muted">Sin tratamientos</p>';
     });
   }
+
   window.openModalNuevoTratamiento = function() {
     openModal(`
       <div class="modal-title">Nuevo tratamiento</div>
@@ -985,6 +1110,7 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarTratamiento()">Guardar</button></div>
     `);
   };
+
   window.guardarTratamiento = function() {
     const nombre = $('f-trat-nombre').value.trim();
     const precio_base = parseFloat($('f-trat-precio').value)||0;
@@ -993,6 +1119,7 @@
     db.collection('tratamientos').add({ nombre, precio_base, duracion })
       .then(() => { closeModal(); showToast('Guardado'); });
   };
+
   window.eliminarTratamiento = function(id) {
     if (!confirm('¿Eliminar?')) return;
     db.collection('tratamientos').doc(id).delete().then(() => showToast('Eliminado'));
@@ -1020,6 +1147,7 @@
       $('especialidades-list').innerHTML = html || '<p class="text-muted">Sin especialidades</p>';
     });
   }
+
   window.openModalNuevaEspecialidad = function() {
     openModal(`
       <div class="modal-title">Nueva especialidad</div>
@@ -1027,19 +1155,21 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarEspecialidad()">Guardar</button></div>
     `);
   };
+
   window.guardarEspecialidad = function() {
     const nombre = $('f-esp-nombre').value.trim();
     if (!nombre) return alert('Nombre requerido');
     db.collection('especialidades').add({ nombre })
       .then(() => { closeModal(); showToast('Guardado'); });
   };
+
   window.eliminarEspecialidad = function(id) {
     if (!confirm('¿Eliminar?')) return;
     db.collection('especialidades').doc(id).delete().then(() => showToast('Eliminado'));
   };
 
   // ============================================================
-  // WEB (Landing)
+  // WEB
   // ============================================================
   function renderWeb() {
     $('view-web').innerHTML = `
@@ -1058,6 +1188,7 @@
       }
     });
   }
+
   window.guardarWeb = function() {
     const tagline = $('web-tagline').value.trim();
     const descripcion = $('web-desc').value.trim();
@@ -1087,6 +1218,7 @@
       }
     });
   }
+
   window.guardarWhatsApp = function() {
     const proveedor = $('wp-proveedor').value;
     const token = $('wp-token').value.trim();
@@ -1096,7 +1228,7 @@
   };
 
   // ============================================================
-  // CONFIGURACIÓN (sucursales, zona horaria)
+  // CONFIGURACIÓN
   // ============================================================
   function renderConfiguracion() {
     $('view-configuracion').innerHTML = `
@@ -1110,7 +1242,6 @@
         <button class="btn btn-primary" onclick="guardarConfiguracion()">Guardar</button>
       </div>
     `;
-    // Cargar sucursales
     db.collection('sucursales').orderBy('nombre').onSnapshot(snap => {
       let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Dirección</th><th></th></tr></thead><tbody>';
       snap.forEach(d => {
@@ -1121,11 +1252,11 @@
       html += '</tbody></table></div>';
       $('sucursales-list').innerHTML = html || '<p class="text-muted">Sin sucursales</p>';
     });
-    // Cargar zona horaria
     db.collection('configuracion').doc('main').get().then(doc => {
       if (doc.exists) $('cfg-timezone').value = doc.data().timezone||'America/Argentina/Buenos_Aires';
     });
   }
+
   window.openModalNuevaSucursal = function() {
     openModal(`
       <div class="modal-title">Nueva sucursal</div>
@@ -1134,6 +1265,7 @@
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarSucursal()">Guardar</button></div>
     `);
   };
+
   window.guardarSucursal = function() {
     const nombre = $('f-suc-nombre').value.trim();
     const direccion = $('f-suc-direccion').value.trim();
@@ -1141,14 +1273,43 @@
     db.collection('sucursales').add({ nombre, direccion })
       .then(() => { closeModal(); showToast('Guardado'); });
   };
+
   window.eliminarSucursal = function(id) {
     if (!confirm('¿Eliminar sucursal?')) return;
     db.collection('sucursales').doc(id).delete().then(() => showToast('Eliminado'));
   };
+
   window.guardarConfiguracion = function() {
     const timezone = $('cfg-timezone').value;
     db.collection('configuracion').doc('main').set({ timezone, updated: new Date().toISOString() })
       .then(() => showToast('Configuración guardada'));
+  };
+
+  // ============================================================
+  // NUEVO TURNO (desde la agenda)
+  // ============================================================
+  window.openModalNuevoTurno = function() {
+    openModal(`
+      <div class="modal-title">Nuevo turno</div>
+      <div class="form-group"><label class="form-label">Paciente</label><input class="form-control" id="f-turno-paciente" placeholder="Nombre"></div>
+      <div class="form-group"><label class="form-label">Fecha</label><input class="form-control" id="f-turno-fecha" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="form-group"><label class="form-label">Hora</label><input class="form-control" id="f-turno-hora" type="time" value="09:00"></div>
+      <div class="form-group"><label class="form-label">Profesional</label><input class="form-control" id="f-turno-profesional" placeholder="Opcional"></div>
+      <div class="form-group"><label class="form-label">Duración (min)</label><input class="form-control" id="f-turno-duracion" type="number" value="30"></div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarTurno()">Guardar</button></div>
+    `);
+  };
+
+  window.guardarTurno = function() {
+    const paciente = $('f-turno-paciente').value.trim();
+    const fecha = $('f-turno-fecha').value;
+    const hora = $('f-turno-hora').value;
+    const profesional = $('f-turno-profesional').value.trim();
+    const duracion = parseInt($('f-turno-duracion').value) || 30;
+    if (!paciente || !fecha || !hora) return alert('Completá todos los campos');
+    db.collection('turnos').add({ paciente, fecha, hora, profesional, duracion, estado:'pendiente', color:'#355063', creado: new Date().toISOString() })
+      .then(() => { closeModal(); showToast('Turno creado'); renderAgenda(); })
+      .catch(err => alert('Error: '+err.message));
   };
 
   // ============================================================
