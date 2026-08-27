@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Clínica Dental · Panel Completo</title>
 
   <style>
@@ -808,7 +808,7 @@
     const container = document.getElementById('trt-lista');
     if (!container) return;
 
-    db.collection('tratamientos').orderBy('categoria').orderBy('nombre').get().then(snap => {
+    db.collection('tratamientos').get().then(snap => {
       if (snap.empty) {
         container.innerHTML = '<p class="text-muted" style="padding:12px;text-align:center;">No hay tratamientos cargados</p>';
         return;
@@ -1562,14 +1562,16 @@
       </div>
     `;
 
-    // Escuchar cambios en Firestore
-    db.collection('tratamientos').orderBy('categoria').orderBy('nombre').onSnapshot(snap => {
+    // Escuchar cambios en Firestore (SIN orderBy múltiple para evitar índice)
+    db.collection('tratamientos').onSnapshot(snap => {
       allTratamientosData = [];
       snap.forEach(doc => {
         const data = doc.data();
         allTratamientosData.push({ id: doc.id, ...data });
       });
       actualizarVistaTratamientos();
+    }, (error) => {
+      console.error('Error en snapshot de tratamientos:', error);
     });
   }
 
@@ -1577,7 +1579,7 @@
     const container = $('tratamientos-list-container');
     const countEl = $('tratamientos-count');
 
-    // Construir tabs dinámicamente
+    // Obtener categorías únicas y ordenarlas
     const categoriasSet = new Set();
     allTratamientosData.forEach(item => {
       if (item.categoria) categoriasSet.add(item.categoria);
@@ -1606,6 +1608,9 @@
     if (filterAgendaVirtual) {
       filtered = filtered.filter(item => item.agenda_virtual === true);
     }
+
+    // Ordenar alfabéticamente por nombre dentro de la lista filtrada
+    filtered.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
 
     if (countEl) {
       countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'tratamiento' : 'tratamientos'}`;
