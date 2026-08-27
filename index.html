@@ -1,1743 +1,487 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clínica Dental · Panel Completo</title>
-
-  <style>
-    /* ===== Variables y reset ===== */
-    :root {
-      --primary: #355063;
-      --primary-dark: #1e2d3a;
-      --accent: #4285F4;
-      --accent-dark: #2b6ed7;
-      --accent-light: #e8f0fe;
-      --text: #1e2d3a;
-      --text-muted: #64748b;
-      --bg: #f1f5f9;
-      --border: #e2e8f0;
-      --white: #ffffff;
-      --danger: #dc2626;
-      --success: #16a34a;
-      --warning: #f59e0b;
-      --radius: 8px;
-      --shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    /* ===== Topnav ===== */
-    .topnav {
-      background: var(--primary);
-      color: #fff;
-      padding: 0 20px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .topnav .logo { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
-    .topnav .logo span { font-weight: 300; }
-    .topnav .nav-links { display: flex; gap: 8px; margin-left: 24px; }
-    .topnav .nav-links a {
-      color: rgba(255,255,255,0.7);
-      text-decoration: none;
-      font-size: 14px;
-      padding: 6px 12px;
-      border-radius: var(--radius);
-      transition: 0.2s;
-    }
-    .topnav .nav-links a:hover,
-    .topnav .nav-links a.active { background: rgba(255,255,255,0.15); color: #fff; }
-    .topnav .nav-right { display: flex; align-items: center; gap: 16px; }
-    .topnav .nav-clinic { font-size: 13px; opacity: 0.8; }
-    .topnav .nav-avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: var(--accent); display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 13px; color: #fff;
-    }
-    .topnav .user-menu-trigger { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-    .topnav .nav-user-text { text-align: right; line-height: 1.2; }
-    .topnav .nav-user-text div:last-child { font-size: 11px; opacity: 0.6; }
-    .topnav .user-dropdown {
-      display: none; position: absolute; right: 0; top: 100%;
-      background: #fff; border-radius: var(--radius);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-      min-width: 180px; padding: 8px 0; margin-top: 4px;
-    }
-    .topnav .user-dropdown a {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 16px; color: var(--text); text-decoration: none; font-size: 13px;
-    }
-    .topnav .user-dropdown a:hover { background: var(--bg); }
-    .topnav .user-dropdown a.danger { color: var(--danger); }
-    .user-menu-wrap { position: relative; }
-
-    /* ===== Layout ===== */
-    .app-layout { display: flex; flex: 1; }
-
-    /* ===== Sidebar ===== */
-    .sidebar {
-      width: 240px;
-      background: var(--white);
-      border-right: 1px solid var(--border);
-      padding: 16px 0;
-      flex-shrink: 0;
-      overflow-y: auto;
-      height: calc(100vh - 60px);
-      position: sticky;
-      top: 60px;
-    }
-    .sidebar .sidebar-section { margin-bottom: 24px; }
-    .sidebar .sidebar-label {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.6px; color: var(--text-muted);
-      padding: 0 16px 8px;
-    }
-    .sidebar .sidebar-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 16px; color: var(--text); text-decoration: none;
-      font-size: 14px; border-radius: var(--radius);
-      margin: 0 6px; cursor: pointer; transition: 0.15s;
-      border: none; background: none; width: calc(100% - 12px); text-align: left;
-    }
-    .sidebar .sidebar-item:hover { background: var(--bg); }
-    .sidebar .sidebar-item.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
-    .sidebar .sidebar-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
-    .sidebar .sidebar-item .sb-txt { flex: 1; }
-
-    /* ===== Main ===== */
-    .main { flex: 1; padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 60px); }
-
-    /* ===== Componentes ===== */
-    .page-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
-    }
-    .page-title { font-size: 22px; font-weight: 700; }
-    .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
-
-    .card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 20px;
-      box-shadow: var(--shadow); margin-bottom: 20px;
-    }
-
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 16px; border-radius: var(--radius);
-      font-size: 13px; font-weight: 600; border: 1px solid transparent;
-      cursor: pointer; transition: 0.15s; text-decoration: none; line-height: 1.4;
-    }
-    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .btn-primary:hover { background: var(--accent-dark); }
-    .btn-secondary { background: var(--bg); color: var(--text); border-color: var(--border); }
-    .btn-secondary:hover { background: #e2e8f0; }
-    .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
-    .btn-danger:hover { background: #b91c1c; }
-    .btn-sm { padding: 4px 10px; font-size: 12px; }
-    .btn-block { width: 100%; justify-content: center; }
-
-    .form-group { margin-bottom: 14px; }
-    .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-    .form-control {
-      width: 100%; padding: 8px 12px;
-      border: 1px solid var(--border); border-radius: var(--radius);
-      font-size: 13px; background: var(--white); transition: 0.15s;
-    }
-    .form-control:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(66,133,244,0.15); }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-
-    .badge {
-      display: inline-block; padding: 2px 10px; border-radius: 20px;
-      font-size: 12px; font-weight: 600;
-    }
-    .badge-green { background: #dcfce7; color: #15803d; }
-    .badge-blue { background: #dbeafe; color: #1d4ed8; }
-    .badge-red { background: #fee2e2; color: #b91c1c; }
-    .badge-amber { background: #fef3c7; color: #b45309; }
-    .badge-gray { background: #f1f5f9; color: #4b5563; }
-
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; padding: 10px 12px; background: var(--bg); font-weight: 600; color: var(--text-muted); border-bottom: 2px solid var(--border); }
-    td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background: #fafcff; }
-
-    .tabs {
-      display: flex; gap: 4px; border-bottom: 2px solid var(--border);
-      margin-bottom: 20px;
-    }
-    .tab {
-      padding: 10px 18px; font-size: 13px; font-weight: 600;
-      color: var(--text-muted); cursor: pointer;
-      border-bottom: 2px solid transparent; margin-bottom: -2px;
-      transition: 0.15s;
-    }
-    .tab:hover { color: var(--text); }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-    .avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 13px; flex-shrink: 0;
-    }
-    .flex { display: flex; align-items: center; gap: 8px; }
-    .gap-4 { gap: 4px; }
-    .mt-2 { margin-top: 8px; }
-    .mb-2 { margin-bottom: 8px; }
-    .text-muted { color: var(--text-muted); }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .w-full { width: 100%; }
-
-    /* ===== Responsive ===== */
-    @media (max-width: 768px) {
-      .sidebar { width: 60px; padding: 12px 0; }
-      .sidebar .sb-txt { display: none; }
-      .sidebar .sidebar-item { justify-content: center; padding: 10px; }
-      .sidebar .sidebar-label { text-align: center; font-size: 0; }
-      .main { padding: 16px; }
-      .form-grid { grid-template-columns: 1fr; }
-      .topnav .nav-links { display: none; }
-      .topnav .nav-clinic { display: none; }
-    }
-
-    /* ===== Vistas (inicialmente ocultas) ===== */
-    .view { display: none; }
-    .view.active { display: block; }
-
-    /* ===== Modal ===== */
-    .modal-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.45); align-items: center; justify-content: center;
-      z-index: 9999; padding: 20px;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal-box {
-      background: #fff; border-radius: var(--radius);
-      max-width: 700px; width: 100%; padding: 24px;
-      max-height: 90vh; overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-    }
-    .modal-box .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
-    .modal-box .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-
-    /* Estilos para tratamientos en el modal */
-    .trt-grupo { margin-bottom: 4px; }
-    .trt-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; border-top: 1px solid var(--border); }
-    .trt-item:hover { background: var(--bg); }
-    .trt-item .os-split-label { display: none; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
-    .trt-item .os-pct-badge { display: none; font-size: 10px; font-weight: 700; color: #0891b2; white-space: nowrap; }
-  </style>
-</head>
-<body>
-
-<!-- ===== TOP NAV ===== -->
-<nav class="topnav">
-  <div style="display:flex;align-items:center;gap:12px;">
-    <button class="topnav-hamburger" onclick="toggleSidebar()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;display:none;">☰</button>
-    <div class="logo">Dental<span>Soft</span></div>
-    <div class="nav-links">
-      <a href="#" class="active" data-view="dashboard">Dashboard</a>
-      <a href="#" data-view="agenda">Agenda</a>
-      <a href="#" data-view="pacientes">Pacientes</a>
-      <a href="#" data-view="caja">Caja</a>
-      <a href="#" data-view="automatizaciones">Automatizaciones</a>
-    </div>
-  </div>
-  <div class="nav-right">
-    <div class="nav-clinic">Clínica Dental Demo</div>
-    <div class="user-menu-wrap">
-      <div class="user-menu-trigger" onclick="toggleUserMenu()">
-        <div class="nav-avatar">AD</div>
-        <div class="nav-user-text"><div>Admin Demo</div><div>admin</div></div>
-      </div>
-      <div class="user-dropdown" id="user-dropdown">
-        <a href="#" data-view="configuracion"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Configuración</a>
-        <a href="#" class="danger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Cerrar sesión</a>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<!-- ===== LAYOUT ===== -->
-<div class="app-layout">
-  <!-- Sidebar -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Principal</div>
-      <button class="sidebar-item active" data-view="dashboard"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="sb-txt">Dashboard</span></button>
-      <button class="sidebar-item" data-view="agenda"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="sb-txt">Agenda</span></button>
-      <button class="sidebar-item" data-view="pacientes"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="sb-txt">Pacientes</span></button>
-      <button class="sidebar-item" data-view="profesionales"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="sb-txt">Profesionales</span></button>
-      <button class="sidebar-item" data-view="liquidaciones"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="sb-txt">Liquidaciones</span></button>
-      <button class="sidebar-item" data-view="automatizaciones"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="sb-txt">Automatizaciones</span></button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Finanzas</div>
-      <button class="sidebar-item" data-view="caja"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg><span class="sb-txt">Caja</span></button>
-      <button class="sidebar-item" data-view="presupuestos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span class="sb-txt">Presupuestos</span></button>
-      <button class="sidebar-item" data-view="productividad"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="sb-txt">Productividad</span></button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Clínica</div>
-      <button class="sidebar-item" data-view="obras_sociales"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="sb-txt">Obras sociales</span></button>
-      <button class="sidebar-item" data-view="liquidaciones_os"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg><span class="sb-txt">Liquidaciones OS</span></button>
-      <button class="sidebar-item" data-view="inventario"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg><span class="sb-txt">Inventario</span></button>
-      <button class="sidebar-item" data-view="proveedores"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="sb-txt">Proveedores</span></button>
-      <button class="sidebar-item" data-view="tratamientos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg><span class="sb-txt">Tratamientos</span></button>
-      <button class="sidebar-item" data-view="especialidades"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5S7 9.76 7 7a5 5 0 0 1 5-5z"/><path d="M3 21c0-4.42 4.03-8 9-8s9 3.58 9 8"/><path d="M15 7h2m-1-1v2"/></svg><span class="sb-txt">Especialidades</span></button>
-      <button class="sidebar-item" data-view="web"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span class="sb-txt">Web</span></button>
-      <button class="sidebar-item" data-view="whatsapp"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span class="sb-txt">WhatsApp</span></button>
-      <button class="sidebar-item" data-view="configuracion"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="sb-txt">Configuración</span></button>
-    </div>
-  </aside>
-
-  <!-- Main Content -->
-  <main class="main">
-    <div id="view-dashboard" class="view active"></div>
-    <div id="view-agenda" class="view"></div>
-    <div id="view-pacientes" class="view"></div>
-    <div id="view-profesionales" class="view"></div>
-    <div id="view-liquidaciones" class="view"></div>
-    <div id="view-automatizaciones" class="view"></div>
-    <div id="view-caja" class="view"></div>
-    <div id="view-presupuestos" class="view"></div>
-    <div id="view-productividad" class="view"></div>
-    <div id="view-obras_sociales" class="view"></div>
-    <div id="view-liquidaciones_os" class="view"></div>
-    <div id="view-inventario" class="view"></div>
-    <div id="view-proveedores" class="view"></div>
-    <div id="view-tratamientos" class="view"></div>
-    <div id="view-especialidades" class="view"></div>
-    <div id="view-web" class="view"></div>
-    <div id="view-whatsapp" class="view"></div>
-    <div id="view-configuracion" class="view"></div>
-  </main>
-</div>
-
-<!-- Modal genérico -->
-<div class="modal-overlay" id="modal-generic"><div class="modal-box" id="modal-generic-content"></div></div>
-
-<!-- ===== FIREBASE SDK ===== -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
-<script>
-  // ============================================================
-  // FIREBASE CONFIG
-  // ============================================================
-  const firebaseConfig = {
-    apiKey: "AIzaSyCsTQoWZnMmcYwt2vjRQUPNUOKbHj3ZKqA",
-    authDomain: "clinicadental1.firebaseapp.com",
-    projectId: "clinicadental1",
-    storageBucket: "clinicadental1.firebasestorage.app",
-    messagingSenderId: "85943745725",
-    appId: "1:85943745725:web:65e02bdb2c5abee1e2cbd4",
-    measurementId: "G-74CV5LL9F7"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-
-  // ============================================================
-  // UTILITIES
-  // ============================================================
-  function $(id) { return document.getElementById(id); }
-  function qs(sel, ctx=document) { return ctx.querySelector(sel); }
-  function qsa(sel, ctx=document) { return ctx.querySelectorAll(sel); }
-  function openModal(html) { const c=$('modal-generic-content'); c.innerHTML=html; $('modal-generic').classList.add('active'); }
-  function closeModal() { $('modal-generic').classList.remove('active'); }
-  function showToast(msg) { alert('🔔 '+msg); }
-  function formatDate(d) { if (!d) return ''; return d.slice(0,10); }
-
-  // ============================================================
-  // NAVEGACIÓN SPA
-  // ============================================================
-  const views = ['dashboard','agenda','pacientes','profesionales','liquidaciones','automatizaciones',
-                 'caja','presupuestos','productividad','obras_sociales','liquidaciones_os','inventario',
-                 'proveedores','tratamientos','especialidades','web','whatsapp','configuracion'];
-  let currentView = 'dashboard';
-
-  function navigateTo(view) {
-    if (!views.includes(view)) return;
-    currentView = view;
-    qsa('.sidebar .sidebar-item[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === view));
-    qsa('.topnav .nav-links a[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === view));
-    qsa('.view').forEach(el => el.classList.remove('active'));
-    const target = $('view-'+view);
-    if (target) target.classList.add('active');
-    if (target && target.innerHTML.trim() === '') {
-      loadView(view);
-    }
-  }
-
-  document.querySelectorAll('.sidebar .sidebar-item[data-view]').forEach(btn => {
-    btn.addEventListener('click', () => navigateTo(btn.dataset.view));
-  });
-  document.querySelectorAll('.topnav .nav-links a[data-view]').forEach(btn => {
-    btn.addEventListener('click', (e) => { e.preventDefault(); navigateTo(btn.dataset.view); });
-  });
-
-  function toggleUserMenu() {
-    const dd = $('user-dropdown');
-    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
-  }
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.user-menu-wrap')) $('user-dropdown').style.display = 'none';
-  });
-
-  // ============================================================
-  // CARGA DE VISTAS
-  // ============================================================
-  function loadView(view) {
-    switch(view) {
-      case 'dashboard': renderDashboard(); break;
-      case 'agenda': renderAgenda(); break;
-      case 'pacientes': renderPacientes(); break;
-      case 'profesionales': renderProfesionales(); break;
-      case 'liquidaciones': renderLiquidaciones(); break;
-      case 'automatizaciones': renderAutomatizaciones(); break;
-      case 'caja': renderCaja(); break;
-      case 'presupuestos': renderPresupuestos(); break;
-      case 'productividad': renderProductividad(); break;
-      case 'obras_sociales': renderObrasSociales(); break;
-      case 'liquidaciones_os': renderLiquidacionesOS(); break;
-      case 'inventario': renderInventario(); break;
-      case 'proveedores': renderProveedores(); break;
-      case 'tratamientos': renderTratamientos(); break;
-      case 'especialidades': renderEspecialidades(); break;
-      case 'web': renderWeb(); break;
-      case 'whatsapp': renderWhatsApp(); break;
-      case 'configuracion': renderConfiguracion(); break;
-    }
-  }
-
-  // ============================================================
-  // DASHBOARD
-  // ============================================================
-  function renderDashboard() {
-    const el = $('view-dashboard');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Dashboard</div><div class="page-subtitle">Resumen de hoy</div></div></div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
-        <div class="card" style="border-left:3px solid var(--primary)"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Turnos hoy</div><div style="font-size:32px;font-weight:800;color:var(--primary)" id="dash-turnos-hoy">0</div></div>
-        <div class="card" style="border-left:3px solid #22c55e"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Pacientes nuevos (mes)</div><div style="font-size:32px;font-weight:800;color:#22c55e" id="dash-pacientes-nuevos">0</div></div>
-        <div class="card" style="border-left:3px solid #8b5cf6"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Ingresos del mes</div><div style="font-size:24px;font-weight:800;color:#8b5cf6" id="dash-ingresos">$0</div></div>
-        <div class="card" style="border-left:3px solid #f59e0b"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Turnos pendientes</div><div style="font-size:32px;font-weight:800;color:#f59e0b" id="dash-turnos-pendientes">0</div></div>
-      </div>
-      <div class="card"><div style="font-size:14px;font-weight:700;margin-bottom:12px">Próximos turnos</div><div id="dash-proximos"></div></div>
-    `;
-    const hoy = new Date().toISOString().slice(0,10);
-    db.collection('turnos').where('fecha','==',hoy).get().then(snap => { $('dash-turnos-hoy').textContent = snap.size; });
-    const mesInicio = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10);
-    db.collection('pacientes').where('fecha_creacion','>=',mesInicio).get().then(snap => { $('dash-pacientes-nuevos').textContent = snap.size; });
-    db.collection('pagos').where('fecha','>=',mesInicio).get().then(snap => {
-      let total=0; snap.forEach(d => total+=d.data().monto||0);
-      $('dash-ingresos').textContent = '$'+total.toLocaleString();
-    });
-    db.collection('turnos').where('estado','==','pendiente').get().then(snap => { $('dash-turnos-pendientes').textContent = snap.size; });
-    db.collection('turnos').limit(5).get().then(snap => {
-      let html = '';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${data.paciente||'Paciente'}</span><span>${data.fecha} ${data.hora}</span></div>`;
-      });
-      $('dash-proximos').innerHTML = html || '<div class="text-muted">No hay turnos próximos</div>';
-    });
-  }
-
-  // ============================================================
-  // AGENDA (con navegación semanal y carga desde Firestore)
-  // ============================================================
-  let semanaActual = new Date();
-
-  function obtenerLunes(fecha) {
-    const d = new Date(fecha);
-    const dia = d.getDay();
-    const diff = dia === 0 ? -6 : 1 - dia;
-    d.setDate(d.getDate() + diff);
-    return d;
-  }
-  semanaActual = obtenerLunes(new Date());
-
-  function renderAgenda() {
-    const el = $('view-agenda');
-
-    const fechas = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(semanaActual);
-      d.setDate(semanaActual.getDate() + i);
-      fechas.push(d.toISOString().slice(0,10));
-    }
-
-    const diasSemana = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-
-    let headerHtml = `<div></div>`;
-    fechas.forEach((f, idx) => {
-      const diaNum = new Date(f+'T00:00:00').getDate();
-      const esHoy = f === new Date().toISOString().slice(0,10);
-      headerHtml += `<div style="padding:10px 8px;text-align:center;${esHoy?'background:var(--accent-light);':''}border-left:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--text-muted);font-weight:500">${diasSemana[idx]}</div>
-        <div style="font-size:20px;font-weight:800;${esHoy?'color:var(--primary);':''}">${diaNum}</div>
-      </div>`;
-    });
-
-    const horas = Array.from({length:12}, (_,i) => 8+i);
-    let bodyHtml = '';
-    bodyHtml += `<div style="position:relative;height:${horas.length*64}px">`;
-    horas.forEach((h, idx) => {
-      bodyHtml += `<div style="position:absolute;top:${idx*64}px;right:6px;font-size:10px;color:var(--text-muted);">${h}:00</div>`;
-    });
-    bodyHtml += `</div>`;
-
-    fechas.forEach((fecha) => {
-      bodyHtml += `<div data-fecha="${fecha}" style="position:relative;height:${horas.length*64}px;border-left:1px solid var(--border);">`;
-      horas.forEach((h, rowIdx) => {
-        const top = rowIdx * 64;
-        if (rowIdx % 2 === 0) {
-          bodyHtml += `<div style="position:absolute;top:${top}px;left:0;right:0;height:64px;background:#f0f7ff;pointer-events:none;"></div>`;
-        }
-        bodyHtml += `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:1px solid #dde8f0;pointer-events:none;"></div>`;
-      });
-      bodyHtml += `<div class="day-turnos" data-fecha="${fecha}" style="position:absolute;inset:0;z-index:2;"></div>`;
-      bodyHtml += `</div>`;
-    });
-
-    const semanaStr = `${fechas[0]} al ${fechas[6]}`;
-
-    el.innerHTML = `
-      <div class="page-header">
-        <div>
-          <div class="page-title">Agenda</div>
-          <div class="page-subtitle">Semana del ${semanaStr}</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="cambiarSemana(-1)">← Anterior</button>
-          <button class="btn btn-secondary btn-sm" onclick="cambiarSemana(0)">Hoy</button>
-          <button class="btn btn-secondary btn-sm" onclick="cambiarSemana(1)">Siguiente →</button>
-          <button class="btn btn-primary" onclick="openModalNuevoTurno()">+ Nuevo turno</button>
-        </div>
-      </div>
-      <div class="card">
-        <div style="display:grid;grid-template-columns:60px repeat(7,1fr);gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12px;">
-          ${headerHtml}
-          ${bodyHtml}
-        </div>
-      </div>
-    `;
-
-    const fechaInicio = fechas[0];
-    const fechaFin = fechas[6];
-
-    db.collection('turnos')
-      .where('fecha', '>=', fechaInicio)
-      .where('fecha', '<=', fechaFin)
-      .onSnapshot((snapshot) => {
-        document.querySelectorAll('.day-turnos').forEach(col => {
-          while (col.firstChild) col.removeChild(col.firstChild);
-        });
-
-        snapshot.forEach(doc => {
-          const turno = doc.data();
-          const fecha = turno.fecha;
-          const hora = turno.hora;
-          if (!fecha || !hora) return;
-
-          const [h, m] = hora.split(':').map(Number);
-          if (isNaN(h) || isNaN(m)) return;
-          const minutosDesdeInicio = (h - 8) * 60 + m;
-          const top = (minutosDesdeInicio / 60) * 64;
-          const duracion = turno.duracion || 30;
-          const height = (duracion / 60) * 64;
-
-          const columna = document.querySelector(`.day-turnos[data-fecha="${fecha}"]`);
-          if (!columna) return;
-
-          const bloque = document.createElement('div');
-          bloque.style.cssText = `
-            position:absolute; top:${top}px; left:2px; right:2px; height:${height-2}px;
-            background:${turno.color || '#355063'}; border-radius:5px; padding:2px 4px;
-            overflow:hidden; z-index:3; cursor:pointer;
-            font-size:10px; color:#fff; font-weight:600; white-space:nowrap; text-overflow:ellipsis;
-          `;
-          bloque.textContent = `${hora} ${turno.paciente || 'Sin paciente'}`;
-          bloque.title = `${turno.paciente} - ${turno.tratamiento || ''}`;
-          bloque.onclick = () => alert(`Turno de ${turno.paciente}\n${turno.fecha} ${turno.hora}\nEstado: ${turno.estado || 'Pendiente'}`);
-          columna.appendChild(bloque);
-        });
-
-        document.querySelectorAll('.day-turnos').forEach((col, idx) => {
-          const count = col.children.length;
-          const headerDiv = document.querySelectorAll(`[style*="text-align:center;"]`)[idx+1];
-          if (headerDiv) {
-            let existing = headerDiv.querySelector('.turnos-count');
-            if (!existing) {
-              existing = document.createElement('div');
-              existing.className = 'turnos-count';
-              existing.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;';
-              headerDiv.appendChild(existing);
-            }
-            existing.textContent = count + ' turnos';
-          }
-        });
-      }, (error) => {
-        console.error('Error cargando turnos:', error);
-      });
-  }
-
-  function cambiarSemana(direccion) {
-    if (direccion === 0) {
-      semanaActual = obtenerLunes(new Date());
-    } else {
-      semanaActual.setDate(semanaActual.getDate() + direccion * 7);
-    }
-    renderAgenda();
-  }
-
-  // ============================================================
-  // NUEVO TURNO - MODAL COMPLETO
-  // ============================================================
-  let currentPlanId = 0;
-  const DUR_PRESETS = [15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240];
-  // Datos de cobertura de ejemplo (los puedes cargar desde Firestore)
-  const COBERTURAS = {
-    9: { 2: 50, 1: 30, 3: 20, 4: 50 },
-    2: { 1: 40, 2: 60 },
-    1: { 1: 30, 2: 40 },
-    10: { 1: 50, 2: 60 },
-  };
-  const PACIENTES_OS = {
-    7: { obra_social_id: 1, plan_id: 2 },
-    10: { obra_social_id: 1, plan_id: 1 },
-    15: { obra_social_id: 6, plan_id: 11 },
-  };
-  const PACIENTES_TEL = { 7: '5491156745435', 10: '+543855046819', 15: '1145820104' };
-  const PACIENTES_EMAIL = { 7: 'pedroalfonoso@gmail.com', 10: 'lourdesdisanto@gmail.com' };
-
-  window.openModalNuevoTurno = function() {
-    let pacientesHTML = '<option value="">— Seleccionar paciente —</option>';
-    let profesionalesHTML = '<option value="">— Seleccionar profesional —</option>';
-    let sucursalesHTML = '<option value="">— Seleccionar sucursal —</option>';
-
-    db.collection('pacientes').orderBy('nombre').get().then(snap => {
-      snap.forEach(doc => {
-        const data = doc.data();
-        const nombreCompleto = `${data.nombre || ''} ${data.apellido || ''}`.trim();
-        pacientesHTML += `<option value="${doc.id}">${nombreCompleto}</option>`;
-      });
-      document.getElementById('f-turno-paciente').innerHTML = pacientesHTML;
-    });
-
-    db.collection('profesionales').orderBy('nombre').get().then(snap => {
-      snap.forEach(doc => {
-        const data = doc.data();
-        const nombreCompleto = `${data.nombre || ''} ${data.apellido || ''}`.trim();
-        profesionalesHTML += `<option value="${doc.id}">${nombreCompleto}</option>`;
-      });
-      document.getElementById('f-turno-profesional').innerHTML = profesionalesHTML;
-    });
-
-    db.collection('sucursales').orderBy('nombre').get().then(snap => {
-      snap.forEach(doc => {
-        const data = doc.data();
-        sucursalesHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`;
-      });
-      document.getElementById('f-turno-sucursal').innerHTML = sucursalesHTML;
-    });
-
-    const modalHTML = `
-      <div class="modal-title">📋 Nuevo turno</div>
-      <form id="form-nuevo-turno" style="margin-top:8px;">
-        <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:12px;">
-          <div class="form-group" style="grid-column:1/-1;">
-            <label class="form-label">Paciente *</label>
-            <select id="f-turno-paciente" class="form-control" required onchange="onPacienteChangeTurno()">
-              <option value="">— Seleccionar paciente —</option>
-            </select>
-          </div>
-          <div class="form-group" style="grid-column:1/-1;">
-            <label class="form-label">Profesional *</label>
-            <select id="f-turno-profesional" class="form-control" required>
-              <option value="">— Seleccionar profesional —</option>
-            </select>
-          </div>
-          <div class="form-group" style="grid-column:1/-1;">
-            <label class="form-label">Sucursal *</label>
-            <select id="f-turno-sucursal" class="form-control" required>
-              <option value="">— Seleccionar sucursal —</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
-          <div class="form-group">
-            <label class="form-label">Fecha *</label>
-            <input type="date" id="f-turno-fecha" class="form-control" value="${new Date().toISOString().slice(0,10)}" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Hora de inicio *</label>
-            <input type="time" id="f-turno-hora" class="form-control" step="900" value="09:00" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Duración *</label>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <select id="dur-select" class="form-control" style="width:130px;" onchange="durSelectChange(this.value)">
-                ${DUR_PRESETS.map(m => `<option value="${m}" ${m===30?'selected':''}>${m} min</option>`).join('')}
-                <option value="custom">Personalizado…</option>
-              </select>
-              <input type="number" id="dur-input" min="15" step="1" value="30" class="form-control" style="width:72px;" oninput="durInputChange(this.value)">
-              <span style="font-size:13px;color:var(--text-muted);white-space:nowrap;">min</span>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Estado</label>
-            <select id="f-turno-estado" class="form-control">
-              <option value="pendiente" selected>Pendiente</option>
-              <option value="confirmado">Confirmado</option>
-              <option value="en_recepcion">En recepción</option>
-              <option value="en_atencion">En atención</option>
-              <option value="finalizado">Finalizado</option>
-              <option value="cancelado">Cancelado</option>
-              <option value="ausente">Ausente</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="margin-top:14px;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border);">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" id="f-turno-urgencia" value="1" style="width:16px;height:16px;cursor:pointer;">
-            <div>
-              <div style="font-weight:700;font-size:13px;color:var(--text);">⚡ Urgencia / Sobreturno</div>
-              <div style="font-size:12px;color:var(--text-muted);">Permite asignar el turno aunque el profesional esté ocupado. Se muestra en rojo en la agenda.</div>
-            </div>
-          </label>
-        </div>
-
-        <div class="form-group" style="margin-top:14px;">
-          <label class="form-label">Motivo de consulta</label>
-          <textarea id="f-turno-motivo" class="form-control" rows="2"></textarea>
-        </div>
-
-        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
-          <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Tratamientos realizados</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Marcá los realizados durante este turno — se usarán al registrar el pago en Caja</div>
-
-          <div id="os-banner" style="display:none;margin-bottom:10px;padding:8px 12px;background:#e0f2fe;border-radius:8px;font-size:12px;color:#0369a1;">
-            <strong id="os-banner-nombre"></strong> — se muestra la cobertura por tratamiento
-          </div>
-
-          <input type="text" id="trt-buscar" class="form-control" placeholder="Buscar tratamiento…" style="margin-bottom:8px;font-size:13px;" oninput="filtrarTratsTurno(this.value)">
-
-          <div id="trt-lista" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px;">
-            <p class="text-muted" style="padding:12px;text-align:center;">Cargando tratamientos...</p>
-          </div>
-
-          <input type="hidden" id="inp-total-paciente" value="">
-          <input type="hidden" id="inp-total-obra-social" value="">
-
-          <div id="trt-subtotal" style="display:none;margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:12px;color:var(--text-muted);"><span id="trt-count">0</span> tratamiento(s)</span>
-              <span style="font-size:14px;font-weight:700;color:var(--primary);">$<span id="trt-total-val">0</span></span>
-            </div>
-            <div id="os-totales" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);">
-              <div style="display:flex;justify-content:space-between;font-size:12px;">
-                <span style="color:var(--text-muted);">Tratamientos paciente:</span>
-                <span style="font-weight:700;color:#15803d;">$<span id="trt-paciente-val">0</span></span>
-              </div>
-              <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px;">
-                <span style="color:var(--text-muted);">Cubre obra social:</span>
-                <span style="font-weight:700;color:#0891b2;">$<span id="trt-os-val">0</span></span>
-              </div>
-            </div>
-            <div id="coseguro-row" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);">
-              <div style="display:flex;justify-content:space-between;font-size:12px;">
-                <span style="color:var(--text-muted);">Coseguro:</span>
-                <span style="font-weight:700;color:#f59e0b;">$<span id="trt-coseguro-val">0</span></span>
-              </div>
-              <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px;padding-top:4px;border-top:1px solid var(--border);">
-                <span style="font-weight:600;color:var(--text);">Paciente paga total:</span>
-                <span style="font-weight:700;color:#15803d;">$<span id="trt-paciente-total-val">0</span></span>
-              </div>
-            </div>
-          </div>
-
-          <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);">
-            <div>
-              <div style="font-size:12px;font-weight:600;color:var(--text);">Coseguro</div>
-              <div style="font-size:11px;color:var(--text-muted);">Pago adicional del paciente (opcional)</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <span style="font-size:13px;color:var(--text-muted);font-weight:600;">$</span>
-              <input type="number" id="coseguro-input" min="0" step="0.01" value="" oninput="recalcPrecio()" style="width:90px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px;text-align:right;" placeholder="0.00">
-            </div>
-          </div>
-
-          <button type="button" id="btn-pago-caja" class="btn btn-block" disabled style="margin-top:12px;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;opacity:.45;cursor:not-allowed;">
-            💰 Guardar y Registrar pago en Caja
-          </button>
-        </div>
-      </form>
-
-      <div class="modal-actions" style="margin-top:16px;">
-        <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="guardarTurnoCompleto()">Crear turno</button>
-      </div>
-    `;
-
-    openModal(modalHTML);
-    cargarTratamientosTurno();
-  };
-
-  function cargarTratamientosTurno() {
-    const container = document.getElementById('trt-lista');
-    if (!container) return;
-
-    db.collection('tratamientos').orderBy('categoria').orderBy('nombre').get().then(snap => {
-      if (snap.empty) {
-        container.innerHTML = '<p class="text-muted" style="padding:12px;text-align:center;">No hay tratamientos cargados</p>';
-        return;
-      }
-
-      let grupos = {};
-      snap.forEach(doc => {
-        const data = doc.data();
-        const cat = data.categoria || 'otros';
-        if (!grupos[cat]) grupos[cat] = [];
-        grupos[cat].push({ id: doc.id, ...data });
-      });
-
-      let html = '';
-      for (const [cat, items] of Object.entries(grupos)) {
-        html += `<div class="trt-grupo" data-cat="${cat}">
-          <div style="padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);background:var(--bg);position:sticky;top:0;">${cat}</div>`;
-        items.forEach(trat => {
-          html += `
-            <label class="trt-item" data-nombre="${(trat.nombre || '').toLowerCase()}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-top:1px solid var(--border);" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
-              <input type="checkbox" name="tratamientos_realizados_ids[]" value="${trat.id}" data-precio="${trat.precio_base || 0}" data-trat-id="${trat.id}" onchange="recalcPrecio()" style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0;">
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${trat.nombre || 'Sin nombre'}</div>
-                <div class="os-split-label" style="display:none;font-size:11px;color:var(--text-muted);margin-top:1px;"></div>
-              </div>
-              <div style="text-align:right;flex-shrink:0;">
-                <div style="font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap;">$${Number(trat.precio_base || 0).toLocaleString()}</div>
-                <div class="os-pct-badge" style="display:none;font-size:10px;font-weight:700;color:#0891b2;white-space:nowrap;"></div>
-              </div>
-            </label>
-          `;
-        });
-        html += `</div>`;
-      }
-      container.innerHTML = html;
-    });
-  }
-
-  window.onPacienteChangeTurno = function() {
-    const sel = document.getElementById('f-turno-paciente');
-    const pid = sel ? parseInt(sel.value) : 0;
-    const osData = pid ? PACIENTES_OS[pid] : null;
-    currentPlanId = osData ? (osData.plan_id || 0) : 0;
-
-    const banner = document.getElementById('os-banner');
-    if (banner) {
-      if (osData && currentPlanId) {
-        const opt = sel.options[sel.selectedIndex];
-        banner.style.display = 'block';
-        document.getElementById('os-banner-nombre').textContent = opt.textContent.trim().split('—')[0].trim();
-      } else {
-        banner.style.display = 'none';
-      }
-    }
-
-    document.querySelectorAll('#trt-lista input[name="tratamientos_realizados_ids[]"]').forEach(cb => {
-      const tid = parseInt(cb.dataset.tratId);
-      const precio = parseFloat(cb.dataset.precio) || 0;
-      const label = cb.closest('label');
-      const splitEl = label ? label.querySelector('.os-split-label') : null;
-      const badgeEl = label ? label.querySelector('.os-pct-badge') : null;
-
-      const pct = (currentPlanId && COBERTURAS[tid] && COBERTURAS[tid][currentPlanId])
-                  ? parseFloat(COBERTURAS[tid][currentPlanId]) : 0;
-
-      if (splitEl) {
-        if (pct > 0 && precio > 0) {
-          const montoOS = precio * pct / 100;
-          const montoPac = precio - montoOS;
-          splitEl.textContent = `Pte: $${montoPac.toFixed(0)} · OS ${pct}%: $${montoOS.toFixed(0)}`;
-          splitEl.style.display = 'block';
-        } else {
-          splitEl.style.display = 'none';
-        }
-      }
-      if (badgeEl) {
-        if (pct > 0) {
-          badgeEl.textContent = 'OS ' + pct + '%';
-          badgeEl.style.display = 'block';
-        } else {
-          badgeEl.style.display = 'none';
-        }
-      }
-    });
-
-    recalcPrecio();
-  };
-
-  function recalcPrecio() {
-    const checks = document.querySelectorAll('#trt-lista input[name="tratamientos_realizados_ids[]"]:checked');
-    let total = 0, totalPac = 0, totalOS = 0, count = 0;
-    checks.forEach(cb => {
-      const precio = parseFloat(cb.dataset.precio) || 0;
-      const tid = parseInt(cb.dataset.tratId);
-      const pct = (currentPlanId && COBERTURAS[tid] && COBERTURAS[tid][currentPlanId])
-                  ? parseFloat(COBERTURAS[tid][currentPlanId]) : 0;
-      const montoOS = precio * pct / 100;
-      total += precio;
-      totalOS += montoOS;
-      totalPac += precio - montoOS;
-      count++;
-    });
-
-    const coseguroInp = document.getElementById('coseguro-input');
-    const coseguro = coseguroInp ? (parseFloat(coseguroInp.value) || 0) : 0;
-
-    const subtDiv = document.getElementById('trt-subtotal');
-    const countEl = document.getElementById('trt-count');
-    const totalEl = document.getElementById('trt-total-val');
-    const pacEl = document.getElementById('trt-paciente-val');
-    const osEl = document.getElementById('trt-os-val');
-    const osTotDiv = document.getElementById('os-totales');
-    const coseguroRow = document.getElementById('coseguro-row');
-    const coseguroEl = document.getElementById('trt-coseguro-val');
-    const pacTotalEl = document.getElementById('trt-paciente-total-val');
-    const btnCaja = document.getElementById('btn-pago-caja');
-    const inpPac = document.getElementById('inp-total-paciente');
-    const inpOS = document.getElementById('inp-total-obra-social');
-
-    const hasContent = count > 0 || coseguro > 0;
-
-    if (hasContent) {
-      if (countEl) countEl.textContent = count;
-      if (totalEl) totalEl.textContent = total.toFixed(0);
-      subtDiv.style.display = 'block';
-
-      if (currentPlanId && totalOS > 0) {
-        if (pacEl) pacEl.textContent = totalPac.toFixed(0);
-        if (osEl) osEl.textContent = totalOS.toFixed(0);
-        if (osTotDiv) osTotDiv.style.display = 'block';
-      } else {
-        if (osTotDiv) osTotDiv.style.display = 'none';
-      }
-
-      if (coseguro > 0) {
-        if (coseguroEl) coseguroEl.textContent = coseguro.toFixed(0);
-        if (pacTotalEl) pacTotalEl.textContent = (totalPac + coseguro).toFixed(0);
-        if (coseguroRow) coseguroRow.style.display = 'block';
-      } else {
-        if (coseguroRow) coseguroRow.style.display = 'none';
-      }
-
-      if (inpPac) inpPac.value = totalPac.toFixed(2);
-      if (inpOS) inpOS.value = totalOS.toFixed(2);
-
-      if (btnCaja) { btnCaja.disabled = false; btnCaja.style.opacity = '1'; btnCaja.style.cursor = ''; }
-    } else {
-      subtDiv.style.display = 'none';
-      if (coseguroRow) coseguroRow.style.display = 'none';
-      if (inpPac) inpPac.value = '';
-      if (inpOS) inpOS.value = '';
-      if (btnCaja) { btnCaja.disabled = true; btnCaja.style.opacity = '.45'; btnCaja.style.cursor = 'not-allowed'; }
-    }
-  }
-
-  function filtrarTratsTurno(q) {
-    q = q.toLowerCase().trim();
-    document.querySelectorAll('#trt-lista .trt-item').forEach(item => {
-      item.style.display = (!q || (item.dataset.nombre || '').indexOf(q) !== -1) ? '' : 'none';
-    });
-    document.querySelectorAll('#trt-lista .trt-grupo').forEach(grupo => {
-      const vis = Array.from(grupo.querySelectorAll('.trt-item')).filter(i => i.style.display !== 'none');
-      grupo.style.display = vis.length > 0 ? '' : 'none';
-    });
-  }
-
-  function durSelectChange(val) {
-    if (val === 'custom') return;
-    document.getElementById('dur-input').value = val;
-  }
-
-  function durInputChange(val) {
-    const sel = document.getElementById('dur-select');
-    sel.value = DUR_PRESETS.indexOf(parseInt(val)) !== -1 ? val : 'custom';
-  }
-
-  window.guardarTurnoCompleto = function() {
-    const form = document.getElementById('form-nuevo-turno');
-    if (!form) return;
-
-    const pacienteId = document.getElementById('f-turno-paciente').value;
-    const profesionalId = document.getElementById('f-turno-profesional').value;
-    const sucursalId = document.getElementById('f-turno-sucursal').value;
-    const fecha = document.getElementById('f-turno-fecha').value;
-    const hora = document.getElementById('f-turno-hora').value;
-    const duracion = parseInt(document.getElementById('dur-input').value) || 30;
-    const estado = document.getElementById('f-turno-estado').value;
-    const esUrgencia = document.getElementById('f-turno-urgencia').checked;
-    const motivo = document.getElementById('f-turno-motivo').value.trim();
-
-    const tratamientosSeleccionados = [];
-    document.querySelectorAll('#trt-lista input[name="tratamientos_realizados_ids[]"]:checked').forEach(cb => {
-      tratamientosSeleccionados.push({
-        id: cb.value,
-        precio: parseFloat(cb.dataset.precio) || 0
-      });
-    });
-
-    const coseguro = parseFloat(document.getElementById('coseguro-input').value) || 0;
-    const totalPaciente = parseFloat(document.getElementById('inp-total-paciente').value) || 0;
-    const totalOS = parseFloat(document.getElementById('inp-total-obra-social').value) || 0;
-
-    if (!pacienteId) return alert('Selecciona un paciente.');
-    if (!profesionalId) return alert('Selecciona un profesional.');
-    if (!sucursalId) return alert('Selecciona una sucursal.');
-    if (!fecha || !hora) return alert('Completa fecha y hora.');
-
-    const pacienteNombre = document.getElementById('f-turno-paciente').options[document.getElementById('f-turno-paciente').selectedIndex].text;
-    const profesionalNombre = document.getElementById('f-turno-profesional').options[document.getElementById('f-turno-profesional').selectedIndex].text;
-
-    const turnoData = {
-      paciente_id: pacienteId,
-      paciente: pacienteNombre,
-      odontologo_id: profesionalId,
-      odontologo: profesionalNombre,
-      sucursal_id: sucursalId,
-      fecha: fecha,
-      hora: hora,
-      duracion: duracion,
-      estado: estado,
-      es_urgencia: esUrgencia,
-      motivo_consulta: motivo,
-      tratamientos_realizados: tratamientosSeleccionados,
-      coseguro: coseguro,
-      total_paciente: totalPaciente,
-      total_obra_social: totalOS,
-      creado: new Date().toISOString()
-    };
-
-    db.collection('turnos').add(turnoData)
-      .then(() => {
-        closeModal();
-        showToast('✅ Turno creado exitosamente.');
-        renderAgenda();
-      })
-      .catch(err => {
-        alert('❌ Error al crear el turno: ' + err.message);
-      });
-  };
-
-  // ============================================================
-  // PACIENTES (CRUD)
-  // ============================================================
-  function renderPacientes() {
-    const el = $('view-pacientes');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Pacientes</div><div class="page-subtitle">Listado</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevoPaciente()">+ Nuevo paciente</button>
-      </div>
-      <div class="card"><div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th></th></tr></thead><tbody id="pacientes-list"></tbody></table></div></div>
-    `;
-    db.collection('pacientes').orderBy('nombre').onSnapshot(snap => {
-      const tbody = $('pacientes-list');
-      tbody.innerHTML = '';
-      snap.forEach(d => {
-        const data = d.data();
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${data.nombre||''} ${data.apellido||''}</td><td>${data.telefono||''}</td><td>${data.email||''}</td>
-          <td><button class="btn btn-sm btn-secondary" onclick="editarPaciente('${d.id}')">Editar</button>
-          <button class="btn btn-sm btn-danger" onclick="eliminarPaciente('${d.id}')">Eliminar</button></td>`;
-        tbody.appendChild(tr);
-      });
-    });
-  }
-
-  window.openModalNuevoPaciente = function() {
-    openModal(`
-      <div class="modal-title">Nuevo paciente</div>
-      <div class="form-grid">
-        <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-pac-nombre"></div>
-        <div class="form-group"><label class="form-label">Apellido</label><input class="form-control" id="f-pac-apellido"></div>
-        <div class="form-group"><label class="form-label">Teléfono</label><input class="form-control" id="f-pac-telefono"></div>
-        <div class="form-group"><label class="form-label">Email</label><input class="form-control" id="f-pac-email"></div>
-      </div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarPaciente()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarPaciente = function() {
-    const nombre = $('f-pac-nombre').value.trim();
-    const apellido = $('f-pac-apellido').value.trim();
-    const telefono = $('f-pac-telefono').value.trim();
-    const email = $('f-pac-email').value.trim();
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('pacientes').add({ nombre, apellido, telefono, email, fecha_creacion: new Date().toISOString().slice(0,10) })
-      .then(() => { closeModal(); showToast('Paciente creado'); });
-  };
-
-  window.eliminarPaciente = function(id) {
-    if (!confirm('¿Eliminar este paciente?')) return;
-    db.collection('pacientes').doc(id).delete().then(() => showToast('Eliminado'));
-  };
-
-  window.editarPaciente = function(id) {
-    db.collection('pacientes').doc(id).get().then(doc => {
-      if (!doc.exists) return;
-      const data = doc.data();
-      openModal(`
-        <div class="modal-title">Editar paciente</div>
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-pac-edit-nombre" value="${data.nombre||''}"></div>
-          <div class="form-group"><label class="form-label">Apellido</label><input class="form-control" id="f-pac-edit-apellido" value="${data.apellido||''}"></div>
-          <div class="form-group"><label class="form-label">Teléfono</label><input class="form-control" id="f-pac-edit-telefono" value="${data.telefono||''}"></div>
-          <div class="form-group"><label class="form-label">Email</label><input class="form-control" id="f-pac-edit-email" value="${data.email||''}"></div>
-        </div>
-        <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="actualizarPaciente('${id}')">Actualizar</button></div>
-      `);
-    });
-  };
-
-  window.actualizarPaciente = function(id) {
-    const nombre = $('f-pac-edit-nombre').value.trim();
-    const apellido = $('f-pac-edit-apellido').value.trim();
-    const telefono = $('f-pac-edit-telefono').value.trim();
-    const email = $('f-pac-edit-email').value.trim();
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('pacientes').doc(id).update({ nombre, apellido, telefono, email })
-      .then(() => { closeModal(); showToast('Actualizado'); });
-  };
-
-  // ============================================================
-  // PROFESIONALES (CRUD)
-  // ============================================================
-  function renderProfesionales() {
-    const el = $('view-profesionales');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Profesionales</div><div class="page-subtitle">Listado</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevoProfesional()">+ Nuevo profesional</button>
-      </div>
-      <div class="card"><div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Especialidad</th><th>Email</th><th></th></tr></thead><tbody id="profesionales-list"></tbody></table></div></div>
-    `;
-    db.collection('profesionales').orderBy('nombre').onSnapshot(snap => {
-      const tbody = $('profesionales-list');
-      tbody.innerHTML = '';
-      snap.forEach(d => {
-        const data = d.data();
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${data.nombre||''} ${data.apellido||''}</td><td>${data.especialidad||''}</td><td>${data.email||''}</td>
-          <td><button class="btn btn-sm btn-secondary" onclick="editarProfesional('${d.id}')">Editar</button>
-          <button class="btn btn-sm btn-danger" onclick="eliminarProfesional('${d.id}')">Eliminar</button></td>`;
-        tbody.appendChild(tr);
-      });
-    });
-  }
-
-  window.openModalNuevoProfesional = function() {
-    openModal(`
-      <div class="modal-title">Nuevo profesional</div>
-      <div class="form-grid">
-        <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-prof-nombre"></div>
-        <div class="form-group"><label class="form-label">Apellido</label><input class="form-control" id="f-prof-apellido"></div>
-        <div class="form-group"><label class="form-label">Especialidad</label><input class="form-control" id="f-prof-especialidad"></div>
-        <div class="form-group"><label class="form-label">Email</label><input class="form-control" id="f-prof-email"></div>
-      </div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarProfesional()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarProfesional = function() {
-    const nombre = $('f-prof-nombre').value.trim();
-    const apellido = $('f-prof-apellido').value.trim();
-    const especialidad = $('f-prof-especialidad').value.trim();
-    const email = $('f-prof-email').value.trim();
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('profesionales').add({ nombre, apellido, especialidad, email })
-      .then(() => { closeModal(); showToast('Profesional creado'); });
-  };
-
-  window.eliminarProfesional = function(id) {
-    if (!confirm('¿Eliminar?')) return;
-    db.collection('profesionales').doc(id).delete().then(() => showToast('Eliminado'));
-  };
-
-  window.editarProfesional = function(id) {
-    db.collection('profesionales').doc(id).get().then(doc => {
-      if (!doc.exists) return;
-      const data = doc.data();
-      openModal(`
-        <div class="modal-title">Editar profesional</div>
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-prof-edit-nombre" value="${data.nombre||''}"></div>
-          <div class="form-group"><label class="form-label">Apellido</label><input class="form-control" id="f-prof-edit-apellido" value="${data.apellido||''}"></div>
-          <div class="form-group"><label class="form-label">Especialidad</label><input class="form-control" id="f-prof-edit-especialidad" value="${data.especialidad||''}"></div>
-          <div class="form-group"><label class="form-label">Email</label><input class="form-control" id="f-prof-edit-email" value="${data.email||''}"></div>
-        </div>
-        <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="actualizarProfesional('${id}')">Actualizar</button></div>
-      `);
-    });
-  };
-
-  window.actualizarProfesional = function(id) {
-    const nombre = $('f-prof-edit-nombre').value.trim();
-    const apellido = $('f-prof-edit-apellido').value.trim();
-    const especialidad = $('f-prof-edit-especialidad').value.trim();
-    const email = $('f-prof-edit-email').value.trim();
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('profesionales').doc(id).update({ nombre, apellido, especialidad, email })
-      .then(() => { closeModal(); showToast('Actualizado'); });
-  };
-
-  // ============================================================
-  // LIQUIDACIONES
-  // ============================================================
-  function renderLiquidaciones() {
-    const el = $('view-liquidaciones');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Liquidaciones</div><div class="page-subtitle">Historial</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevaLiquidacion()">+ Nueva liquidación</button>
-      </div>
-      <div class="card"><div id="liquidaciones-list"><p class="text-muted">Cargando...</p></div></div>
-    `;
-    db.collection('liquidaciones').orderBy('fecha','desc').onSnapshot(snap => {
-      let html = '<div class="table-wrap"><table><thead><tr><th>Profesional</th><th>Período</th><th>Total</th><th>Fecha</th></tr></thead><tbody>';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<tr><td>${data.profesional||''}</td><td>${data.periodo||''}</td><td>$${data.total||0}</td><td>${data.fecha||''}</td></tr>`;
-      });
-      html += '</tbody></table></div>';
-      $('liquidaciones-list').innerHTML = html || '<p class="text-muted">Sin liquidaciones</p>';
-    });
-  }
-
-  window.openModalNuevaLiquidacion = function() {
-    openModal(`
-      <div class="modal-title">Nueva liquidación</div>
-      <div class="form-group"><label class="form-label">Profesional</label><input class="form-control" id="f-liq-prof" placeholder="Nombre"></div>
-      <div class="form-group"><label class="form-label">Período</label><input class="form-control" id="f-liq-periodo" placeholder="Ej: Agosto 2026"></div>
-      <div class="form-group"><label class="form-label">Total</label><input class="form-control" id="f-liq-total" type="number" step="0.01"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarLiquidacion()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarLiquidacion = function() {
-    const profesional = $('f-liq-prof').value.trim();
-    const periodo = $('f-liq-periodo').value.trim();
-    const total = parseFloat($('f-liq-total').value);
-    if (!profesional || !periodo || isNaN(total)) return alert('Completá todos los campos');
-    db.collection('liquidaciones').add({ profesional, periodo, total, fecha: new Date().toISOString().slice(0,10) })
-      .then(() => { closeModal(); showToast('Liquidación guardada'); });
-  };
-
-  // ============================================================
-  // AUTOMATIZACIONES
-  // ============================================================
-  function renderAutomatizaciones() {
-    const el = $('view-automatizaciones');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Automatizaciones</div><div class="page-subtitle">Recordatorios y mensajes automáticos</div></div></div>
-      <div class="card">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
-          <div class="card" style="text-align:center"><div style="font-size:28px;font-weight:800;color:var(--primary)">5</div><div class="text-muted">Activas</div></div>
-          <div class="card" style="text-align:center"><div style="font-size:28px;font-weight:800;color:#f59e0b">44</div><div class="text-muted">Errores</div></div>
-          <div class="card" style="text-align:center"><div style="font-size:28px;font-weight:800;color:#10b981">71</div><div class="text-muted">Enviados este mes</div></div>
-        </div>
-        <div id="auto-list"><p class="text-muted">Cargando...</p></div>
-      </div>
-    `;
-    db.collection('automatizaciones').onSnapshot(snap => {
-      let html = '';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-          <span><strong>${data.nombre||'Sin nombre'}</strong> <span class="badge ${data.activa?'badge-green':'badge-gray'}">${data.activa?'Activa':'Inactiva'}</span></span>
-          <span>${data.canales||'WhatsApp, Email'}</span>
-        </div>`;
-      });
-      $('auto-list').innerHTML = html || '<p class="text-muted">No hay automatizaciones</p>';
-    });
-  }
-
-  // ============================================================
-  // CAJA
-  // ============================================================
-  function renderCaja() {
-    const el = $('view-caja');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Caja</div><div class="page-subtitle">Registros de pago</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevoPago()">+ Registrar pago</button>
-      </div>
-      <div class="card"><div id="pagos-list"><p class="text-muted">Cargando...</p></div></div>
-    `;
-    db.collection('pagos').orderBy('fecha','desc').onSnapshot(snap => {
-      let html = '<div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Monto</th><th>Método</th><th>Fecha</th></tr></thead><tbody>';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<tr><td>${data.paciente||''}</td><td>$${data.monto||0}</td><td>${data.metodo||''}</td><td>${data.fecha||''}</td></tr>`;
-      });
-      html += '</tbody></table></div>';
-      $('pagos-list').innerHTML = html || '<p class="text-muted">Sin pagos</p>';
-    });
-  }
-
-  window.openModalNuevoPago = function() {
-    openModal(`
-      <div class="modal-title">Registrar pago</div>
-      <div class="form-group"><label class="form-label">Paciente</label><input class="form-control" id="f-pago-paciente"></div>
-      <div class="form-group"><label class="form-label">Monto</label><input class="form-control" id="f-pago-monto" type="number" step="0.01"></div>
-      <div class="form-group"><label class="form-label">Método</label><select class="form-control" id="f-pago-metodo"><option>Efectivo</option><option>Tarjeta crédito</option><option>Transferencia</option></select></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarPago()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarPago = function() {
-    const paciente = $('f-pago-paciente').value.trim();
-    const monto = parseFloat($('f-pago-monto').value);
-    const metodo = $('f-pago-metodo').value;
-    if (!paciente || isNaN(monto)) return alert('Completá todos los campos');
-    db.collection('pagos').add({ paciente, monto, metodo, fecha: new Date().toISOString().slice(0,10) })
-      .then(() => { closeModal(); showToast('Pago registrado'); });
-  };
-
-  // ============================================================
-  // PRESUPUESTOS
-  // ============================================================
-  function renderPresupuestos() {
-    const el = $('view-presupuestos');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Presupuestos</div><div class="page-subtitle">Listado</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevoPresupuesto()">+ Nuevo presupuesto</button>
-      </div>
-      <div class="card"><div id="presupuestos-list"><p class="text-muted">Cargando...</p></div></div>
-    `;
-    db.collection('presupuestos').orderBy('fecha','desc').onSnapshot(snap => {
-      let html = '<div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Total</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<tr><td>${data.paciente||''}</td><td>$${data.total||0}</td><td><span class="badge ${data.estado==='aprobado'?'badge-green':'badge-amber'}">${data.estado||'Pendiente'}</span></td><td>${data.fecha||''}</td></tr>`;
-      });
-      html += '</tbody></table></div>';
-      $('presupuestos-list').innerHTML = html || '<p class="text-muted">Sin presupuestos</p>';
-    });
-  }
-
-  window.openModalNuevoPresupuesto = function() {
-    openModal(`
-      <div class="modal-title">Nuevo presupuesto</div>
-      <div class="form-group"><label class="form-label">Paciente</label><input class="form-control" id="f-pres-paciente"></div>
-      <div class="form-group"><label class="form-label">Total</label><input class="form-control" id="f-pres-total" type="number" step="0.01"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarPresupuesto()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarPresupuesto = function() {
-    const paciente = $('f-pres-paciente').value.trim();
-    const total = parseFloat($('f-pres-total').value);
-    if (!paciente || isNaN(total)) return alert('Completá todos los campos');
-    db.collection('presupuestos').add({ paciente, total, estado:'pendiente', fecha: new Date().toISOString().slice(0,10) })
-      .then(() => { closeModal(); showToast('Presupuesto creado'); });
-  };
-
-  // ============================================================
-  // PRODUCTIVIDAD
-  // ============================================================
-  function renderProductividad() {
-    $('view-productividad').innerHTML = `
-      <div class="page-header"><div><div class="page-title">Productividad</div><div class="page-subtitle">Rendimiento clínico</div></div></div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
-        <div class="card"><div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase">Turnos atendidos</div><div style="font-size:28px;font-weight:800">12</div></div>
-        <div class="card"><div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase">Ingresos</div><div style="font-size:28px;font-weight:800">$45.000</div></div>
-        <div class="card"><div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase">Ausentes</div><div style="font-size:28px;font-weight:800">2</div></div>
-        <div class="card"><div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase">Pacientes nuevos</div><div style="font-size:28px;font-weight:800">21</div></div>
-      </div>
-      <div class="card"><div class="text-muted">Gráficos y detalles adicionales</div></div>
-    `;
-  }
-
-  // ============================================================
-  // OBRAS SOCIALES
-  // ============================================================
-  function renderObrasSociales() {
-    const el = $('view-obras_sociales');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Obras sociales</div><div class="page-subtitle">Listado</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevaObraSocial()">+ Nueva obra social</button>
-      </div>
-      <div class="card"><div id="os-list"><p class="text-muted">Cargando...</p></div></div>
-    `;
-    db.collection('obras_sociales').orderBy('nombre').onSnapshot(snap => {
-      let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Código</th><th></th></tr></thead><tbody>';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<tr><td>${data.nombre||''}</td><td>${data.codigo||''}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="eliminarObraSocial('${d.id}')">Eliminar</button></td></tr>`;
-      });
-      html += '</tbody></table></div>';
-      $('os-list').innerHTML = html || '<p class="text-muted">Sin obras sociales</p>';
-    });
-  }
-
-  window.openModalNuevaObraSocial = function() {
-    openModal(`
-      <div class="modal-title">Nueva obra social</div>
-      <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-os-nombre"></div>
-      <div class="form-group"><label class="form-label">Código</label><input class="form-control" id="f-os-codigo"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarObraSocial()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarObraSocial = function() {
-    const nombre = $('f-os-nombre').value.trim();
-    const codigo = $('f-os-codigo').value.trim();
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('obras_sociales').add({ nombre, codigo })
-      .then(() => { closeModal(); showToast('Guardado'); });
-  };
-
-  window.eliminarObraSocial = function(id) {
-    if (!confirm('¿Eliminar?')) return;
-    db.collection('obras_sociales').doc(id).delete().then(() => showToast('Eliminado'));
-  };
-
-  // ============================================================
-  // LIQUIDACIONES OS
-  // ============================================================
-  function renderLiquidacionesOS() {
-    $('view-liquidaciones_os').innerHTML = `
-      <div class="page-header"><div><div class="page-title">Liquidaciones OS</div><div class="page-subtitle">Pendientes y cobradas</div></div>
-        <button class="btn btn-primary" onclick="alert('Funcionalidad en desarrollo')">+ Nueva liquidación OS</button>
-      </div>
-      <div class="card"><div class="text-muted">No hay liquidaciones registradas</div></div>
-    `;
-  }
-
-  // ============================================================
-  // INVENTARIO
-  // ============================================================
-  function renderInventario() {
-    const el = $('view-inventario');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Inventario</div><div class="page-subtitle">Insumos</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevoProducto()">+ Nuevo producto</button>
-      </div>
-      <div class="card"><div id="inventario-list"><p class="text-muted">Cargando...</p></div></div>
-    `;
-    db.collection('inventario').orderBy('nombre').onSnapshot(snap => {
-      let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Stock</th><th>Precio</th><th></th></tr></thead><tbody>';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<tr><td>${data.nombre||''}</td><td>${data.stock||0}</td><td>$${data.precio||0}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="eliminarProducto('${d.id}')">Eliminar</button></td></tr>`;
-      });
-      html += '</tbody></table></div>';
-      $('inventario-list').innerHTML = html || '<p class="text-muted">Sin productos</p>';
-    });
-  }
-
-  window.openModalNuevoProducto = function() {
-    openModal(`
-      <div class="modal-title">Nuevo producto</div>
-      <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-inv-nombre"></div>
-      <div class="form-group"><label class="form-label">Stock</label><input class="form-control" id="f-inv-stock" type="number"></div>
-      <div class="form-group"><label class="form-label">Precio</label><input class="form-control" id="f-inv-precio" type="number" step="0.01"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarProducto()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarProducto = function() {
-    const nombre = $('f-inv-nombre').value.trim();
-    const stock = parseInt($('f-inv-stock').value)||0;
-    const precio = parseFloat($('f-inv-precio').value)||0;
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('inventario').add({ nombre, stock, precio })
-      .then(() => { closeModal(); showToast('Producto guardado'); });
-  };
-
-  window.eliminarProducto = function(id) {
-    if (!confirm('¿Eliminar?')) return;
-    db.collection('inventario').doc(id).delete().then(() => showToast('Eliminado'));
-  };
-
-  // ============================================================
-  // PROVEEDORES
-  // ============================================================
-  function renderProveedores() {
-    const el = $('view-proveedores');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Proveedores</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevoProveedor()">+ Nuevo proveedor</button>
-      </div>
-      <div class="card"><div id="proveedores-list"><p class="text-muted">Cargando...</p></div></div>
-    `;
-    db.collection('proveedores').orderBy('nombre').onSnapshot(snap => {
-      let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Contacto</th><th></th></tr></thead><tbody>';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<tr><td>${data.nombre||''}</td><td>${data.contacto||''}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="eliminarProveedor('${d.id}')">Eliminar</button></td></tr>`;
-      });
-      html += '</tbody></table></div>';
-      $('proveedores-list').innerHTML = html || '<p class="text-muted">Sin proveedores</p>';
-    });
-  }
-
-  window.openModalNuevoProveedor = function() {
-    openModal(`
-      <div class="modal-title">Nuevo proveedor</div>
-      <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-prov-nombre"></div>
-      <div class="form-group"><label class="form-label">Contacto</label><input class="form-control" id="f-prov-contacto"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarProveedor()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarProveedor = function() {
-    const nombre = $('f-prov-nombre').value.trim();
-    const contacto = $('f-prov-contacto').value.trim();
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('proveedores').add({ nombre, contacto })
-      .then(() => { closeModal(); showToast('Guardado'); });
-  };
-
-  window.eliminarProveedor = function(id) {
-    if (!confirm('¿Eliminar?')) return;
-    db.collection('proveedores').doc(id).delete().then(() => showToast('Eliminado'));
-  };
-
-  // ============================================================
-  // TRATAMIENTOS
-  // ============================================================
-  function renderTratamientos() {
-    const el = $('view-tratamientos');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Tratamientos</div><div class="page-subtitle">Catálogo</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevoTratamiento()">+ Nuevo tratamiento</button>
-      </div>
-      <div class="card"><div id="tratamientos-list"><p class="text-muted">Cargando...</p></div></div>
-    `;
-    db.collection('tratamientos').orderBy('nombre').onSnapshot(snap => {
-      let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Precio base</th><th>Duración</th><th></th></tr></thead><tbody>';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<tr><td>${data.nombre||''}</td><td>$${data.precio_base||0}</td><td>${data.duracion||''}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="eliminarTratamiento('${d.id}')">Eliminar</button></td></tr>`;
-      });
-      html += '</tbody></table></div>';
-      $('tratamientos-list').innerHTML = html || '<p class="text-muted">Sin tratamientos</p>';
-    });
-  }
-
-  window.openModalNuevoTratamiento = function() {
-    openModal(`
-      <div class="modal-title">Nuevo tratamiento</div>
-      <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-trat-nombre"></div>
-      <div class="form-group"><label class="form-label">Precio base</label><input class="form-control" id="f-trat-precio" type="number" step="0.01"></div>
-      <div class="form-group"><label class="form-label">Duración (min)</label><input class="form-control" id="f-trat-duracion" type="number"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarTratamiento()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarTratamiento = function() {
-    const nombre = $('f-trat-nombre').value.trim();
-    const precio_base = parseFloat($('f-trat-precio').value)||0;
-    const duracion = $('f-trat-duracion').value.trim();
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('tratamientos').add({ nombre, precio_base, duracion })
-      .then(() => { closeModal(); showToast('Guardado'); });
-  };
-
-  window.eliminarTratamiento = function(id) {
-    if (!confirm('¿Eliminar?')) return;
-    db.collection('tratamientos').doc(id).delete().then(() => showToast('Eliminado'));
-  };
-
-  // ============================================================
-  // ESPECIALIDADES
-  // ============================================================
-  function renderEspecialidades() {
-    const el = $('view-especialidades');
-    el.innerHTML = `
-      <div class="page-header"><div><div class="page-title">Especialidades</div></div>
-        <button class="btn btn-primary" onclick="openModalNuevaEspecialidad()">+ Nueva especialidad</button>
-      </div>
-      <div class="card"><div id="especialidades-list"><p class="text-muted">Cargando...</p></div></div>
-    `;
-    db.collection('especialidades').orderBy('nombre').onSnapshot(snap => {
-      let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th></th></tr></thead><tbody>';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<tr><td>${data.nombre||''}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="eliminarEspecialidad('${d.id}')">Eliminar</button></td></tr>`;
-      });
-      html += '</tbody></table></div>';
-      $('especialidades-list').innerHTML = html || '<p class="text-muted">Sin especialidades</p>';
-    });
-  }
-
-  window.openModalNuevaEspecialidad = function() {
-    openModal(`
-      <div class="modal-title">Nueva especialidad</div>
-      <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-esp-nombre"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarEspecialidad()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarEspecialidad = function() {
-    const nombre = $('f-esp-nombre').value.trim();
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('especialidades').add({ nombre })
-      .then(() => { closeModal(); showToast('Guardado'); });
-  };
-
-  window.eliminarEspecialidad = function(id) {
-    if (!confirm('¿Eliminar?')) return;
-    db.collection('especialidades').doc(id).delete().then(() => showToast('Eliminado'));
-  };
-
-  // ============================================================
-  // WEB
-  // ============================================================
-  function renderWeb() {
-    $('view-web').innerHTML = `
-      <div class="page-header"><div><div class="page-title">Landing page</div><div class="page-subtitle">Configuración de la página pública</div></div></div>
-      <div class="card">
-        <div class="form-group"><label class="form-label">Tagline</label><input class="form-control" id="web-tagline" placeholder="Tu sonrisa, nuestra pasión"></div>
-        <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-control" id="web-desc" rows="3"></textarea></div>
-        <button class="btn btn-primary" onclick="guardarWeb()">Guardar</button>
-      </div>
-    `;
-    db.collection('landing_config').doc('main').get().then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
-        $('web-tagline').value = data.tagline||'';
-        $('web-desc').value = data.descripcion||'';
-      }
-    });
-  }
-
-  window.guardarWeb = function() {
-    const tagline = $('web-tagline').value.trim();
-    const descripcion = $('web-desc').value.trim();
-    db.collection('landing_config').doc('main').set({ tagline, descripcion, updated: new Date().toISOString() })
-      .then(() => showToast('Configuración guardada'));
-  };
-
-  // ============================================================
-  // WHATSAPP
-  // ============================================================
-  function renderWhatsApp() {
-    $('view-whatsapp').innerHTML = `
-      <div class="page-header"><div><div class="page-title">WhatsApp</div><div class="page-subtitle">Configuración</div></div></div>
-      <div class="card">
-        <div class="form-group"><label class="form-label">Proveedor</label><select class="form-control" id="wp-proveedor"><option value="evolution">Evolution API</option><option value="meta">Meta (Oficial)</option></select></div>
-        <div class="form-group"><label class="form-label">API Key / Token</label><input class="form-control" id="wp-token" placeholder="Token"></div>
-        <div class="form-group"><label class="form-label">Mensaje automático</label><textarea class="form-control" id="wp-mensaje" rows="2">Hola {nombre}, recibimos tu mensaje.</textarea></div>
-        <button class="btn btn-primary" onclick="guardarWhatsApp()">Guardar</button>
-      </div>
-    `;
-    db.collection('whatsapp_config').doc('main').get().then(doc => {
-      if (doc.exists) {
-        const data = doc.data();
-        $('wp-proveedor').value = data.proveedor||'evolution';
-        $('wp-token').value = data.token||'';
-        $('wp-mensaje').value = data.mensaje_auto||'';
-      }
-    });
-  }
-
-  window.guardarWhatsApp = function() {
-    const proveedor = $('wp-proveedor').value;
-    const token = $('wp-token').value.trim();
-    const mensaje_auto = $('wp-mensaje').value.trim();
-    db.collection('whatsapp_config').doc('main').set({ proveedor, token, mensaje_auto, updated: new Date().toISOString() })
-      .then(() => showToast('Configuración guardada'));
-  };
-
-  // ============================================================
-  // CONFIGURACIÓN
-  // ============================================================
-  function renderConfiguracion() {
-    $('view-configuracion').innerHTML = `
-      <div class="page-header"><div><div class="page-title">Configuración</div><div class="page-subtitle">Sucursales y horarios</div></div></div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="font-weight:700">Sucursales</span><button class="btn btn-primary btn-sm" onclick="openModalNuevaSucursal()">+ Agregar</button></div>
-        <div id="sucursales-list"><p class="text-muted">Cargando...</p></div>
-      </div>
-      <div class="card">
-        <div class="form-group"><label class="form-label">Zona horaria</label><select class="form-control" id="cfg-timezone"><option value="America/Argentina/Buenos_Aires">UTC-03:00 Buenos Aires</option><option value="UTC">UTC</option></select></div>
-        <button class="btn btn-primary" onclick="guardarConfiguracion()">Guardar</button>
-      </div>
-    `;
-    db.collection('sucursales').orderBy('nombre').onSnapshot(snap => {
-      let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Dirección</th><th></th></tr></thead><tbody>';
-      snap.forEach(d => {
-        const data = d.data();
-        html += `<tr><td>${data.nombre||''}</td><td>${data.direccion||''}</td>
-          <td><button class="btn btn-sm btn-danger" onclick="eliminarSucursal('${d.id}')">Eliminar</button></td></tr>`;
-      });
-      html += '</tbody></table></div>';
-      $('sucursales-list').innerHTML = html || '<p class="text-muted">Sin sucursales</p>';
-    });
-    db.collection('configuracion').doc('main').get().then(doc => {
-      if (doc.exists) $('cfg-timezone').value = doc.data().timezone||'America/Argentina/Buenos_Aires';
-    });
-  }
-
-  window.openModalNuevaSucursal = function() {
-    openModal(`
-      <div class="modal-title">Nueva sucursal</div>
-      <div class="form-group"><label class="form-label">Nombre</label><input class="form-control" id="f-suc-nombre"></div>
-      <div class="form-group"><label class="form-label">Dirección</label><input class="form-control" id="f-suc-direccion"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarSucursal()">Guardar</button></div>
-    `);
-  };
-
-  window.guardarSucursal = function() {
-    const nombre = $('f-suc-nombre').value.trim();
-    const direccion = $('f-suc-direccion').value.trim();
-    if (!nombre) return alert('Nombre requerido');
-    db.collection('sucursales').add({ nombre, direccion })
-      .then(() => { closeModal(); showToast('Guardado'); });
-  };
-
-  window.eliminarSucursal = function(id) {
-    if (!confirm('¿Eliminar sucursal?')) return;
-    db.collection('sucursales').doc(id).delete().then(() => showToast('Eliminado'));
-  };
-
-  window.guardarConfiguracion = function() {
-    const timezone = $('cfg-timezone').value;
-    db.collection('configuracion').doc('main').set({ timezone, updated: new Date().toISOString() })
-      .then(() => showToast('Configuración guardada'));
-  };
-
-  // ============================================================
-  // INICIALIZACIÓN
-  // ============================================================
-  navigateTo('dashboard');
-  $('modal-generic').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-
-  console.log('Panel DentalSoft completo iniciado con Firebase.');
+<!DOCTYPE html><html lang="es"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Clínica Dental · Panel Completo</title> <style> /* ===== Variables y reset ===== */ :root { --primary: #355063; --primary-dark: #1e2d3a; --accent: #4285F4; --accent-dark: #2b6ed7; --accent-light: #e8f0fe; --text: #1e2d3a; --text-muted: #64748b; --bg: #f1f5f9; --border: #e2e8f0; --white: #ffffff; --danger: #dc2626; --success: #16a34a; --warning: #f59e0b; --radius: 8px; --shadow: 0 2px 8px rgba(0,0,0,0.08); } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
+/* ===== Topnav ===== */
+.topnav {
+background: var(--primary);
+color: #fff;
+padding: 0 20px;
+height: 60px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+flex-shrink: 0;
+position: sticky;
+top: 0;
+z-index: 100;
+}
+.topnav .logo { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+.topnav .logo span { font-weight: 300; }
+.topnav .nav-links { display: flex; gap: 8px; margin-left: 24px; }
+.topnav .nav-links a {
+color: rgba(255,255,255,0.7);
+text-decoration: none;
+font-size: 14px;
+padding: 6px 12px;
+border-radius: var(--radius);
+transition: 0.2s;
+}
+.topnav .nav-links a:hover,
+.topnav .nav-links a.active { background: rgba(255,255,255,0.15); color: #fff; }
+.topnav .nav-right { display: flex; align-items: center; gap: 16px; }
+.topnav .nav-clinic { font-size: 13px; opacity: 0.8; }
+.topnav .nav-avatar {
+width: 32px; height: 32px; border-radius: 50%;
+background: var(--accent); display: flex; align-items: center; justify-content: center;
+font-weight: 700; font-size: 13px; color: #fff;
+}
+.topnav .user-menu-trigger { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.topnav .nav-user-text { text-align: right; line-height: 1.2; }
+.topnav .nav-user-text div:last-child { font-size: 11px; opacity: 0.6; }
+.topnav .user-dropdown {
+display: none; position: absolute; right: 0; top: 100%;
+background: #fff; border-radius: var(--radius);
+box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+min-width: 180px; padding: 8px 0; margin-top: 4px;
+}
+.topnav .user-dropdown a {
+display: flex; align-items: center; gap: 8px;
+padding: 8px 16px; color: var(--text); text-decoration: none; font-size: 13px;
+}
+.topnav .user-dropdown a:hover { background: var(--bg); }
+.topnav .user-dropdown a.danger { color: var(--danger); }
+.user-menu-wrap { position: relative; }
+
+/* ===== Layout ===== */
+.app-layout { display: flex; flex: 1; }
+
+/* ===== Sidebar ===== */
+.sidebar {
+width: 240px;
+background: var(--white);
+border-right: 1px solid var(--border);
+padding: 16px 0;
+flex-shrink: 0;
+overflow-y: auto;
+height: calc(100vh - 60px);
+position: sticky;
+top: 60px;
+}
+.sidebar .sidebar-section { margin-bottom: 24px; }
+.sidebar .sidebar-label {
+font-size: 11px; font-weight: 700; text-transform: uppercase;
+letter-spacing: 0.6px; color: var(--text-muted);
+padding: 0 16px 8px;
+}
+.sidebar .sidebar-item {
+display: flex; align-items: center; gap: 10px;
+padding: 8px 16px; color: var(--text); text-decoration: none;
+font-size: 14px; border-radius: var(--radius);
+margin: 0 6px; cursor: pointer; transition: 0.15s;
+border: none; background: none; width: calc(100% - 12px); text-align: left;
+}
+.sidebar .sidebar-item:hover { background: var(--bg); }
+.sidebar .sidebar-item.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+.sidebar .sidebar-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar .sidebar-item .sb-txt { flex: 1; }
+
+/* ===== Main ===== */
+.main { flex: 1; padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 60px); }
+
+/* ===== Componentes ===== */
+.page-header {
+display: flex; justify-content: space-between; align-items: center;
+margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+.page-title { font-size: 22px; font-weight: 700; }
+.page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+
+.card {
+background: var(--white); border: 1px solid var(--border);
+border-radius: var(--radius); padding: 20px;
+box-shadow: var(--shadow); margin-bottom: 20px;
+}
+
+.btn {
+display: inline-flex; align-items: center; gap: 6px;
+padding: 8px 16px; border-radius: var(--radius);
+font-size: 13px; font-weight: 600; border: 1px solid transparent;
+cursor: pointer; transition: 0.15s; text-decoration: none; line-height: 1.4;
+}
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-secondary { background: var(--bg); color: var(--text); border-color: var(--border); }
+.btn-secondary:hover { background: #e2e8f0; }
+.btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn-danger:hover { background: #b91c1c; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-block { width: 100%; justify-content: center; }
+
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.form-control {
+width: 100%; padding: 8px 12px;
+border: 1px solid var(--border); border-radius: var(--radius);
+font-size: 13px; background: var(--white); transition: 0.15s;
+}
+.form-control:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(66,133,244,0.15); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+.badge {
+display: inline-block; padding: 2px 10px; border-radius: 20px;
+font-size: 12px; font-weight: 600;
+}
+.badge-green { background: #dcfce7; color: #15803d; }
+.badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-red { background: #fee2e2; color: #b91c1c; }
+.badge-amber { background: #fef3c7; color: #b45309; }
+.badge-gray { background: #f1f5f9; color: #4b5563; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; background: var(--bg); font-weight: 600; color: var(--text-muted); border-bottom: 2px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:hover td { background: #fafcff; }
+
+.tabs {
+display: flex; gap: 4px; border-bottom: 2px solid var(--border);
+margin-bottom: 20px;
+}
+.tab {
+padding: 10px 18px; font-size: 13px; font-weight: 600;
+color: var(--text-muted); cursor: pointer;
+border-bottom: 2px solid transparent; margin-bottom: -2px;
+transition: 0.15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.avatar {
+width: 32px; height: 32px; border-radius: 50%;
+display: flex; align-items: center; justify-content: center;
+font-weight: 700; font-size: 13px; flex-shrink: 0;
+}
+.flex { display: flex; align-items: center; gap: 8px; }
+.gap-4 { gap: 4px; }
+.mt-2 { margin-top: 8px; }
+.mb-2 { margin-bottom: 8px; }
+.text-muted { color: var(--text-muted); }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.w-full { width: 100%; }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+.sidebar { width: 60px; padding: 12px 0; }
+.sidebar .sb-txt { display: none; }
+.sidebar .sidebar-item { justify-content: center; padding: 10px; }
+.sidebar .sidebar-label { text-align: center; font-size: 0; }
+.main { padding: 16px; }
+.form-grid { grid-template-columns: 1fr; }
+.topnav .nav-links { display: none; }
+.topnav .nav-clinic { display: none; }
+}
+
+/* ===== Vistas (inicialmente ocultas) ===== */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ===== Modal ===== */
+.modal-overlay {
+display: none; position: fixed; inset: 0;
+background: rgba(0,0,0,0.45); align-items: center; justify-content: center;
+z-index: 9999; padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+background: #fff; border-radius: var(--radius);
+max-width: 700px; width: 100%; padding: 24px;
+max-height: 90vh; overflow-y: auto;
+box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.modal-box .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+.modal-box .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+/* Estilos para lista de tratamientos en el modal */
+.trt-grupo { margin-bottom: 4px; }
+.trt-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; cursor: pointer; border-top: 1px solid var(--border); transition: background 0.1s; }
+.trt-item:hover { background: var(--bg); }
+.trt-item .os-split-label { font-size: 11px; color: var(--text-muted); }
+.trt-item .os-pct-badge { font-size: 10px; font-weight: 700; color: #0891b2; }
+.trt-item input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--primary); flex-shrink: 0; }
+
+/* Toggle de urgencia */
+.urg-wrap { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 14px; transition: 0.2s; }
+.urg-wrap.active { background: #fef2f2; border-color: #fca5a5; }
+.urg-wrap.active .urg-title { color: #b91c1c; }
+.urg-wrap.active .urg-desc { color: #b91c1c; }
+
+/* Coseguro */
+.coseguro-wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); margin-top: 8px; }
+.coseguro-wrap input { width: 90px; border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 13px; text-align: right; }
+
+/* Subtotal tratamientos */
+#trt-subtotal { display: none; margin-top: 8px; padding: 8px 12px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); }
+#trt-subtotal .total-row { display: flex; justify-content: space-between; align-items: center; }
+#trt-subtotal .total-row .label { font-size: 12px; color: var(--text-muted); }
+#trt-subtotal .total-row .value { font-size: 14px; font-weight: 700; color: var(--primary); }
+#os-totales { display: none; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); }
+#coseguro-row { display: none; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); }
+</style>
+
+</head> <body><!-- ===== TOP NAV ===== --><nav class="topnav"> <div style="display:flex;align-items:center;gap:12px;"> <button class="topnav-hamburger" onclick="toggleSidebar()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;display:none;">☰</button> <div class="logo">Dental<span>Soft</span></div> <div class="nav-links"> <a href="#" class="active" data-view="dashboard">Dashboard</a> <a href="#" data-view="agenda">Agenda</a> <a href="#" data-view="pacientes">Pacientes</a> <a href="#" data-view="caja">Caja</a> <a href="#" data-view="automatizaciones">Automatizaciones</a> </div> </div> <div class="nav-right"> <div class="nav-clinic">Clínica Dental Demo</div> <div class="user-menu-wrap"> <div class="user-menu-trigger" onclick="toggleUserMenu()"> <div class="nav-avatar">AD</div> <div class="nav-user-text"><div>Admin Demo</div><div>admin</div></div> </div> <div class="user-dropdown" id="user-dropdown"> <a href="#" data-view="configuracion"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Configuración</a> <a href="#" class="danger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Cerrar sesión</a> </div> </div> </div> </nav><!-- ===== LAYOUT ===== --><div class="app-layout"> <!-- Sidebar --> <aside class="sidebar" id="sidebar"> <div class="sidebar-section"> <div class="sidebar-label">Principal</div> <button class="sidebar-item active" data-view="dashboard"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="sb-txt">Dashboard</span></button> <button class="sidebar-item" data-view="agenda"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="sb-txt">Agenda</span></button> <button class="sidebar-item" data-view="pacientes"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="sb-txt">Pacientes</span></button> <button class="sidebar-item" data-view="profesionales"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="sb-txt">Profesionales</span></button> <button class="sidebar-item" data-view="liquidaciones"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="sb-txt">Liquidaciones</span></button> <button class="sidebar-item" data-view="automatizaciones"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="sb-txt">Automatizaciones</span></button> </div> <div class="sidebar-section"> <div class="sidebar-label">Finanzas</div> <button class="sidebar-item" data-view="caja"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg><span class="sb-txt">Caja</span></button> <button class="sidebar-item" data-view="presupuestos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span class="sb-txt">Presupuestos</span></button> <button class="sidebar-item" data-view="productividad"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="sb-txt">Productividad</span></button> </div> <div class="sidebar-section"> <div class="sidebar-label">Clínica</div> <button class="sidebar-item" data-view="obras_sociales"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="sb-txt">Obras sociales</span></button> <button class="sidebar-item" data-view="liquidaciones_os"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg><span class="sb-txt">Liquidaciones OS</span></button> <button class="sidebar-item" data-view="inventario"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg><span class="sb-txt">Inventario</span></button> <button class="sidebar-item" data-view="proveedores"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="sb-txt">Proveedores</span></button> <button class="sidebar-item" data-view="tratamientos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg><span class="sb-txt">Tratamientos</span></button> <button class="sidebar-item" data-view="especialidades"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5S7 9.76 7 7a5 5 0 0 1 5-5z"/><path d="M3 21c0-4.42 4.03-8 9-8s9 3.58 9 8"/><path d="M15 7h2m-1-1v2"/></svg><span class="sb-txt">Especialidades</span></button> <button class="sidebar-item" data-view="web"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span class="sb-txt">Web</span></button> <button class="sidebar-item" data-view="whatsapp"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span class="sb-txt">WhatsApp</span></button> <button class="sidebar-item" data-view="configuracion"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="sb-txt">Configuración</span></button> </div> </aside> <!-- Main Content --> <main class="main"> <div id="view-dashboard" class="view active"></div> <div id="view-agenda" class="view"></div> <div id="view-pacientes" class="view"></div> <div id="view-profesionales" class="view"></div> <div id="view-liquidaciones" class="view"></div> <div id="view-automatizaciones" class="view"></div> <div id="view-caja" class="view"></div> <div id="view-presupuestos" class="view"></div> <div id="view-productividad" class="view"></div> <div id="view-obras_sociales" class="view"></div> <div id="view-liquidaciones_os" class="view"></div> <div id="view-inventario" class="view"></div> <div id="view-proveedores" class="view"></div> <div id="view-tratamientos" class="view"></div> <div id="view-especialidades" class="view"></div> <div id="view-web" class="view"></div> <div id="view-whatsapp" class="view"></div> <div id="view-configuracion" class="view"></div> </main> </div><!-- Modal genérico --><div class="modal-overlay" id="modal-generic"><div class="modal-box" id="modal-generic-content"></div></div><!-- ===== FIREBASE SDK ===== --><script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script><script> // ============================================================ // FIREBASE CONFIG // ============================================================ const firebaseConfig = { apiKey: "AIzaSyCsTQoWZnMmcYwt2vjRQUPNUOKbHj3ZKqA", authDomain: "clinicadental1.firebaseapp.com", projectId: "clinicadental1", storageBucket: "clinicadental1.firebasestorage.app", messagingSenderId: "85943745725", appId: "1:85943745725:web:65e02bdb2c5abee1e2cbd4", measurementId: "G-74CV5LL9F7" }; firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); // ============================================================ // UTILITIES // ============================================================ function $(id) { return document.getElementById(id); } function qs(sel, ctx=document) { return ctx.querySelector(sel); } function qsa(sel, ctx=document) { return ctx.querySelectorAll(sel); } function openModal(html) { const c=$('modal-generic-content'); c.innerHTML=html; $('modal-generic').classList.add('active'); } function closeModal() { $('modal-generic').classList.remove('active'); } function showToast(msg) { alert('🔔 '+msg); } function formatDate(d) { if (!d) return ''; return d.slice(0,10); } // ============================================================ // NAVEGACIÓN (SPA) // ============================================================ const views = ['dashboard','agenda','pacientes','profesionales','liquidaciones','automatizaciones', 'caja','presupuestos','productividad','obras_sociales','liquidaciones_os','inventario', 'proveedores','tratamientos','especialidades','web','whatsapp','configuracion']; let currentView = 'dashboard'; function navigateTo(view) { if (!views.includes(view)) return; currentView = view; qsa('.sidebar .sidebar-item[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === view)); qsa('.topnav .nav-links a[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === view)); qsa('.view').forEach(el => el.classList.remove('active')); const target = $('view-'+view); if (target) target.classList.add('active'); if (target && target.innerHTML.trim() === '') { loadView(view); } } document.querySelectorAll('.sidebar .sidebar-item[data-view]').forEach(btn => { btn.addEventListener('click', () => navigateTo(btn.dataset.view)); }); document.querySelectorAll('.topnav .nav-links a[data-view]').forEach(btn => { btn.addEventListener('click', (e) => { e.preventDefault(); navigateTo(btn.dataset.view); }); }); function toggleUserMenu() { const dd = $('user-dropdown'); dd.style.display = dd.style.display === 'block' ? 'none' : 'block'; } document.addEventListener('click', (e) => { if (!e.target.closest('.user-menu-wrap')) $('user-dropdown').style.display = 'none'; }); // ============================================================ // CARGA DE VISTAS (solo las que se usan en este demo) // ============================================================ function loadView(view) { switch(view) { case 'dashboard': renderDashboard(); break; case 'agenda': renderAgenda(); break; // Otras vistas se mantienen vacías o con mensaje default: const el = $('view-'+view); if (el) el.innerHTML = `<div class="page-header"><div><div class="page-title">${views.find(v=>v===view)}</div><div class="page-subtitle">Contenido en desarrollo</div></div></div><div class="card"><p class="text-muted">Esta sección se cargará desde Firestore próximamente.</p></div>`; } } // ============================================================ // DASHBOARD (simplificado) // ============================================================ function renderDashboard() { const el = $('view-dashboard'); el.innerHTML = ` <div class="page-header"><div><div class="page-title">Dashboard</div><div class="page-subtitle">Resumen de hoy</div></div></div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px"> <div class="card" style="border-left:3px solid var(--primary)"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Turnos hoy</div><div style="font-size:32px;font-weight:800;color:var(--primary)" id="dash-turnos-hoy">0</div></div> <div class="card" style="border-left:3px solid #22c55e"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Pacientes nuevos (mes)</div><div style="font-size:32px;font-weight:800;color:#22c55e" id="dash-pacientes-nuevos">0</div></div> <div class="card" style="border-left:3px solid #8b5cf6"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Ingresos del mes</div><div style="font-size:24px;font-weight:800;color:#8b5cf6" id="dash-ingresos">$0</div></div> <div class="card" style="border-left:3px solid #f59e0b"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Turnos pendientes</div><div style="font-size:32px;font-weight:800;color:#f59e0b" id="dash-turnos-pendientes">0</div></div> </div> <div class="card"><div style="font-size:14px;font-weight:700;margin-bottom:12px">Próximos turnos</div><div id="dash-proximos"></div></div> `; const hoy = new Date().toISOString().slice(0,10); db.collection('turnos').where('fecha','==',hoy).get().then(snap => { $('dash-turnos-hoy').textContent = snap.size; }); const mesInicio = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10); db.collection('pacientes').where('fecha_creacion','>=',mesInicio).get().then(snap => { $('dash-pacientes-nuevos').textContent = snap.size; }); db.collection('pagos').where('fecha','>=',mesInicio).get().then(snap => { let total=0; snap.forEach(d => total+=d.data().monto||0); $('dash-ingresos').textContent = '$'+total.toLocaleString(); }); db.collection('turnos').where('estado','==','pendiente').get().then(snap => { $('dash-turnos-pendientes').textContent = snap.size; }); db.collection('turnos').limit(5).get().then(snap => { let html = ''; snap.forEach(d => { const data = d.data(); html += `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${data.paciente||'Paciente'}</span><span>${data.fecha} ${data.hora}</span></div>`; }); $('dash-proximos').innerHTML = html || '<div class="text-muted">No hay turnos próximos</div>'; }); } // ============================================================ // AGENDA (con navegación y botón Nuevo turno) // ============================================================ let semanaActual = new Date(); function obtenerLunes(fecha) { const d = new Date(fecha); const dia = d.getDay(); const diff = dia === 0 ? -6 : 1 - dia; d.setDate(d.getDate() + diff); return d; } semanaActual = obtenerLunes(new Date()); function renderAgenda() { const el = $('view-agenda'); const fechas = []; for (let i = 0; i < 7; i++) { const d = new Date(semanaActual); d.setDate(semanaActual.getDate() + i); fechas.push(d.toISOString().slice(0,10)); } const diasSemana = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']; let headerHtml = `<div></div>`; fechas.forEach((f, idx) => { const diaNum = new Date(f+'T00:00:00').getDate(); const esHoy = f === new Date().toISOString().slice(0,10); headerHtml += `<div style="padding:10px 8px;text-align:center;${esHoy?'background:var(--accent-light);':''}border-left:1px solid var(--border);"> <div style="font-size:11px;color:var(--text-muted);font-weight:500">${diasSemana[idx]}</div> <div style="font-size:20px;font-weight:800;${esHoy?'color:var(--primary);':''}">${diaNum}</div> </div>`; }); const horas = Array.from({length:12}, (_,i) => 8+i); let bodyHtml = ''; bodyHtml += `<div style="position:relative;height:${horas.length*64}px">`; horas.forEach((h, idx) => { bodyHtml += `<div style="position:absolute;top:${idx*64}px;right:6px;font-size:10px;color:var(--text-muted);">${h}:00</div>`; }); bodyHtml += `</div>`; fechas.forEach((fecha) => { bodyHtml += `<div data-fecha="${fecha}" style="position:relative;height:${horas.length*64}px;border-left:1px solid var(--border);">`; horas.forEach((h, rowIdx) => { const top = rowIdx * 64; if (rowIdx % 2 === 0) { bodyHtml += `<div style="position:absolute;top:${top}px;left:0;right:0;height:64px;background:#f0f7ff;pointer-events:none;"></div>`; } bodyHtml += `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:1px solid #dde8f0;pointer-events:none;"></div>`; }); bodyHtml += `<div class="day-turnos" data-fecha="${fecha}" style="position:absolute;inset:0;z-index:2;"></div>`; bodyHtml += `</div>`; }); const semanaStr = `${fechas[0]} al ${fechas[6]}`; el.innerHTML = ` <div class="page-header"> <div> <div class="page-title">Agenda</div> <div class="page-subtitle">Semana del ${semanaStr}</div> </div> <div style="display:flex;gap:8px;flex-wrap:wrap;"> <button class="btn btn-secondary btn-sm" onclick="cambiarSemana(-1)">← Anterior</button> <button class="btn btn-secondary btn-sm" onclick="cambiarSemana(0)">Hoy</button> <button class="btn btn-secondary btn-sm" onclick="cambiarSemana(1)">Siguiente →</button> <button class="btn btn-primary" onclick="openModalNuevoTurno()">+ Nuevo turno</button> </div> </div> <div class="card"> <div style="display:grid;grid-template-columns:60px repeat(7,1fr);gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12px;"> ${headerHtml} ${bodyHtml} </div> </div> `; const fechaInicio = fechas[0]; const fechaFin = fechas[6]; db.collection('turnos') .where('fecha', '>=', fechaInicio) .where('fecha', '<=', fechaFin) .onSnapshot((snapshot) => { document.querySelectorAll('.day-turnos').forEach(col => { while (col.firstChild) col.removeChild(col.firstChild); }); snapshot.forEach(doc => { const turno = doc.data(); const fecha = turno.fecha; const hora = turno.hora; if (!fecha || !hora) return; const [h, m] = hora.split(':').map(Number); if (isNaN(h) || isNaN(m)) return; const minutosDesdeInicio = (h - 8) * 60 + m; const top = (minutosDesdeInicio / 60) * 64; const duracion = turno.duracion || 30; const height = (duracion / 60) * 64; const columna = document.querySelector(`.day-turnos[data-fecha="${fecha}"]`); if (!columna) return; const bloque = document.createElement('div'); bloque.style.cssText = ` position:absolute; top:${top}px; left:2px; right:2px; height:${height-2}px; background:${turno.color || '#355063'}; border-radius:5px; padding:2px 4px; overflow:hidden; z-index:3; cursor:pointer; font-size:10px; color:#fff; font-weight:600; white-space:nowrap; text-overflow:ellipsis; `; bloque.textContent = `${hora} ${turno.paciente || 'Sin paciente'}`; bloque.title = `${turno.paciente} - ${turno.tratamiento || ''}`; bloque.onclick = () => alert(`Turno de ${turno.paciente}\n${turno.fecha} ${turno.hora}\nEstado: ${turno.estado || 'Pendiente'}`); columna.appendChild(bloque); }); document.querySelectorAll('.day-turnos').forEach((col, idx) => { const count = col.children.length; const headerDiv = document.querySelectorAll(`[style*="text-align:center;"]`)[idx+1]; if (headerDiv) { let existing = headerDiv.querySelector('.turnos-count'); if (!existing) { existing = document.createElement('div'); existing.className = 'turnos-count'; existing.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;'; headerDiv.appendChild(existing); } existing.textContent = count + ' turnos'; } }); }, (error) => { console.error('Error cargando turnos:', error); }); } function cambiarSemana(direccion) { if (direccion === 0) { semanaActual = obtenerLunes(new Date()); } else { semanaActual.setDate(semanaActual.getDate() + direccion * 7); } renderAgenda(); } // ============================================================ // NUEVO TURNO - MODAL COMPLETO // ============================================================ // Datos de cobertura simulados (los cargarás desde Firestore en producción) // estructura: { tratamiento_id: { plan_id: porcentaje } } const COBERTURAS = { 9: { 2: 50, 1: 30, 3: 20, 4: 50 }, 2: { 1: 40, 2: 60 }, 1: { 1: 30, 2: 40 }, 10: { 1: 50, 2: 60 }, 44: { 1: 20, 2: 30 }, 48: { 1: 25, 2: 35 }, 46: { 1: 20, 2: 30 }, 42: { 1: 30, 2: 40 }, 8: { 1: 40, 2: 50 }, 45: { 1: 30, 2: 40 }, 43: { 1: 25, 2: 35 }, 47: { 1: 30, 2: 40 }, 20: { 1: 30, 2: 40 }, 17: { 1: 40, 2: 50 }, 19: { 1: 30, 2: 40 }, 21: { 1: 35, 2: 45 }, 22: { 1: 30, 2: 40 }, 26: { 1: 20, 2: 30 }, 23: { 1: 25, 2: 35 }, 5: { 1: 10, 2: 15 }, 4: { 1: 10, 2: 15 }, 24: { 1: 25, 2: 35 }, 25: { 1: 20, 2: 30 }, 34: { 1: 30, 2: 40 }, 31: { 1: 35, 2: 45 }, 33: { 1: 40, 2: 50 }, 32: { 1: 35, 2: 45 }, 10: { 1: 50, 2: 60 }, 35: { 1: 30, 2: 40 }, 36: { 1: 45, 2: 55 }, 52: { 1: 20, 2: 30 }, 12: { 1: 25, 2: 35 }, 53: { 1: 30, 2: 40 }, 54: { 1: 30, 2: 40 }, 55: { 1: 20, 2: 30 }, 16: { 1: 35, 2: 45 }, 15: { 1: 40, 2: 50 }, 38: { 1: 30, 2: 40 }, 1: { 1: 30, 2: 40 }, 39: { 1: 25, 2: 35 }, 41: { 1: 35, 2: 45 }, 37: { 1: 25, 2: 35 }, 3: { 1: 20, 2: 30 }, 40: { 1: 30, 2: 40 }, 65: { 1: 30, 2: 40 }, 66: { 1: 30, 2: 40 }, 18: { 1: 30, 2: 40 }, 67: { 1: 30, 2: 40 }, 13: { 1: 30, 2: 40 }, 51: { 1: 30, 2: 40 }, 14: { 1: 30, 2: 40 }, 50: { 1: 30, 2: 40 }, 49: { 1: 30, 2: 40 }, 11: { 1: 30, 2: 40 }, 56: { 1: 30, 2: 40 }, 57: { 1: 30, 2: 40 }, 64: { 1: 25, 2: 35 }, 58: { 1: 30, 2: 40 }, 61: { 1: 30, 2: 40 }, 59: { 1: 30, 2: 40 }, 60: { 1: 30, 2: 40 }, 62: { 1: 25, 2: 35 }, 30: { 1: 30, 2: 40 }, 29: { 1: 30, 2: 40 }, 28: { 1: 30, 2: 40 }, 27: { 1: 30, 2: 40 }, 7: { 1: 30, 2: 40 }, 6: { 1: 30, 2: 40 } }; // Datos de obra social por paciente (los cargarás desde Firestore) const PACIENTES_OS = { 7: { obra_social_id: 1, plan_id: 2 }, 10: { obra_social_id: 1, plan_id: 1 }, 15: { obra_social_id: 6, plan_id: 11 }, 8: { obra_social_id: 0, plan_id: 0 }, 9: { obra_social_id: 2, plan_id: 3 }, 19: { obra_social_id: 10, plan_id: 15 }, 22: { obra_social_id: 1, plan_id: 0 }, 23: { obra_social_id: 0, plan_id: 0 }, 11: { obra_social_id: 0, plan_id: 0 }, 2: { obra_social_id: 0, plan_id: 0 }, 4: { obra_social_id: 0, plan_id: 0 }, 14: { obra_social_id: 5, plan_id: 10 }, 18: { obra_social_id: 9, plan_id: 14 }, 17: { obra_social_id: 8, plan_id: 13 }, 1: { obra_social_id: 0, plan_id: 0 }, 6: { obra_social_id: 1, plan_id: 1 }, 13: { obra_social_id: 4, plan_id: 9 }, 12: { obra_social_id: 1, plan_id: 8 }, 16: { obra_social_id: 7, plan_id: 12 }, 20: { obra_social_id: 11, plan_id: 16 }, 21: { obra_social_id: 12, plan_id: 17 } }; let currentPlanId = 0; const DUR_PRESETS = [15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240]; window.openModalNuevoTurno = function() { // Cargar pacientes, profesionales, sucursales y tratamientos desde Firestore let pacientesHTML = '<option value="">— Seleccionar paciente —</option>'; let profesionalesHTML = '<option value="">— Seleccionar profesional —</option>'; let sucursalesHTML = '<option value="">— Seleccionar sucursal —</option>'; db.collection('pacientes').orderBy('nombre').get().then(snap => { snap.forEach(doc => { const data = doc.data(); const nombreCompleto = `${data.nombre || ''} ${data.apellido || ''}`.trim(); pacientesHTML += `<option value="${doc.id}">${nombreCompleto}</option>`; }); document.getElementById('f-turno-paciente').innerHTML = pacientesHTML; }); db.collection('profesionales').orderBy('nombre').get().then(snap => { snap.forEach(doc => { const data = doc.data(); const nombreCompleto = `${data.nombre || ''} ${data.apellido || ''}`.trim(); profesionalesHTML += `<option value="${doc.id}">${nombreCompleto}</option>`; }); document.getElementById('f-turno-profesional').innerHTML = profesionalesHTML; }); db.collection('sucursales').orderBy('nombre').get().then(snap => { snap.forEach(doc => { const data = doc.data(); sucursalesHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`; }); document.getElementById('f-turno-sucursal').innerHTML = sucursalesHTML; }); // Construir modal const modalHTML = ` <div class="modal-title">📋 Nuevo turno</div> <form id="form-nuevo-turno" style="margin-top:8px;"> <!-- Paciente, Profesional, Sucursal --> <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:12px;"> <div class="form-group" style="grid-column:1/-1;"> <label class="form-label">Paciente *</label> <select id="f-turno-paciente" class="form-control" required onchange="onPacienteChangeTurno()"> <option value="">— Seleccionar paciente —</option> </select> </div> <div class="form-group" style="grid-column:1/-1;"> <label class="form-label">Profesional *</label> <select id="f-turno-profesional" class="form-control" required> <option value="">— Seleccionar profesional —</option> </select> </div> <div class="form-group" style="grid-column:1/-1;"> <label class="form-label">Sucursal *</label> <select id="f-turno-sucursal" class="form-control" required> <option value="">— Seleccionar sucursal —</option> </select> </div> </div> <!-- Fecha, hora, duración, estado --> <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;"> <div class="form-group"> <label class="form-label">Fecha *</label> <input type="date" id="f-turno-fecha" class="form-control" value="${new Date().toISOString().slice(0,10)}" required> </div> <div class="form-group"> <label class="form-label">Hora de inicio *</label> <input type="time" id="f-turno-hora" class="form-control" step="900" value="09:00" required> </div> <div class="form-group"> <label class="form-label">Duración *</label> <div style="display:flex;align-items:center;gap:6px;"> <select id="dur-select" class="form-control" style="width:130px;" onchange="durSelectChangeTurno(this.value)"> ${DUR_PRESETS.map(m => `<option value="${m}" ${m===30?'selected':''}>${m} min</option>`).join('')} <option value="custom">Personalizado…</option> </select> <input type="number" id="dur-input" min="15" step="1" value="30" class="form-control" style="width:72px;" oninput="durInputChangeTurno(this.value)"> <span style="font-size:13px;color:var(--text-muted);white-space:nowrap;">min</span> </div> </div> <div class="form-group"> <label class="form-label">Estado</label> <select id="f-turno-estado" class="form-control"> <option value="pendiente" selected>Pendiente</option> <option value="confirmado">Confirmado</option> <option value="en_recepcion">En recepción</option> <option value="en_atencion">En atención</option> <option value="finalizado">Finalizado</option> <option value="cancelado">Cancelado</option> <option value="ausente">Ausente</option> </select> </div> </div> <!-- Urgencia --> <div class="urg-wrap" id="urg-wrap"> <label style="display:flex;align-items:center;gap:10px;cursor:pointer;"> <input type="checkbox" id="f-turno-urgencia" value="1" style="width:16px;height:16px;cursor:pointer;" onchange="toggleUrgenciaTurno(this)"> <div> <div class="urg-title" style="font-weight:700;font-size:13px;color:var(--text);">⚡ Urgencia / Sobreturno</div> <div class="urg-desc" style="font-size:12px;color:var(--text-muted);">Permite asignar el turno aunque el profesional esté ocupado. Se muestra en rojo en la agenda.</div> </div> </label> </div> <!-- Motivo de consulta --> <div class="form-group" style="margin-top:14px;"> <label class="form-label">Motivo de consulta</label> <textarea id="f-turno-motivo" class="form-control" rows="2"></textarea> </div> <!-- Tratamientos realizados --> <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;"> <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Tratamientos realizados</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Marcá los realizados durante este turno — se usarán al registrar el pago en Caja</div> <div id="os-banner" style="display:none;margin-bottom:10px;padding:8px 12px;background:#e0f2fe;border-radius:8px;font-size:12px;color:#0369a1;"> <strong id="os-banner-nombre"></strong> — se muestra la cobertura por tratamiento </div> <input type="text" id="trt-buscar" class="form-control" placeholder="Buscar tratamiento…" style="margin-bottom:8px;font-size:13px;" oninput="filtrarTratsTurno(this.value)"> <div id="trt-lista" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px;"> <p class="text-muted" style="padding:12px;text-align:center;">Cargando tratamientos...</p> </div> <input type="hidden" id="inp-total-paciente" value=""> <input type="hidden" id="inp-total-obra-social" value=""> <div id="trt-subtotal"> <div class="total-row"> <span class="label"><span id="trt-count">0</span> tratamiento(s)</span> <span class="value">$<span id="trt-total-val">0</span></span> </div> <div id="os-totales"> <div style="display:flex;justify-content:space-between;font-size:12px;"> <span style="color:var(--text-muted);">Tratamientos paciente:</span> <span style="font-weight:700;color:#15803d;">$<span id="trt-paciente-val">0</span></span> </div> <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px;"> <span style="color:var(--text-muted);">Cubre obra social:</span> <span style="font-weight:700;color:#0891b2;">$<span id="trt-os-val">0</span></span> </div> </div> <div id="coseguro-row"> <div style="display:flex;justify-content:space-between;font-size:12px;"> <span style="color:var(--text-muted);">Coseguro:</span> <span style="font-weight:700;color:#f59e0b;">$<span id="trt-coseguro-val">0</span></span> </div> <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px;padding-top:4px;border-top:1px solid var(--border);"> <span style="font-weight:600;color:var(--text);">Paciente paga total:</span> <span style="font-weight:700;color:#15803d;">$<span id="trt-paciente-total-val">0</span></span> </div> </div> </div> <!-- Coseguro --> <div class="coseguro-wrap"> <div> <div style="font-size:12px;font-weight:600;color:var(--text);">Coseguro</div> <div style="font-size:11px;color:var(--text-muted);">Pago adicional del paciente (opcional)</div> </div> <div style="display:flex;align-items:center;gap:4px;"> <span style="font-size:13px;color:var(--text-muted);font-weight:600;">$</span> <input type="number" id="coseguro-input" min="0" step="0.01" value="" oninput="recalcPrecio()" placeholder="0.00"> </div> </div> <button type="button" id="btn-pago-caja" class="btn btn-block" disabled style="margin-top:12px;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;opacity:.45;cursor:not-allowed;"> 💰 Guardar y Registrar pago en Caja </button> </div> </form> <div class="modal-actions" style="margin-top:16px;"> <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button> <button class="btn btn-primary" onclick="guardarTurnoCompleto()">Crear turno</button> </div> `;
+openModal(modalHTML);
+
+// Cargar tratamientos desde Firestore
+cargarTratamientosTurno();
+};
+
+// Cargar tratamientos
+function cargarTratamientosTurno() {
+const container = document.getElementById('trt-lista');
+if (!container) return;
+
+db.collection('tratamientos').orderBy('categoria').orderBy('nombre').get().then(snap => {
+if (snap.empty) {
+container.innerHTML = '<p class="text-muted" style="padding:12px;text-align:center;">No hay tratamientos cargados</p>';
+return;
+}
+
+let grupos = {};
+snap.forEach(doc => {
+const data = doc.data();
+const cat = data.categoria || 'otros';
+if (!grupos[cat]) grupos[cat] = [];
+grupos[cat].push({ id: doc.id, ...data });
+});
+
+let html = '';
+for (const [cat, items] of Object.entries(grupos)) {
+html += `<div class="trt-grupo" data-cat="${cat}">
+
+<div style="padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);background:var(--bg);position:sticky;top:0;">${cat}</div>`; items.forEach(trat => { html += ` <label class="trt-item" data-nombre="${(trat.nombre || '').toLowerCase()}"> <input type="checkbox" name="tratamientos_realizados_ids[]" value="${trat.id}" data-precio="${trat.precio_base || 0}" data-trat-id="${trat.id}" onchange="recalcPrecio()"> <div style="flex:1;min-width:0;"> <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${trat.nombre || 'Sin nombre'}</div> <div class="os-split-label" style="display:none;font-size:11px;color:var(--text-muted);margin-top:1px;"></div> </div> <div style="text-align:right;flex-shrink:0;"> <div style="font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap;">$${Number(trat.precio_base || 0).toLocaleString()}</div> <div class="os-pct-badge" style="display:none;font-size:10px;font-weight:700;color:#0891b2;white-space:nowrap;"></div> </div> </label> `; }); html += `</div>`; } container.innerHTML = html; // Trigger recálculo de cobertura si ya hay paciente seleccionado onPacienteChangeTurno(); }); }
+// Cambio de paciente
+window.onPacienteChangeTurno = function() {
+const sel = document.getElementById('f-turno-paciente');
+if (!sel) return;
+const pid = sel.value;
+const osData = pid ? PACIENTES_OS[pid] : null;
+currentPlanId = osData ? (osData.plan_id || 0) : 0;
+
+const banner = document.getElementById('os-banner');
+if (banner) {
+if (osData && currentPlanId) {
+const opt = sel.options[sel.selectedIndex];
+banner.style.display = 'block';
+document.getElementById('os-banner-nombre').textContent = opt ? opt.textContent.trim().split('—')[0].trim() : '';
+} else {
+banner.style.display = 'none';
+}
+}
+
+// Actualizar badges de cobertura
+document.querySelectorAll('#trt-lista .trt-item input[type="checkbox"]').forEach(cb => {
+const tid = parseInt(cb.dataset.tratId);
+const precio = parseFloat(cb.dataset.precio) || 0;
+const label = cb.closest('label');
+const splitEl = label ? label.querySelector('.os-split-label') : null;
+const badgeEl = label ? label.querySelector('.os-pct-badge') : null;
+
+const pct = (currentPlanId && COBERTURAS[tid] && COBERTURAS[tid][currentPlanId])
+? parseFloat(COBERTURAS[tid][currentPlanId]) : 0;
+
+if (splitEl) {
+if (pct > 0 && precio > 0) {
+const montoOS = precio * pct / 100;
+const montoPac = precio - montoOS;
+splitEl.textContent = Pte: $${montoPac.toFixed(0)} · OS ${pct}%: $${montoOS.toFixed(0)};
+splitEl.style.display = 'block';
+} else {
+splitEl.style.display = 'none';
+}
+}
+if (badgeEl) {
+if (pct > 0) {
+badgeEl.textContent = 'OS ' + pct + '%';
+badgeEl.style.display = 'block';
+} else {
+badgeEl.style.display = 'none';
+}
+}
+});
+
+recalcPrecio();
+};
+
+// Recalcular totales
+function recalcPrecio() {
+const checks = document.querySelectorAll('#trt-lista .trt-item input[type="checkbox"]:checked');
+let total = 0, totalPac = 0, totalOS = 0, count = 0;
+checks.forEach(cb => {
+const precio = parseFloat(cb.dataset.precio) || 0;
+const tid = parseInt(cb.dataset.tratId);
+const pct = (currentPlanId && COBERTURAS[tid] && COBERTURAS[tid][currentPlanId])
+? parseFloat(COBERTURAS[tid][currentPlanId]) : 0;
+const montoOS = precio * pct / 100;
+total += precio;
+totalOS += montoOS;
+totalPac += precio - montoOS;
+count++;
+});
+
+const coseguroInp = document.getElementById('coseguro-input');
+const coseguro = coseguroInp ? (parseFloat(coseguroInp.value) || 0) : 0;
+
+const subtDiv = document.getElementById('trt-subtotal');
+const countEl = document.getElementById('trt-count');
+const totalEl = document.getElementById('trt-total-val');
+const pacEl = document.getElementById('trt-paciente-val');
+const osEl = document.getElementById('trt-os-val');
+const osTotDiv = document.getElementById('os-totales');
+const coseguroRow = document.getElementById('coseguro-row');
+const coseguroEl = document.getElementById('trt-coseguro-val');
+const pacTotalEl = document.getElementById('trt-paciente-total-val');
+const btnCaja = document.getElementById('btn-pago-caja');
+const inpPac = document.getElementById('inp-total-paciente');
+const inpOS = document.getElementById('inp-total-obra-social');
+
+const hasContent = count > 0 || coseguro > 0;
+
+if (hasContent) {
+if (countEl) countEl.textContent = count;
+if (totalEl) totalEl.textContent = total.toFixed(0);
+subtDiv.style.display = 'block';
+
+if (currentPlanId && totalOS > 0) {
+if (pacEl) pacEl.textContent = totalPac.toFixed(0);
+if (osEl) osEl.textContent = totalOS.toFixed(0);
+if (osTotDiv) osTotDiv.style.display = 'block';
+} else {
+if (osTotDiv) osTotDiv.style.display = 'none';
+}
+
+if (coseguro > 0) {
+if (coseguroEl) coseguroEl.textContent = coseguro.toFixed(0);
+if (pacTotalEl) pacTotalEl.textContent = (totalPac + coseguro).toFixed(0);
+if (coseguroRow) coseguroRow.style.display = 'block';
+} else {
+if (coseguroRow) coseguroRow.style.display = 'none';
+}
+
+if (inpPac) inpPac.value = totalPac.toFixed(2);
+if (inpOS) inpOS.value = totalOS.toFixed(2);
+
+if (btnCaja) { btnCaja.disabled = false; btnCaja.style.opacity = '1'; btnCaja.style.cursor = ''; }
+} else {
+subtDiv.style.display = 'none';
+if (coseguroRow) coseguroRow.style.display = 'none';
+if (inpPac) inpPac.value = '';
+if (inpOS) inpOS.value = '';
+if (btnCaja) { btnCaja.disabled = true; btnCaja.style.opacity = '.45'; btnCaja.style.cursor = 'not-allowed'; }
+}
+}
+
+// Filtrar tratamientos
+function filtrarTratsTurno(q) {
+q = q.toLowerCase().trim();
+document.querySelectorAll('#trt-lista .trt-item').forEach(item => {
+item.style.display = (!q || (item.dataset.nombre || '').indexOf(q) !== -1) ? '' : 'none';
+});
+document.querySelectorAll('#trt-lista .trt-grupo').forEach(grupo => {
+const vis = Array.from(grupo.querySelectorAll('.trt-item')).filter(i => i.style.display !== 'none');
+grupo.style.display = vis.length > 0 ? '' : 'none';
+});
+}
+
+// Duración
+function durSelectChangeTurno(val) {
+if (val === 'custom') return;
+document.getElementById('dur-input').value = val;
+}
+function durInputChangeTurno(val) {
+const sel = document.getElementById('dur-select');
+sel.value = DUR_PRESETS.indexOf(parseInt(val)) !== -1 ? val : 'custom';
+}
+
+// Urgencia
+function toggleUrgenciaTurno(cb) {
+const wrap = document.getElementById('urg-wrap');
+if (cb.checked) {
+wrap.classList.add('active');
+} else {
+wrap.classList.remove('active');
+}
+}
+
+// Guardar turno completo
+window.guardarTurnoCompleto = function() {
+const pacienteId = document.getElementById('f-turno-paciente').value;
+const profesionalId = document.getElementById('f-turno-profesional').value;
+const sucursalId = document.getElementById('f-turno-sucursal').value;
+const fecha = document.getElementById('f-turno-fecha').value;
+const hora = document.getElementById('f-turno-hora').value;
+const duracion = parseInt(document.getElementById('dur-input').value) || 30;
+const estado = document.getElementById('f-turno-estado').value;
+const esUrgencia = document.getElementById('f-turno-urgencia').checked;
+const motivo = document.getElementById('f-turno-motivo').value.trim();
+
+const tratamientosSeleccionados = [];
+document.querySelectorAll('#trt-lista .trt-item input[type="checkbox"]:checked').forEach(cb => {
+tratamientosSeleccionados.push({
+id: cb.value,
+precio: parseFloat(cb.dataset.precio) || 0
+});
+});
+
+const coseguro = parseFloat(document.getElementById('coseguro-input').value) || 0;
+const totalPaciente = parseFloat(document.getElementById('inp-total-paciente').value) || 0;
+const totalOS = parseFloat(document.getElementById('inp-total-obra-social').value) || 0;
+
+if (!pacienteId) return alert('Selecciona un paciente.');
+if (!profesionalId) return alert('Selecciona un profesional.');
+if (!sucursalId) return alert('Selecciona una sucursal.');
+if (!fecha || !hora) return alert('Completa fecha y hora.');
+
+const pacienteNombre = document.getElementById('f-turno-paciente').options[document.getElementById('f-turno-paciente').selectedIndex].text;
+const profesionalNombre = document.getElementById('f-turno-profesional').options[document.getElementById('f-turno-profesional').selectedIndex].text;
+
+const turnoData = {
+paciente_id: pacienteId,
+paciente: pacienteNombre,
+odontologo_id: profesionalId,
+odontologo: profesionalNombre,
+sucursal_id: sucursalId,
+fecha: fecha,
+hora: hora,
+duracion: duracion,
+estado: estado,
+es_urgencia: esUrgencia,
+motivo_consulta: motivo,
+tratamientos_realizados: tratamientosSeleccionados,
+coseguro: coseguro,
+total_paciente: totalPaciente,
+total_obra_social: totalOS,
+color: esUrgencia ? '#dc2626' : '#355063',
+creado: new Date().toISOString()
+};
+
+db.collection('turnos').add(turnoData)
+.then(() => {
+closeModal();
+showToast('✅ Turno creado exitosamente.');
+renderAgenda();
+})
+.catch(err => {
+alert('❌ Error al crear el turno: ' + err.message);
+});
+};
+
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+navigateTo('dashboard');
+$('modal-generic').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+console.log('Panel DentalSoft con nuevo turno completo iniciado.');
 </script>
 
-</body>
-</html>
+</body> </html>
