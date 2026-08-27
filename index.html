@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clínica Dental · Panel</title>
+  <title>Clínica Dental · Panel Completo</title>
 
-  <!-- Estilos generales -->
+  <!-- Estilos base (iguales a los originales) -->
   <style>
+    /* ===== Variables y reset ===== */
     :root {
       --primary: #355063;
       --primary-dark: #1e2d3a;
@@ -24,13 +25,7 @@
       --radius: 8px;
       --shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
@@ -40,7 +35,7 @@
       min-height: 100vh;
     }
 
-    /* Top nav */
+    /* ===== Topnav ===== */
     .topnav {
       background: var(--primary);
       color: #fff;
@@ -54,17 +49,9 @@
       top: 0;
       z-index: 100;
     }
-    .topnav .logo {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
+    .topnav .logo { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
     .topnav .logo span { font-weight: 300; }
-    .topnav .nav-links {
-      display: flex;
-      gap: 8px;
-      margin-left: 24px;
-    }
+    .topnav .nav-links { display: flex; gap: 8px; margin-left: 24px; }
     .topnav .nav-links a {
       color: rgba(255,255,255,0.7);
       text-decoration: none;
@@ -74,52 +61,35 @@
       transition: 0.2s;
     }
     .topnav .nav-links a:hover,
-    .topnav .nav-links a.active {
-      background: rgba(255,255,255,0.15);
-      color: #fff;
-    }
-    .topnav .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .topnav .nav-clinic {
-      font-size: 13px;
-      opacity: 0.8;
-    }
+    .topnav .nav-links a.active { background: rgba(255,255,255,0.15); color: #fff; }
+    .topnav .nav-right { display: flex; align-items: center; gap: 16px; }
+    .topnav .nav-clinic { font-size: 13px; opacity: 0.8; }
     .topnav .nav-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 13px;
-      color: #fff;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent); display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px; color: #fff;
     }
-    .topnav .user-menu-trigger {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-    }
+    .topnav .user-menu-trigger { display: flex; align-items: center; gap: 8px; cursor: pointer; }
     .topnav .nav-user-text { text-align: right; line-height: 1.2; }
     .topnav .nav-user-text div:last-child { font-size: 11px; opacity: 0.6; }
-    .topnav .user-dropdown { display: none; position: absolute; right: 0; top: 100%; background: #fff; border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.15); min-width: 180px; padding: 8px 0; margin-top: 4px; }
-    .topnav .user-dropdown a { display: flex; align-items: center; gap: 8px; padding: 8px 16px; color: var(--text); text-decoration: none; font-size: 13px; }
+    .topnav .user-dropdown {
+      display: none; position: absolute; right: 0; top: 100%;
+      background: #fff; border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      min-width: 180px; padding: 8px 0; margin-top: 4px;
+    }
+    .topnav .user-dropdown a {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; color: var(--text); text-decoration: none; font-size: 13px;
+    }
     .topnav .user-dropdown a:hover { background: var(--bg); }
     .topnav .user-dropdown a.danger { color: var(--danger); }
     .user-menu-wrap { position: relative; }
 
-    /* Layout */
-    .app-layout {
-      display: flex;
-      flex: 1;
-    }
+    /* ===== Layout ===== */
+    .app-layout { display: flex; flex: 1; }
 
-    /* Sidebar */
+    /* ===== Sidebar ===== */
     .sidebar {
       width: 240px;
       background: var(--white);
@@ -133,79 +103,44 @@
     }
     .sidebar .sidebar-section { margin-bottom: 24px; }
     .sidebar .sidebar-label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      color: var(--text-muted);
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--text-muted);
       padding: 0 16px 8px;
     }
     .sidebar .sidebar-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 16px;
-      color: var(--text);
-      text-decoration: none;
-      font-size: 14px;
-      border-radius: var(--radius);
-      margin: 0 6px;
-      cursor: pointer;
-      transition: 0.15s;
-      border: none;
-      background: none;
-      width: calc(100% - 12px);
-      text-align: left;
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; color: var(--text); text-decoration: none;
+      font-size: 14px; border-radius: var(--radius);
+      margin: 0 6px; cursor: pointer; transition: 0.15s;
+      border: none; background: none; width: calc(100% - 12px); text-align: left;
     }
     .sidebar .sidebar-item:hover { background: var(--bg); }
     .sidebar .sidebar-item.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
     .sidebar .sidebar-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
     .sidebar .sidebar-item .sb-txt { flex: 1; }
 
-    /* Main content */
-    .main {
-      flex: 1;
-      padding: 24px 28px;
-      overflow-y: auto;
-      max-height: calc(100vh - 60px);
-    }
+    /* ===== Main ===== */
+    .main { flex: 1; padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 60px); }
 
-    /* Page header */
+    /* ===== Componentes ===== */
     .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      gap: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
     }
     .page-title { font-size: 22px; font-weight: 700; }
     .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
 
-    /* Cards */
     .card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      box-shadow: var(--shadow);
-      margin-bottom: 20px;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      box-shadow: var(--shadow); margin-bottom: 20px;
     }
 
-    /* Buttons */
     .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      border-radius: var(--radius);
-      font-size: 13px;
-      font-weight: 600;
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: 0.15s;
-      text-decoration: none;
-      line-height: 1.4;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 600; border: 1px solid transparent;
+      cursor: pointer; transition: 0.15s; text-decoration: none; line-height: 1.4;
     }
     .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
     .btn-primary:hover { background: var(--accent-dark); }
@@ -216,29 +151,20 @@
     .btn-sm { padding: 4px 10px; font-size: 12px; }
     .btn-block { width: 100%; justify-content: center; }
 
-    /* Forms */
     .form-group { margin-bottom: 14px; }
     .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
     .form-control {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 13px;
-      background: var(--white);
-      transition: 0.15s;
+      width: 100%; padding: 8px 12px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: 13px; background: var(--white); transition: 0.15s;
     }
     .form-control:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(66,133,244,0.15); }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
 
-    /* Badges */
     .badge {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
+      display: inline-block; padding: 2px 10px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
     }
     .badge-green { background: #dcfce7; color: #15803d; }
     .badge-blue { background: #dbeafe; color: #1d4ed8; }
@@ -246,34 +172,25 @@
     .badge-amber { background: #fef3c7; color: #b45309; }
     .badge-gray { background: #f1f5f9; color: #4b5563; }
 
-    /* Tables */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { text-align: left; padding: 10px 12px; background: var(--bg); font-weight: 600; color: var(--text-muted); border-bottom: 2px solid var(--border); }
     td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:hover td { background: #fafcff; }
 
-    /* Tabs */
     .tabs {
-      display: flex;
-      gap: 4px;
-      border-bottom: 2px solid var(--border);
+      display: flex; gap: 4px; border-bottom: 2px solid var(--border);
       margin-bottom: 20px;
     }
     .tab {
-      padding: 10px 18px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-muted);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
+      padding: 10px 18px; font-size: 13px; font-weight: 600;
+      color: var(--text-muted); cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
       transition: 0.15s;
     }
     .tab:hover { color: var(--text); }
     .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-    /* Misc */
     .avatar {
       width: 32px; height: 32px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
@@ -288,7 +205,7 @@
     .text-right { text-align: right; }
     .w-full { width: 100%; }
 
-    /* Responsive */
+    /* ===== Responsive ===== */
     @media (max-width: 768px) {
       .sidebar { width: 60px; padding: 12px 0; }
       .sidebar .sb-txt { display: none; }
@@ -300,19 +217,22 @@
       .topnav .nav-clinic { display: none; }
     }
 
-    /* Estilos para vistas ocultas */
+    /* ===== Vistas (inicialmente ocultas) ===== */
     .view { display: none; }
     .view.active { display: block; }
 
-    /* Quick styles for modals */
+    /* ===== Modal ===== */
     .modal-overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
-      align-items: center; justify-content: center; z-index: 9999; padding: 20px;
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); align-items: center; justify-content: center;
+      z-index: 9999; padding: 20px;
     }
     .modal-overlay.active { display: flex; }
     .modal-box {
-      background: #fff; border-radius: var(--radius); max-width: 600px; width: 100%;
-      padding: 24px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      background: #fff; border-radius: var(--radius);
+      max-width: 600px; width: 100%; padding: 24px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
     }
     .modal-box .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
     .modal-box .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
@@ -320,7 +240,7 @@
 </head>
 <body>
 
-<!-- Top Navigation -->
+<!-- ===== TOP NAV ===== -->
 <nav class="topnav">
   <div style="display:flex;align-items:center;gap:12px;">
     <button class="topnav-hamburger" onclick="toggleSidebar()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;display:none;">☰</button>
@@ -341,13 +261,14 @@
         <div class="nav-user-text"><div>Admin Demo</div><div>admin</div></div>
       </div>
       <div class="user-dropdown" id="user-dropdown">
-        <a href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Configuración</a>
+        <a href="#" data-view="configuracion"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Configuración</a>
         <a href="#" class="danger"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Cerrar sesión</a>
       </div>
     </div>
   </div>
 </nav>
 
+<!-- ===== LAYOUT ===== -->
 <div class="app-layout">
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
@@ -382,37 +303,38 @@
 
   <!-- Main Content -->
   <main class="main">
-    <!-- Cada vista se carga dinámicamente -->
-    <div id="view-dashboard" class="view active"><!-- Dashboard --></div>
-    <div id="view-agenda" class="view"><!-- Agenda --></div>
-    <div id="view-pacientes" class="view"><!-- Pacientes --></div>
-    <div id="view-profesionales" class="view"><!-- Profesionales --></div>
-    <div id="view-liquidaciones" class="view"><!-- Liquidaciones --></div>
-    <div id="view-automatizaciones" class="view"><!-- Automatizaciones --></div>
-    <div id="view-caja" class="view"><!-- Caja --></div>
-    <div id="view-presupuestos" class="view"><!-- Presupuestos --></div>
-    <div id="view-productividad" class="view"><!-- Productividad --></div>
-    <div id="view-obras_sociales" class="view"><!-- Obras sociales --></div>
-    <div id="view-liquidaciones_os" class="view"><!-- Liquidaciones OS --></div>
-    <div id="view-inventario" class="view"><!-- Inventario --></div>
-    <div id="view-proveedores" class="view"><!-- Proveedores --></div>
-    <div id="view-tratamientos" class="view"><!-- Tratamientos --></div>
-    <div id="view-especialidades" class="view"><!-- Especialidades --></div>
-    <div id="view-web" class="view"><!-- Web --></div>
-    <div id="view-whatsapp" class="view"><!-- WhatsApp --></div>
-    <div id="view-configuracion" class="view"><!-- Configuración --></div>
+    <div id="view-dashboard" class="view active"></div>
+    <div id="view-agenda" class="view"></div>
+    <div id="view-pacientes" class="view"></div>
+    <div id="view-profesionales" class="view"></div>
+    <div id="view-liquidaciones" class="view"></div>
+    <div id="view-automatizaciones" class="view"></div>
+    <div id="view-caja" class="view"></div>
+    <div id="view-presupuestos" class="view"></div>
+    <div id="view-productividad" class="view"></div>
+    <div id="view-obras_sociales" class="view"></div>
+    <div id="view-liquidaciones_os" class="view"></div>
+    <div id="view-inventario" class="view"></div>
+    <div id="view-proveedores" class="view"></div>
+    <div id="view-tratamientos" class="view"></div>
+    <div id="view-especialidades" class="view"></div>
+    <div id="view-web" class="view"></div>
+    <div id="view-whatsapp" class="view"></div>
+    <div id="view-configuracion" class="view"></div>
   </main>
 </div>
 
-<!-- Modales genéricos -->
+<!-- Modal genérico -->
 <div class="modal-overlay" id="modal-generic"><div class="modal-box" id="modal-generic-content"></div></div>
 
-<!-- Firebase SDK -->
+<!-- ===== FIREBASE SDK ===== -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <script>
-  // --- CONFIGURACIÓN DE FIREBASE ---
+  // ============================================================
+  // FIREBASE CONFIG
+  // ============================================================
   const firebaseConfig = {
     apiKey: "AIzaSyCsTQoWZnMmcYwt2vjRQUPNUOKbHj3ZKqA",
     authDomain: "clinicadental1.firebaseapp.com",
@@ -425,53 +347,40 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-  // --- UTILITY FUNCTIONS ---
+  // ============================================================
+  // UTILITIES
+  // ============================================================
   function $(id) { return document.getElementById(id); }
   function qs(sel, ctx=document) { return ctx.querySelector(sel); }
   function qsa(sel, ctx=document) { return ctx.querySelectorAll(sel); }
   function openModal(html) { const c=$('modal-generic-content'); c.innerHTML=html; $('modal-generic').classList.add('active'); }
   function closeModal() { $('modal-generic').classList.remove('active'); }
-  function showToast(msg, type='info') { alert('🔔 '+msg); } // simple
+  function showToast(msg) { alert('🔔 '+msg); }
+  function formatDate(d) { if (!d) return ''; return d.slice(0,10); }
 
-  // --- NAVEGACIÓN ---
-  const views = {
-    dashboard: 'Dashboard',
-    agenda: 'Agenda',
-    pacientes: 'Pacientes',
-    profesionales: 'Profesionales',
-    liquidaciones: 'Liquidaciones',
-    automatizaciones: 'Automatizaciones',
-    caja: 'Caja',
-    presupuestos: 'Presupuestos',
-    productividad: 'Productividad',
-    obras_sociales: 'Obras sociales',
-    liquidaciones_os: 'Liquidaciones OS',
-    inventario: 'Inventario',
-    proveedores: 'Proveedores',
-    tratamientos: 'Tratamientos',
-    especialidades: 'Especialidades',
-    web: 'Web',
-    whatsapp: 'WhatsApp',
-    configuracion: 'Configuración'
-  };
-
+  // ============================================================
+  // NAVEGACIÓN
+  // ============================================================
+  const views = ['dashboard','agenda','pacientes','profesionales','liquidaciones','automatizaciones',
+                 'caja','presupuestos','productividad','obras_sociales','liquidaciones_os','inventario',
+                 'proveedores','tratamientos','especialidades','web','whatsapp','configuracion'];
   let currentView = 'dashboard';
 
   function navigateTo(view) {
-    if (!views[view]) return;
+    if (!views.includes(view)) return;
     currentView = view;
-    // Actualizar sidebar
-    qsa('.sidebar .sidebar-item').forEach(el => el.classList.toggle('active', el.dataset.view === view));
-    // Mostrar vista
+    // Sidebar
+    qsa('.sidebar .sidebar-item[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === view));
+    // Top nav
+    qsa('.topnav .nav-links a[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === view));
+    // Views
     qsa('.view').forEach(el => el.classList.remove('active'));
     const target = $('view-'+view);
     if (target) target.classList.add('active');
-    // Cargar contenido si es la primera vez
+    // Cargar contenido si está vacío
     if (target && target.innerHTML.trim() === '') {
       loadView(view);
     }
-    // Top nav active
-    qsa('.topnav .nav-links a').forEach(el => el.classList.toggle('active', el.dataset.view === view));
   }
 
   // Sidebar clicks
@@ -481,7 +390,6 @@
   document.querySelectorAll('.topnav .nav-links a[data-view]').forEach(btn => {
     btn.addEventListener('click', (e) => { e.preventDefault(); navigateTo(btn.dataset.view); });
   });
-
   // User dropdown
   function toggleUserMenu() {
     const dd = $('user-dropdown');
@@ -491,7 +399,9 @@
     if (!e.target.closest('.user-menu-wrap')) $('user-dropdown').style.display = 'none';
   });
 
-  // --- CARGA DE VISTAS (cada vista se construye dinámicamente) ---
+  // ============================================================
+  // CARGA DE VISTAS (cada una se renderiza con su contenido)
+  // ============================================================
   function loadView(view) {
     switch(view) {
       case 'dashboard': renderDashboard(); break;
@@ -515,35 +425,31 @@
     }
   }
 
-  // --- DASHBOARD ---
+  // ============================================================
+  // DASHBOARD
+  // ============================================================
   function renderDashboard() {
     const el = $('view-dashboard');
     el.innerHTML = `
       <div class="page-header"><div><div class="page-title">Dashboard</div><div class="page-subtitle">Resumen de hoy</div></div></div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
         <div class="card" style="border-left:3px solid var(--primary)"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Turnos hoy</div><div style="font-size:32px;font-weight:800;color:var(--primary)" id="dash-turnos-hoy">0</div></div>
-        <div class="card" style="border-left:3px solid #22c55e"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Pacientes nuevos</div><div style="font-size:32px;font-weight:800;color:#22c55e" id="dash-pacientes-nuevos">0</div></div>
+        <div class="card" style="border-left:3px solid #22c55e"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Pacientes nuevos (mes)</div><div style="font-size:32px;font-weight:800;color:#22c55e" id="dash-pacientes-nuevos">0</div></div>
         <div class="card" style="border-left:3px solid #8b5cf6"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Ingresos del mes</div><div style="font-size:24px;font-weight:800;color:#8b5cf6" id="dash-ingresos">$0</div></div>
         <div class="card" style="border-left:3px solid #f59e0b"><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Turnos pendientes</div><div style="font-size:32px;font-weight:800;color:#f59e0b" id="dash-turnos-pendientes">0</div></div>
       </div>
       <div class="card"><div style="font-size:14px;font-weight:700;margin-bottom:12px">Próximos turnos</div><div id="dash-proximos"></div></div>
     `;
-    // Cargar datos
+    // Cargar datos en tiempo real
     const hoy = new Date().toISOString().slice(0,10);
-    db.collection('turnos').where('fecha','==',hoy).get().then(snap => {
-      $('dash-turnos-hoy').textContent = snap.size;
-    });
-    db.collection('pacientes').where('fecha_creacion','>=',new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10)).get().then(snap => {
-      $('dash-pacientes-nuevos').textContent = snap.size;
-    });
-    db.collection('pagos').where('fecha','>=',new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10)).get().then(snap => {
+    db.collection('turnos').where('fecha','==',hoy).get().then(snap => { $('dash-turnos-hoy').textContent = snap.size; });
+    const mesInicio = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10);
+    db.collection('pacientes').where('fecha_creacion','>=',mesInicio).get().then(snap => { $('dash-pacientes-nuevos').textContent = snap.size; });
+    db.collection('pagos').where('fecha','>=',mesInicio).get().then(snap => {
       let total=0; snap.forEach(d => total+=d.data().monto||0);
       $('dash-ingresos').textContent = '$'+total.toLocaleString();
     });
-    db.collection('turnos').where('estado','==','pendiente').get().then(snap => {
-      $('dash-turnos-pendientes').textContent = snap.size;
-    });
-    // Próximos turnos
+    db.collection('turnos').where('estado','==','pendiente').get().then(snap => { $('dash-turnos-pendientes').textContent = snap.size; });
     db.collection('turnos').orderBy('fecha').orderBy('hora').limit(5).get().then(snap => {
       let html = '';
       snap.forEach(d => {
@@ -554,7 +460,9 @@
     });
   }
 
-  // --- AGENDA (simplificada) ---
+  // ============================================================
+  // AGENDA
+  // ============================================================
   function renderAgenda() {
     const el = $('view-agenda');
     el.innerHTML = `
@@ -567,33 +475,37 @@
         ${Array.from({length:12}, (_,i) => {
           const hora = 8+i;
           let row = `<div style="padding:4px 0;font-weight:600;color:var(--text-muted);text-align:right;padding-right:6px">${hora}:00</div>`;
-          for(let j=0;j<7;j++) row += `<div style="border:1px solid var(--border);min-height:40px;cursor:pointer;background:var(--white);" onclick="alert('Crear turno en este slot')"></div>`;
+          for(let j=0;j<7;j++) row += `<div style="border:1px solid var(--border);min-height:40px;cursor:pointer;background:var(--white);" onclick="openModalNuevoTurno()"></div>`;
           return row;
         }).join('')}
       </div></div>
     `;
   }
 
-  function openModalNuevoTurno() {
+  window.openModalNuevoTurno = function() {
     openModal(`
       <div class="modal-title">Nuevo turno</div>
       <div class="form-group"><label class="form-label">Paciente</label><input class="form-control" id="f-turno-paciente" placeholder="Nombre"></div>
       <div class="form-group"><label class="form-label">Fecha</label><input class="form-control" id="f-turno-fecha" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
       <div class="form-group"><label class="form-label">Hora</label><input class="form-control" id="f-turno-hora" type="time" value="09:00"></div>
+      <div class="form-group"><label class="form-label">Profesional</label><input class="form-control" id="f-turno-profesional" placeholder="Opcional"></div>
       <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="guardarTurno()">Guardar</button></div>
     `);
-  }
+  };
   window.guardarTurno = function() {
     const paciente = $('f-turno-paciente').value.trim();
     const fecha = $('f-turno-fecha').value;
     const hora = $('f-turno-hora').value;
+    const profesional = $('f-turno-profesional').value.trim();
     if (!paciente || !fecha || !hora) return alert('Completá todos los campos');
-    db.collection('turnos').add({ paciente, fecha, hora, estado:'pendiente', creado: new Date().toISOString() })
+    db.collection('turnos').add({ paciente, fecha, hora, profesional, estado:'pendiente', creado: new Date().toISOString() })
       .then(() => { closeModal(); showToast('Turno creado'); renderAgenda(); })
       .catch(err => alert('Error: '+err.message));
   };
 
-  // --- PACIENTES ---
+  // ============================================================
+  // PACIENTES (CRUD completo)
+  // ============================================================
   function renderPacientes() {
     const el = $('view-pacientes');
     el.innerHTML = `
@@ -602,7 +514,7 @@
       </div>
       <div class="card"><div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th></th></tr></thead><tbody id="pacientes-list"></tbody></table></div></div>
     `;
-    db.collection('pacientes').orderBy('nombre').get().then(snap => {
+    db.collection('pacientes').orderBy('nombre').onSnapshot(snap => {
       const tbody = $('pacientes-list');
       tbody.innerHTML = '';
       snap.forEach(d => {
@@ -633,13 +545,13 @@
     const telefono = $('f-pac-telefono').value.trim();
     const email = $('f-pac-email').value.trim();
     if (!nombre) return alert('Nombre requerido');
-    db.collection('pacientes').add({ nombre, apellido, telefono, email, fecha_creacion: new Date().toISOString() })
-      .then(() => { closeModal(); showToast('Paciente creado'); renderPacientes(); })
+    db.collection('pacientes').add({ nombre, apellido, telefono, email, fecha_creacion: new Date().toISOString().slice(0,10) })
+      .then(() => { closeModal(); showToast('Paciente creado'); })
       .catch(err => alert('Error: '+err.message));
   };
   window.eliminarPaciente = function(id) {
     if (!confirm('¿Eliminar este paciente?')) return;
-    db.collection('pacientes').doc(id).delete().then(() => { showToast('Eliminado'); renderPacientes(); });
+    db.collection('pacientes').doc(id).delete().then(() => showToast('Eliminado'));
   };
   window.editarPaciente = function(id) {
     db.collection('pacientes').doc(id).get().then(doc => {
@@ -664,10 +576,12 @@
     const email = $('f-pac-edit-email').value.trim();
     if (!nombre) return alert('Nombre requerido');
     db.collection('pacientes').doc(id).update({ nombre, apellido, telefono, email })
-      .then(() => { closeModal(); showToast('Actualizado'); renderPacientes(); });
+      .then(() => { closeModal(); showToast('Actualizado'); });
   };
 
-  // --- PROFESIONALES (similar a pacientes) ---
+  // ============================================================
+  // PROFESIONALES (CRUD)
+  // ============================================================
   function renderProfesionales() {
     const el = $('view-profesionales');
     el.innerHTML = `
@@ -676,7 +590,7 @@
       </div>
       <div class="card"><div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Especialidad</th><th>Email</th><th></th></tr></thead><tbody id="profesionales-list"></tbody></table></div></div>
     `;
-    db.collection('profesionales').orderBy('nombre').get().then(snap => {
+    db.collection('profesionales').orderBy('nombre').onSnapshot(snap => {
       const tbody = $('profesionales-list');
       tbody.innerHTML = '';
       snap.forEach(d => {
@@ -708,11 +622,11 @@
     const email = $('f-prof-email').value.trim();
     if (!nombre) return alert('Nombre requerido');
     db.collection('profesionales').add({ nombre, apellido, especialidad, email })
-      .then(() => { closeModal(); showToast('Profesional creado'); renderProfesionales(); });
+      .then(() => { closeModal(); showToast('Profesional creado'); });
   };
   window.eliminarProfesional = function(id) {
     if (!confirm('¿Eliminar?')) return;
-    db.collection('profesionales').doc(id).delete().then(() => { showToast('Eliminado'); renderProfesionales(); });
+    db.collection('profesionales').doc(id).delete().then(() => showToast('Eliminado'));
   };
   window.editarProfesional = function(id) {
     db.collection('profesionales').doc(id).get().then(doc => {
@@ -737,10 +651,12 @@
     const email = $('f-prof-edit-email').value.trim();
     if (!nombre) return alert('Nombre requerido');
     db.collection('profesionales').doc(id).update({ nombre, apellido, especialidad, email })
-      .then(() => { closeModal(); showToast('Actualizado'); renderProfesionales(); });
+      .then(() => { closeModal(); showToast('Actualizado'); });
   };
 
-  // --- LIQUIDACIONES (simplificado) ---
+  // ============================================================
+  // LIQUIDACIONES (simple)
+  // ============================================================
   function renderLiquidaciones() {
     const el = $('view-liquidaciones');
     el.innerHTML = `
@@ -749,7 +665,7 @@
       </div>
       <div class="card"><div id="liquidaciones-list"><p class="text-muted">Cargando...</p></div></div>
     `;
-    db.collection('liquidaciones').orderBy('fecha','desc').get().then(snap => {
+    db.collection('liquidaciones').orderBy('fecha','desc').onSnapshot(snap => {
       let html = '<div class="table-wrap"><table><thead><tr><th>Profesional</th><th>Período</th><th>Total</th><th>Fecha</th></tr></thead><tbody>';
       snap.forEach(d => {
         const data = d.data();
@@ -774,10 +690,12 @@
     const total = parseFloat($('f-liq-total').value);
     if (!profesional || !periodo || isNaN(total)) return alert('Completá todos los campos');
     db.collection('liquidaciones').add({ profesional, periodo, total, fecha: new Date().toISOString().slice(0,10) })
-      .then(() => { closeModal(); showToast('Liquidación guardada'); renderLiquidaciones(); });
+      .then(() => { closeModal(); showToast('Liquidación guardada'); });
   };
 
-  // --- AUTOMATIZACIONES (solo mostrar) ---
+  // ============================================================
+  // AUTOMATIZACIONES
+  // ============================================================
   function renderAutomatizaciones() {
     const el = $('view-automatizaciones');
     el.innerHTML = `
@@ -791,7 +709,7 @@
         <div id="auto-list"><p class="text-muted">Cargando...</p></div>
       </div>
     `;
-    db.collection('automatizaciones').get().then(snap => {
+    db.collection('automatizaciones').onSnapshot(snap => {
       let html = '';
       snap.forEach(d => {
         const data = d.data();
@@ -804,7 +722,9 @@
     });
   }
 
-  // --- CAJA ---
+  // ============================================================
+  // CAJA
+  // ============================================================
   function renderCaja() {
     const el = $('view-caja');
     el.innerHTML = `
@@ -813,7 +733,7 @@
       </div>
       <div class="card"><div id="pagos-list"><p class="text-muted">Cargando...</p></div></div>
     `;
-    db.collection('pagos').orderBy('fecha','desc').get().then(snap => {
+    db.collection('pagos').orderBy('fecha','desc').onSnapshot(snap => {
       let html = '<div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Monto</th><th>Método</th><th>Fecha</th></tr></thead><tbody>';
       snap.forEach(d => {
         const data = d.data();
@@ -838,10 +758,12 @@
     const metodo = $('f-pago-metodo').value;
     if (!paciente || isNaN(monto)) return alert('Completá todos los campos');
     db.collection('pagos').add({ paciente, monto, metodo, fecha: new Date().toISOString().slice(0,10) })
-      .then(() => { closeModal(); showToast('Pago registrado'); renderCaja(); });
+      .then(() => { closeModal(); showToast('Pago registrado'); });
   };
 
-  // --- PRESUPUESTOS (simplificado) ---
+  // ============================================================
+  // PRESUPUESTOS
+  // ============================================================
   function renderPresupuestos() {
     const el = $('view-presupuestos');
     el.innerHTML = `
@@ -850,7 +772,7 @@
       </div>
       <div class="card"><div id="presupuestos-list"><p class="text-muted">Cargando...</p></div></div>
     `;
-    db.collection('presupuestos').orderBy('fecha','desc').get().then(snap => {
+    db.collection('presupuestos').orderBy('fecha','desc').onSnapshot(snap => {
       let html = '<div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Total</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>';
       snap.forEach(d => {
         const data = d.data();
@@ -873,10 +795,12 @@
     const total = parseFloat($('f-pres-total').value);
     if (!paciente || isNaN(total)) return alert('Completá todos los campos');
     db.collection('presupuestos').add({ paciente, total, estado:'pendiente', fecha: new Date().toISOString().slice(0,10) })
-      .then(() => { closeModal(); showToast('Presupuesto creado'); renderPresupuestos(); });
+      .then(() => { closeModal(); showToast('Presupuesto creado'); });
   };
 
-  // --- PRODUCTIVIDAD (estático) ---
+  // ============================================================
+  // PRODUCTIVIDAD (estático)
+  // ============================================================
   function renderProductividad() {
     $('view-productividad').innerHTML = `
       <div class="page-header"><div><div class="page-title">Productividad</div><div class="page-subtitle">Rendimiento clínico</div></div></div>
@@ -890,7 +814,9 @@
     `;
   }
 
-  // --- OBRAS SOCIALES (CRUD básico) ---
+  // ============================================================
+  // OBRAS SOCIALES
+  // ============================================================
   function renderObrasSociales() {
     const el = $('view-obras_sociales');
     el.innerHTML = `
@@ -899,7 +825,7 @@
       </div>
       <div class="card"><div id="os-list"><p class="text-muted">Cargando...</p></div></div>
     `;
-    db.collection('obras_sociales').orderBy('nombre').get().then(snap => {
+    db.collection('obras_sociales').orderBy('nombre').onSnapshot(snap => {
       let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Código</th><th></th></tr></thead><tbody>';
       snap.forEach(d => {
         const data = d.data();
@@ -923,14 +849,16 @@
     const codigo = $('f-os-codigo').value.trim();
     if (!nombre) return alert('Nombre requerido');
     db.collection('obras_sociales').add({ nombre, codigo })
-      .then(() => { closeModal(); showToast('Guardado'); renderObrasSociales(); });
+      .then(() => { closeModal(); showToast('Guardado'); });
   };
   window.eliminarObraSocial = function(id) {
     if (!confirm('¿Eliminar?')) return;
-    db.collection('obras_sociales').doc(id).delete().then(() => { showToast('Eliminado'); renderObrasSociales(); });
+    db.collection('obras_sociales').doc(id).delete().then(() => showToast('Eliminado'));
   };
 
-  // --- LIQUIDACIONES OS (similar) ---
+  // ============================================================
+  // LIQUIDACIONES OS
+  // ============================================================
   function renderLiquidacionesOS() {
     $('view-liquidaciones_os').innerHTML = `
       <div class="page-header"><div><div class="page-title">Liquidaciones OS</div><div class="page-subtitle">Pendientes y cobradas</div></div>
@@ -940,7 +868,9 @@
     `;
   }
 
-  // --- INVENTARIO ---
+  // ============================================================
+  // INVENTARIO
+  // ============================================================
   function renderInventario() {
     const el = $('view-inventario');
     el.innerHTML = `
@@ -949,7 +879,7 @@
       </div>
       <div class="card"><div id="inventario-list"><p class="text-muted">Cargando...</p></div></div>
     `;
-    db.collection('inventario').orderBy('nombre').get().then(snap => {
+    db.collection('inventario').orderBy('nombre').onSnapshot(snap => {
       let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Stock</th><th>Precio</th><th></th></tr></thead><tbody>';
       snap.forEach(d => {
         const data = d.data();
@@ -975,14 +905,16 @@
     const precio = parseFloat($('f-inv-precio').value)||0;
     if (!nombre) return alert('Nombre requerido');
     db.collection('inventario').add({ nombre, stock, precio })
-      .then(() => { closeModal(); showToast('Producto guardado'); renderInventario(); });
+      .then(() => { closeModal(); showToast('Producto guardado'); });
   };
   window.eliminarProducto = function(id) {
     if (!confirm('¿Eliminar?')) return;
-    db.collection('inventario').doc(id).delete().then(() => { showToast('Eliminado'); renderInventario(); });
+    db.collection('inventario').doc(id).delete().then(() => showToast('Eliminado'));
   };
 
-  // --- PROVEEDORES (similar) ---
+  // ============================================================
+  // PROVEEDORES
+  // ============================================================
   function renderProveedores() {
     const el = $('view-proveedores');
     el.innerHTML = `
@@ -991,7 +923,7 @@
       </div>
       <div class="card"><div id="proveedores-list"><p class="text-muted">Cargando...</p></div></div>
     `;
-    db.collection('proveedores').orderBy('nombre').get().then(snap => {
+    db.collection('proveedores').orderBy('nombre').onSnapshot(snap => {
       let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Contacto</th><th></th></tr></thead><tbody>';
       snap.forEach(d => {
         const data = d.data();
@@ -1015,14 +947,16 @@
     const contacto = $('f-prov-contacto').value.trim();
     if (!nombre) return alert('Nombre requerido');
     db.collection('proveedores').add({ nombre, contacto })
-      .then(() => { closeModal(); showToast('Guardado'); renderProveedores(); });
+      .then(() => { closeModal(); showToast('Guardado'); });
   };
   window.eliminarProveedor = function(id) {
     if (!confirm('¿Eliminar?')) return;
-    db.collection('proveedores').doc(id).delete().then(() => { showToast('Eliminado'); renderProveedores(); });
+    db.collection('proveedores').doc(id).delete().then(() => showToast('Eliminado'));
   };
 
-  // --- TRATAMIENTOS (CRUD) ---
+  // ============================================================
+  // TRATAMIENTOS
+  // ============================================================
   function renderTratamientos() {
     const el = $('view-tratamientos');
     el.innerHTML = `
@@ -1031,7 +965,7 @@
       </div>
       <div class="card"><div id="tratamientos-list"><p class="text-muted">Cargando...</p></div></div>
     `;
-    db.collection('tratamientos').orderBy('nombre').get().then(snap => {
+    db.collection('tratamientos').orderBy('nombre').onSnapshot(snap => {
       let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Precio base</th><th>Duración</th><th></th></tr></thead><tbody>';
       snap.forEach(d => {
         const data = d.data();
@@ -1057,14 +991,16 @@
     const duracion = $('f-trat-duracion').value.trim();
     if (!nombre) return alert('Nombre requerido');
     db.collection('tratamientos').add({ nombre, precio_base, duracion })
-      .then(() => { closeModal(); showToast('Guardado'); renderTratamientos(); });
+      .then(() => { closeModal(); showToast('Guardado'); });
   };
   window.eliminarTratamiento = function(id) {
     if (!confirm('¿Eliminar?')) return;
-    db.collection('tratamientos').doc(id).delete().then(() => { showToast('Eliminado'); renderTratamientos(); });
+    db.collection('tratamientos').doc(id).delete().then(() => showToast('Eliminado'));
   };
 
-  // --- ESPECIALIDADES ---
+  // ============================================================
+  // ESPECIALIDADES
+  // ============================================================
   function renderEspecialidades() {
     const el = $('view-especialidades');
     el.innerHTML = `
@@ -1073,7 +1009,7 @@
       </div>
       <div class="card"><div id="especialidades-list"><p class="text-muted">Cargando...</p></div></div>
     `;
-    db.collection('especialidades').orderBy('nombre').get().then(snap => {
+    db.collection('especialidades').orderBy('nombre').onSnapshot(snap => {
       let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th></th></tr></thead><tbody>';
       snap.forEach(d => {
         const data = d.data();
@@ -1095,14 +1031,16 @@
     const nombre = $('f-esp-nombre').value.trim();
     if (!nombre) return alert('Nombre requerido');
     db.collection('especialidades').add({ nombre })
-      .then(() => { closeModal(); showToast('Guardado'); renderEspecialidades(); });
+      .then(() => { closeModal(); showToast('Guardado'); });
   };
   window.eliminarEspecialidad = function(id) {
     if (!confirm('¿Eliminar?')) return;
-    db.collection('especialidades').doc(id).delete().then(() => { showToast('Eliminado'); renderEspecialidades(); });
+    db.collection('especialidades').doc(id).delete().then(() => showToast('Eliminado'));
   };
 
-  // --- WEB (Landing) ---
+  // ============================================================
+  // WEB (Landing)
+  // ============================================================
   function renderWeb() {
     $('view-web').innerHTML = `
       <div class="page-header"><div><div class="page-title">Landing page</div><div class="page-subtitle">Configuración de la página pública</div></div></div>
@@ -1127,7 +1065,9 @@
       .then(() => showToast('Configuración guardada'));
   };
 
-  // --- WHATSAPP ---
+  // ============================================================
+  // WHATSAPP
+  // ============================================================
   function renderWhatsApp() {
     $('view-whatsapp').innerHTML = `
       <div class="page-header"><div><div class="page-title">WhatsApp</div><div class="page-subtitle">Configuración</div></div></div>
@@ -1155,7 +1095,9 @@
       .then(() => showToast('Configuración guardada'));
   };
 
-  // --- CONFIGURACIÓN (sucursales, zona horaria) ---
+  // ============================================================
+  // CONFIGURACIÓN (sucursales, zona horaria)
+  // ============================================================
   function renderConfiguracion() {
     $('view-configuracion').innerHTML = `
       <div class="page-header"><div><div class="page-title">Configuración</div><div class="page-subtitle">Sucursales y horarios</div></div></div>
@@ -1169,7 +1111,7 @@
       </div>
     `;
     // Cargar sucursales
-    db.collection('sucursales').orderBy('nombre').get().then(snap => {
+    db.collection('sucursales').orderBy('nombre').onSnapshot(snap => {
       let html = '<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Dirección</th><th></th></tr></thead><tbody>';
       snap.forEach(d => {
         const data = d.data();
@@ -1197,11 +1139,11 @@
     const direccion = $('f-suc-direccion').value.trim();
     if (!nombre) return alert('Nombre requerido');
     db.collection('sucursales').add({ nombre, direccion })
-      .then(() => { closeModal(); showToast('Guardado'); renderConfiguracion(); });
+      .then(() => { closeModal(); showToast('Guardado'); });
   };
   window.eliminarSucursal = function(id) {
     if (!confirm('¿Eliminar sucursal?')) return;
-    db.collection('sucursales').doc(id).delete().then(() => { showToast('Eliminado'); renderConfiguracion(); });
+    db.collection('sucursales').doc(id).delete().then(() => showToast('Eliminado'));
   };
   window.guardarConfiguracion = function() {
     const timezone = $('cfg-timezone').value;
@@ -1209,15 +1151,13 @@
       .then(() => showToast('Configuración guardada'));
   };
 
-  // --- INICIALIZAR ---
+  // ============================================================
+  // INICIALIZACIÓN
+  // ============================================================
   navigateTo('dashboard');
+  $('modal-generic').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 
-  // Cerrar modal al hacer clic fuera
-  $('modal-generic').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-  });
-
-  console.log('Panel DentalSoft iniciado con Firebase.');
+  console.log('Panel DentalSoft completo iniciado con Firebase.');
 </script>
 </body>
 </html>
