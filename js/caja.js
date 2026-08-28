@@ -3,7 +3,7 @@
 // ============================================================
 
 // ============================================================
-// RENDER CAJA PRINCIPAL
+// RENDER CAJA PRINCIPAL (LISTA DE PAGOS Y RESUMEN)
 // ============================================================
 function renderCaja() {
   const el = $('view-caja');
@@ -39,11 +39,11 @@ function renderCaja() {
         <div class="page-subtitle" id="caja-fecha-actual">${new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="#" class="btn btn-secondary" onclick="alert('Función en desarrollo')">Cierres de caja</a>
-        <a href="#" class="btn btn-secondary" onclick="alert('Función en desarrollo')">Realizar cierre</a>
+        <a href="#" class="btn btn-secondary" onclick="renderCierresView()">Cierres de caja</a>
+        <a href="#" class="btn btn-secondary" onclick="renderRealizarCierreView()">Realizar cierre</a>
         <a href="#" class="btn btn-secondary" onclick="renderPresupuestos()">Presupuestos</a>
-        <a href="#" class="btn btn-secondary" style="color:#dc2626;border-color:#fecaca;" onclick="alert('Función en desarrollo')">− Registrar egreso</a>
-        <a href="#" class="btn btn-primary" onclick="alert('Función en desarrollo')">+ Registrar pago</a>
+        <a href="#" class="btn btn-secondary" style="color:#dc2626;border-color:#fecaca;" onclick="renderRegistrarEgresoView()">− Registrar egreso</a>
+        <a href="#" class="btn btn-primary" onclick="renderRegistrarPagoView()">+ Registrar pago</a>
       </div>
     </div>
 
@@ -186,10 +186,9 @@ function calcularResumenes(pagos) {
 
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
 
-  // Filtrar pagos completados (no anulados)
-  const pagosValidos = pagos.filter(p => p.estado !== 'anulado');
+  // Filtrar pagos completados (no anulados) y solo ingresos (no egresos)
+  const pagosValidos = pagos.filter(p => p.estado !== 'anulado' && p.tipo !== 'egreso');
 
-  // Función para agrupar por método
   function agruparPorMetodo(pagosFiltrados) {
     const grupos = {};
     pagosFiltrados.forEach(p => {
@@ -294,7 +293,6 @@ window.aplicarFiltrosCaja = function() {
 
   let filtrados = _todosLosPagos || [];
 
-  // Filtro por fecha
   if (desde) {
     const desdeDate = new Date(desde);
     desdeDate.setHours(0, 0, 0, 0);
@@ -313,12 +311,10 @@ window.aplicarFiltrosCaja = function() {
     });
   }
 
-  // Filtro por método
   if (metodo) {
     filtrados = filtrados.filter(p => p.metodo === metodo);
   }
 
-  // Filtro por estado
   if (estado) {
     filtrados = filtrados.filter(p => p.estado === estado);
   }
@@ -327,9 +323,6 @@ window.aplicarFiltrosCaja = function() {
   renderTablaPagos(filtrados);
 };
 
-// ============================================================
-// LIMPIAR FILTROS
-// ============================================================
 window.limpiarFiltrosCaja = function() {
   document.getElementById('filtro-desde').value = '';
   document.getElementById('filtro-hasta').value = '';
@@ -403,9 +396,9 @@ function renderTablaPagos(pagos) {
     const estadoClase = estadoBadges[estado] || 'badge-gray';
     const estadoTexto = estadoTextos[estado] || estado;
     const esAnulado = estado === 'anulado';
+    const esEgreso = p.tipo === 'egreso';
 
-    // Mostrar botón anular solo si no está anulado
-    const btnAnular = !esAnulado ? `
+    const btnAnular = !esAnulado && !esEgreso ? `
       <button type="button" class="btn btn-sm"
         style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;"
         onclick="abrirAnular('${p.id}', '${paciente}', ${monto})">
@@ -413,7 +406,9 @@ function renderTablaPagos(pagos) {
       </button>
     ` : '';
 
-    // Fila de tabla
+    const signo = esEgreso ? '−' : '';
+    const colorMonto = esEgreso ? 'var(--danger)' : (esAnulado ? 'var(--text-muted)' : 'var(--text)');
+
     html += `
       <tr style="${esAnulado ? 'opacity:0.5;' : ''}">
         <td style="font-size:12px;white-space:nowrap;">${fecha}</td>
@@ -426,23 +421,22 @@ function renderTablaPagos(pagos) {
         </td>
         <td style="font-size:12px;color:var(--text-muted);">${comprobante}</td>
         <td style="font-size:12px;color:var(--text-muted);">${registradoPor}</td>
-        <td style="text-align:right;font-weight:700;white-space:nowrap;color:${esAnulado ? 'var(--text-muted)' : 'var(--text)'};">
-          ${esAnulado ? '−' : '$'}${Number(monto).toLocaleString()}
+        <td style="text-align:right;font-weight:700;white-space:nowrap;color:${colorMonto};">
+          ${signo}$${Number(monto).toLocaleString()}
         </td>
         <td><span class="badge ${estadoClase}">${estadoTexto}</span></td>
         <td>${btnAnular}</td>
       </tr>
     `;
 
-    // Lista mobile
     mobHTML += `
       <div style="padding:11px 14px;border-bottom:1px solid #f1f5f9;background:#fff;${esAnulado ? 'opacity:0.5;' : ''}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;">
           <div style="font-weight:600;font-size:14px;flex:1;min-width:0;padding-right:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
             ${paciente}
           </div>
-          <div style="font-weight:700;font-size:15px;white-space:nowrap;color:${esAnulado ? 'var(--text-muted)' : 'var(--text)'};flex-shrink:0;">
-            ${esAnulado ? '−' : '$'}${Number(monto).toLocaleString()}
+          <div style="font-weight:700;font-size:15px;white-space:nowrap;color:${colorMonto};flex-shrink:0;">
+            ${signo}$${Number(monto).toLocaleString()}
           </div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
@@ -517,5 +511,590 @@ window.confirmarAnular = function() {
 };
 
 // ============================================================
-// NOTA: Las funciones showToast, $, etc. deben estar definidas globalmente
+// VISTA: CIERRES DE CAJA (LISTA)
+// ============================================================
+window.renderCierresView = function() {
+  const el = $('view-caja');
+  el.innerHTML = `
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="#" class="btn btn-secondary btn-sm" onclick="renderCaja()">&larr; Volver</a>
+        <div>
+          <div class="page-title">Cierres de caja</div>
+          <div class="page-subtitle" id="cierres-count">Cargando...</div>
+        </div>
+      </div>
+      <a href="#" class="btn btn-primary" onclick="renderRealizarCierreView()">Nuevo cierre</a>
+    </div>
+    <div class="card">
+      <div id="cierres-list" style="padding:20px;text-align:center;color:var(--text-muted);">Cargando cierres...</div>
+    </div>
+  `;
+
+  // Cargar cierres desde Firestore
+  db.collection('cierres')
+    .orderBy('fecha_cierre', 'desc')
+    .get()
+    .then(snapshot => {
+      const list = document.getElementById('cierres-list');
+      if (snapshot.empty) {
+        list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">No hay cierres de caja registrados.</div>';
+        document.getElementById('cierres-count').textContent = '0 registros';
+        return;
+      }
+      const cierres = [];
+      snapshot.forEach(doc => cierres.push({ id: doc.id, ...doc.data() }));
+      document.getElementById('cierres-count').textContent = `${cierres.length} ${cierres.length === 1 ? 'registro' : 'registros'}`;
+
+      let html = `
+        <table class="table" style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">N°</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Fecha cierre</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Período</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Efectivo esperado</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Efectivo ingresado</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Diferencia</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Cerrado por</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;"></th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      cierres.forEach((c, index) => {
+        const fecha = c.fecha_cierre ? formatDateCaja(c.fecha_cierre) : '—';
+        const periodo = c.periodo || '—';
+        const efectivoEsperado = c.efectivo_esperado || 0;
+        const efectivoIngresado = c.efectivo_ingresado || 0;
+        const diff = efectivoIngresado - efectivoEsperado;
+        const diffColor = Math.abs(diff) < 0.01 ? 'var(--success)' : (diff < 0 ? 'var(--danger)' : 'var(--warning)');
+        const cerradoPor = c.cerrado_por || '—';
+        html += `
+          <tr>
+            <td style="font-weight:600;">${index + 1}</td>
+            <td>${fecha}</td>
+            <td>${periodo}</td>
+            <td style="text-align:right;">$${Number(efectivoEsperado).toLocaleString()}</td>
+            <td style="text-align:right;">$${Number(efectivoIngresado).toLocaleString()}</td>
+            <td style="text-align:right;font-weight:600;color:${diffColor};">${diff >= 0 ? '+' : ''}$${Number(diff).toLocaleString()}</td>
+            <td>${cerradoPor}</td>
+            <td>
+              <button class="btn btn-sm btn-secondary" onclick="alert('Ver detalle del cierre ${c.id}')">Ver</button>
+            </td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      list.innerHTML = html;
+    })
+    .catch(err => {
+      document.getElementById('cierres-list').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+    });
+};
+
+// ============================================================
+// VISTA: REALIZAR CIERRE DE CAJA
+// ============================================================
+window.renderRealizarCierreView = function() {
+  const el = $('view-caja');
+  el.innerHTML = `
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="#" class="btn btn-secondary btn-sm" onclick="renderCierresView()">&larr; Volver</a>
+        <div>
+          <div class="page-title">Realizar cierre de caja</div>
+          <div class="page-subtitle" id="cierre-subtitle">Cargando...</div>
+        </div>
+      </div>
+    </div>
+    <form id="form-cierre" onsubmit="event.preventDefault(); confirmarCierre()">
+      <div id="cierre-datos" style="text-align:center;padding:20px;color:var(--text-muted);">Cargando datos del cierre...</div>
+    </form>
+  `;
+
+  // Calcular totales de pagos no cerrados
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  db.collection('pagos')
+    .where('estado', '==', 'completado')
+    .where('tipo', '!=', 'egreso') // solo ingresos
+    .get()
+    .then(snapshot => {
+      const pagos = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (!data.cierre_id) { // solo no cerrados
+          pagos.push({ id: doc.id, ...data });
+        }
+      });
+
+      // Calcular efectivo esperado (suma de todos los pagos en efectivo)
+      const efectivoTotal = pagos
+        .filter(p => p.metodo === 'efectivo')
+        .reduce((sum, p) => sum + (p.monto || 0), 0);
+
+      // Agrupar otros métodos
+      const otros = {};
+      pagos.forEach(p => {
+        if (p.metodo !== 'efectivo') {
+          const key = p.metodo || 'otro';
+          if (!otros[key]) otros[key] = 0;
+          otros[key] += p.monto || 0;
+        }
+      });
+
+      const totalGeneral = pagos.reduce((sum, p) => sum + (p.monto || 0), 0);
+
+      // Generar HTML del formulario
+      const formHtml = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+          <!-- Efectivo -->
+          <div class="card">
+            <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text);">Efectivo</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
+              <span style="font-size:13px;color:#166534;font-weight:600;">Esperado en caja</span>
+              <span style="font-size:20px;font-weight:800;color:#166534;" id="efe-esperado">$${Number(efectivoTotal).toLocaleString()}</span>
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <label class="form-label">Efectivo contado físicamente</label>
+              <input type="number" name="efectivo_ingresado" id="efe-ingresado"
+                     class="form-control" step="0.01" min="0" value="${efectivoTotal}"
+                     oninput="calcDiferenciaCierre()" style="font-size:18px;font-weight:700;text-align:right;">
+            </div>
+            <div id="diferencia-box" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:8px;border:1px solid #e5e7eb;">
+              <span style="font-size:13px;color:var(--text-muted);font-weight:600;">Diferencia</span>
+              <span id="diferencia-val" style="font-size:18px;font-weight:800;">$0</span>
+            </div>
+          </div>
+
+          <!-- Otros métodos -->
+          <div class="card">
+            <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text);">Otros métodos de pago</div>
+            ${Object.entries(otros).length === 0 ? '<div style="color:var(--text-muted);font-size:13px;">No hay pagos con otros métodos.</div>' : ''}
+            ${Object.entries(otros).map(([metodo, monto]) => {
+              const nombres = { 'tarjeta_credito': 'Tarjeta crédito', 'tarjeta_debito': 'Tarjeta débito', 'transferencia': 'Transferencia', 'mercadopago': 'MercadoPago', 'obra_social': 'Obra social', 'otro': 'Otro' };
+              return `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface);border-radius:6px;margin-bottom:6px;">
+                  <div style="font-size:13px;color:var(--text);">${nombres[metodo] || metodo}</div>
+                  <div style="text-align:right;">
+                    <div style="font-size:15px;font-weight:700;color:var(--text);">$${Number(monto).toLocaleString()}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">${pagos.filter(p => p.metodo === metodo).length} pago(s)</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
+              <span style="font-size:13px;font-weight:600;color:var(--text-muted);">Total otros</span>
+              <span style="font-size:15px;font-weight:700;color:var(--text);" id="total-otros">$${Number(totalGeneral - efectivoTotal).toLocaleString()}</span>
+            </div>
+            <div style="margin-top:14px;padding:10px 12px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:13px;font-weight:700;color:#1d4ed8;">Total general</span>
+              <span style="font-size:20px;font-weight:800;color:#1d4ed8;" id="total-general">$${Number(totalGeneral).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Observaciones (opcional)</label>
+            <textarea name="observaciones" id="obs-cierre" class="form-control" rows="3" placeholder="Notas sobre este cierre…"></textarea>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <a href="#" class="btn btn-secondary" onclick="renderCierresView()">Cancelar</a>
+          <button type="submit" class="btn btn-primary" style="background:#16a34a;border-color:#16a34a;">Confirmar cierre de caja</button>
+        </div>
+
+        <!-- Registros incluidos -->
+        <div class="card" style="margin-top:24px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text);">
+            Registros que serán contemplados en este cierre
+            <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(${pagos.length} pagos)</span>
+          </div>
+          ${pagos.length === 0 ? '<div style="text-align:center;color:var(--text-muted);">No hay pagos pendientes de cierre.</div>' : `
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Paciente</th>
+                <th>Método</th>
+                <th>Comprobante</th>
+                <th>Registrado por</th>
+                <th style="text-align:right;">Monto</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pagos.map(p => `
+                <tr>
+                  <td style="font-size:12px;white-space:nowrap;">${formatDateCaja(p.fecha)}</td>
+                  <td>${p.paciente || '—'}</td>
+                  <td>${p.metodo || 'otro'}</td>
+                  <td style="font-size:12px;color:var(--text-muted);">${p.comprobante || ''}</td>
+                  <td style="font-size:12px;color:var(--text-muted);">${p.registrado_por || '—'}</td>
+                  <td style="text-align:right;font-weight:700;">$${Number(p.monto).toLocaleString()}</td>
+                  <td><span class="badge badge-green">Completado</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          `}
+        </div>
+      `;
+
+      document.getElementById('cierre-datos').innerHTML = formHtml;
+      document.getElementById('cierre-subtitle').textContent = `Primer cierre — todos los movimientos acumulados (${pagos.length} pagos)`;
+
+      // Almacenar datos para el guardado
+      window._cierrePagos = pagos;
+      window._cierreEfectivoEsperado = efectivoTotal;
+      window._cierreOtros = otros;
+      calcDiferenciaCierre();
+    })
+    .catch(err => {
+      document.getElementById('cierre-datos').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+    });
+};
+
+// ============================================================
+// CALCULAR DIFERENCIA EN CIERRE
+// ============================================================
+function calcDiferenciaCierre() {
+  const esperado = window._cierreEfectivoEsperado || 0;
+  const ingresado = parseFloat(document.getElementById('efe-ingresado').value) || 0;
+  const diff = ingresado - esperado;
+  const box = document.getElementById('diferencia-box');
+  const val = document.getElementById('diferencia-val');
+
+  val.textContent = (diff >= 0 ? '+' : '') + '$' + Math.abs(diff).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  if (Math.abs(diff) < 0.01) {
+    box.style.background = '#f0fdf4';
+    box.style.borderColor = '#bbf7d0';
+    val.style.color = '#166534';
+  } else if (diff < 0) {
+    box.style.background = '#fef2f2';
+    box.style.borderColor = '#fecaca';
+    val.style.color = '#dc2626';
+  } else {
+    box.style.background = '#fffbeb';
+    box.style.borderColor = '#fde68a';
+    val.style.color = '#92400e';
+  }
+}
+
+// ============================================================
+// CONFIRMAR Y GUARDAR CIERRE
+// ============================================================
+window.confirmarCierre = function() {
+  if (!confirm('¿Confirmar el cierre de caja? Los totales se reiniciarán a 0.')) return;
+
+  const efectivoIngresado = parseFloat(document.getElementById('efe-ingresado').value) || 0;
+  const observaciones = document.getElementById('obs-cierre').value || '';
+  const pagos = window._cierrePagos || [];
+  const efectivoEsperado = window._cierreEfectivoEsperado || 0;
+
+  // Datos del cierre
+  const cierreData = {
+    fecha_cierre: new Date().toISOString(),
+    periodo: new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }),
+    efectivo_esperado: efectivoEsperado,
+    efectivo_ingresado: efectivoIngresado,
+    otros_metodos: window._cierreOtros || {},
+    observaciones: observaciones,
+    cerrado_por: 'Admin', // Podrías obtener del usuario actual
+    created_at: new Date().toISOString()
+  };
+
+  // Guardar cierre
+  db.collection('cierres').add(cierreData)
+    .then(docRef => {
+      // Actualizar cada pago con el cierre_id
+      const promises = pagos.map(p => {
+        return db.collection('pagos').doc(p.id).update({
+          cierre_id: docRef.id,
+          updated_at: new Date().toISOString()
+        });
+      });
+      return Promise.all(promises);
+    })
+    .then(() => {
+      showToast('✅ Cierre de caja realizado correctamente.');
+      renderCierresView(); // volver a lista de cierres
+    })
+    .catch(err => {
+      alert('❌ Error al guardar el cierre: ' + err.message);
+    });
+};
+
+// ============================================================
+// VISTA: REGISTRAR EGRESO
+// ============================================================
+window.renderRegistrarEgresoView = function() {
+  const el = $('view-caja');
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Registrar egreso</div>
+        <div class="page-subtitle">Salida de dinero de caja</div>
+      </div>
+      <a href="#" class="btn btn-secondary" onclick="renderCaja()">← Volver</a>
+    </div>
+    <form id="form-egreso" onsubmit="event.preventDefault(); guardarEgreso()">
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;">
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;">Datos del egreso</div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="form-group">
+              <label class="form-label">Concepto *</label>
+              <input type="text" name="concepto" id="egreso-concepto" class="form-control" placeholder="Ej: Materiales, Alquiler, Sueldos…" required>
+            </div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Monto *</label>
+                <div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+                  <span style="padding:8px 10px;background:#fef2f2;color:#dc2626;font-size:13px;font-weight:700;border-right:1px solid var(--border);">−$</span>
+                  <input type="number" name="monto" id="egreso-monto" step="0.01" min="0.01" style="border:none;padding:8px 10px;flex:1;outline:none;font-size:13px;" placeholder="0.00" required>
+                </div>
+                <span class="form-hint">Ingresá el monto positivo — se registrará como salida</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha *</label>
+                <input type="date" name="fecha_pago" id="egreso-fecha" class="form-control" value="${new Date().toISOString().slice(0,10)}" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Método de pago *</label>
+              <select name="metodo_pago" id="egreso-metodo" class="form-control" required>
+                <option value="">— Seleccionar —</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="tarjeta_credito">Tarjeta crédito</option>
+                <option value="tarjeta_debito">Tarjeta débito</option>
+                <option value="mercadopago">MercadoPago</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nro. comprobante</label>
+              <input type="text" name="numero_comprobante" id="egreso-comprobante" class="form-control" placeholder="Factura, recibo, etc.">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notas</label>
+              <textarea name="notas" id="egreso-notas" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <button type="submit" class="btn btn-block" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-weight:700;">− Registrar egreso</button>
+          <a href="#" class="btn btn-secondary btn-block" style="text-align:center;" onclick="renderCaja()">Cancelar</a>
+          <div class="card" style="margin-top:4px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">¿Qué es un egreso?</div>
+            <div style="font-size:13px;line-height:1.7;color:var(--text-muted);">
+              <p>Un egreso es una salida de dinero de la caja, no vinculada a un paciente.</p>
+              <p style="margin-top:8px;">Ejemplos: compra de materiales, pago de servicios, alquiler, sueldos, etc.</p>
+              <p style="margin-top:8px;">Se registra con monto negativo y afecta el total de caja.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  `;
+};
+
+// ============================================================
+// GUARDAR EGRESO
+// ============================================================
+window.guardarEgreso = function() {
+  const concepto = document.getElementById('egreso-concepto').value.trim();
+  const monto = parseFloat(document.getElementById('egreso-monto').value);
+  const fecha = document.getElementById('egreso-fecha').value;
+  const metodo = document.getElementById('egreso-metodo').value;
+  const comprobante = document.getElementById('egreso-comprobante').value.trim();
+  const notas = document.getElementById('egreso-notas').value.trim();
+
+  if (!concepto) { alert('Ingresa el concepto.'); return; }
+  if (!monto || monto <= 0) { alert('Ingresa un monto válido.'); return; }
+  if (!fecha) { alert('Selecciona una fecha.'); return; }
+  if (!metodo) { alert('Selecciona un método de pago.'); return; }
+
+  const data = {
+    tipo: 'egreso',
+    concepto: concepto,
+    monto: monto, // se guarda positivo, pero se mostrará con signo negativo
+    fecha: fecha,
+    metodo: metodo,
+    comprobante: comprobante,
+    notas: notas,
+    estado: 'completado',
+    registrado_por: 'Admin', // Podrías obtener del usuario actual
+    paciente: '—', // No aplica
+    created_at: new Date().toISOString()
+  };
+
+  db.collection('pagos').add(data)
+    .then(() => {
+      showToast('✅ Egreso registrado correctamente.');
+      renderCaja(); // volver a caja
+    })
+    .catch(err => {
+      alert('❌ Error al registrar egreso: ' + err.message);
+    });
+};
+
+// ============================================================
+// VISTA: REGISTRAR PAGO
+// ============================================================
+window.renderRegistrarPagoView = function() {
+  const el = $('view-caja');
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Registrar pago</div>
+        <div class="page-subtitle">Nuevo ingreso en caja</div>
+      </div>
+      <a href="#" class="btn btn-secondary" onclick="renderCaja()">← Volver</a>
+    </div>
+    <form id="form-pago" onsubmit="event.preventDefault(); guardarPago()">
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;">Datos del pago</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div class="form-group">
+                <label class="form-label">Paciente *</label>
+                <select name="paciente_id" id="pago-paciente" class="form-control" required>
+                  <option value="">— Seleccionar paciente —</option>
+                </select>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Monto *</label>
+                  <div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+                    <span style="padding:8px 10px;background:var(--bg);color:var(--text-muted);font-size:13px;border-right:1px solid var(--border);">$</span>
+                    <input type="number" name="monto" id="pago-monto" step="0.01" min="0.01" style="border:none;padding:8px 10px;flex:1;outline:none;font-size:13px;" placeholder="0.00" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Fecha *</label>
+                  <input type="date" name="fecha_pago" id="pago-fecha" class="form-control" value="${new Date().toISOString().slice(0,10)}" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Método de pago *</label>
+                <select name="metodo_pago" id="pago-metodo" class="form-control" required>
+                  <option value="">— Seleccionar —</option>
+                  <option value="efectivo">Efectivo</option>
+                  <option value="tarjeta_credito">Tarjeta crédito</option>
+                  <option value="tarjeta_debito">Tarjeta débito</option>
+                  <option value="transferencia">Transferencia</option>
+                  <option value="mercadopago">MercadoPago</option>
+                  <option value="obra_social">Obra social</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nro. comprobante</label>
+                <input type="text" name="numero_comprobante" id="pago-comprobante" class="form-control" placeholder="Factura, recibo, etc.">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Notas</label>
+                <textarea name="notas" id="pago-notas" class="form-control" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">Vinculación (opcional)</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="form-group">
+                <label class="form-label">ID Turno</label>
+                <input type="number" name="turno_id" id="pago-turno" class="form-control" placeholder="Nro. turno">
+                <span class="form-hint">Dejá vacío si no aplica</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">ID Presupuesto</label>
+                <input type="number" name="presupuesto_id" id="pago-presupuesto" class="form-control" placeholder="Nro. presupuesto">
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Registrar pago</button>
+          <a href="#" class="btn btn-secondary btn-block" style="text-align:center;" onclick="renderCaja()">Cancelar</a>
+        </div>
+      </div>
+    </form>
+  `;
+
+  // Cargar pacientes en el select
+  db.collection('pacientes').orderBy('nombre').get()
+    .then(snapshot => {
+      const select = document.getElementById('pago-paciente');
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
+        const option = document.createElement('option');
+        option.value = doc.id;
+        option.textContent = `${nombre} (PAC-${String(doc.id).slice(0,6).toUpperCase()})`;
+        select.appendChild(option);
+      });
+    })
+    .catch(err => console.error('Error cargando pacientes:', err));
+};
+
+// ============================================================
+// GUARDAR PAGO
+// ============================================================
+window.guardarPago = function() {
+  const pacienteId = document.getElementById('pago-paciente').value;
+  const monto = parseFloat(document.getElementById('pago-monto').value);
+  const fecha = document.getElementById('pago-fecha').value;
+  const metodo = document.getElementById('pago-metodo').value;
+  const comprobante = document.getElementById('pago-comprobante').value.trim();
+  const notas = document.getElementById('pago-notas').value.trim();
+  const turnoId = document.getElementById('pago-turno').value.trim();
+  const presupuestoId = document.getElementById('pago-presupuesto').value.trim();
+
+  if (!pacienteId) { alert('Selecciona un paciente.'); return; }
+  if (!monto || monto <= 0) { alert('Ingresa un monto válido.'); return; }
+  if (!fecha) { alert('Selecciona una fecha.'); return; }
+  if (!metodo) { alert('Selecciona un método de pago.'); return; }
+
+  // Obtener nombre del paciente
+  const select = document.getElementById('pago-paciente');
+  const pacienteNombre = select.options[select.selectedIndex].text;
+
+  const data = {
+    tipo: 'ingreso',
+    paciente_id: pacienteId,
+    paciente: pacienteNombre,
+    monto: monto,
+    fecha: fecha,
+    metodo: metodo,
+    comprobante: comprobante,
+    notas: notas,
+    turno_id: turnoId || null,
+    presupuesto_id: presupuestoId || null,
+    estado: 'completado',
+    registrado_por: 'Admin', // Podrías obtener del usuario actual
+    created_at: new Date().toISOString()
+  };
+
+  db.collection('pagos').add(data)
+    .then(() => {
+      showToast('✅ Pago registrado correctamente.');
+      renderCaja();
+    })
+    .catch(err => {
+      alert('❌ Error al registrar pago: ' + err.message);
+    });
+};
+
+// ============================================================
+// NOTA: Las funciones showToast, $, db deben estar definidas globalmente
 // ============================================================
