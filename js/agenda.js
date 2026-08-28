@@ -1,49 +1,14 @@
 // ============================================================
-// CONFIGURACIÓN DE FIREBASE (importaciones)
+// AGENDA.JS (compat, sin importaciones)
 // ============================================================
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import {
-  getFirestore,
-  collection,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  serverTimestamp
-} from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
 
-// Tu configuración de Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyCsTQoWZnMmcYwt2vjRQUPNUOKbHj3ZKqA",
-  authDomain: "clinicadental1.firebaseapp.com",
-  projectId: "clinicadental1",
-  storageBucket: "clinicadental1.firebasestorage.app",
-  messagingSenderId: "85943745725",
-  appId: "1:85943745725:web:65e02bdb2c5abee1e2cbd4",
-  measurementId: "G-74CV5LL9F7"
-};
-
-// Inicializar Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-// ============================================================
-// CONFIGURACIÓN DE LA AGENDA (igual que el HTML original)
-// ============================================================
+// ─── Configuración ────────────────────────────────────────────
 const HORA_INICIO = 8;
 const HORA_FIN = 20;
 const PX_POR_HORA = 128;
 const SLOT_MINUTOS = 15;
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const MESES_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-
 const ESTADOS_LABELS = {
   pendiente: 'Pendiente',
   confirmado: 'Confirmado',
@@ -62,7 +27,6 @@ const ESTADOS_COLORS = {
   cancelado: '#9ca3af',
   ausente: '#dc2626'
 };
-
 const PLANTILLAS_WA = {
   confirmacion: {
     label: '✅ Confirmación de turno',
@@ -79,40 +43,31 @@ const PLANTILLAS_WA = {
 };
 const DS_TENANT_NOMBRE = "Clínica Dental Demo";
 
-// ============================================================
-// VARIABLES DE ESTADO
-// ============================================================
+// ─── Estado global ────────────────────────────────────────────
 let turnos = [];
 let odontologoActual = null;
 let esOdontologo = false;
 let fechaActual = new Date();
 let semanaInicio = obtenerLunes(fechaActual);
-
 let dragTurnoId = null;
 let dragOriginal = null;
 let pendingMover = null;
-
 let _rzEl = null;
 let _rzStartY = 0;
 let _rzOrigDur = 0;
 let _rzPending = 0;
 let _rzMoved = false;
 let _rzPaciente = '';
-
 let _reprogData = null;
 let TURNO_EN_ATENCION = null;
-
 let unsubscribeTurnos = null;
 let unsubscribeAtencion = null;
-
 let currentPopupData = null;
 let _delUrl = '';
 let _cacNuevoId = null;
 let _cacNuevoPaciente = null;
 
-// ============================================================
-// FUNCIONES AUXILIARES
-// ============================================================
+// ─── Auxiliares ──────────────────────────────────────────────
 function obtenerLunes(fecha) {
   const dia = fecha.getDay();
   const diff = fecha.getDate() - dia + (dia === 0 ? -6 : 1);
@@ -161,19 +116,24 @@ function _esMobile() {
 }
 
 function showToast(msg, type) {
-  if (typeof notify === 'function') {
-    notify(msg, type || 'warning');
+  if (typeof window.showToast === 'function') {
+    window.showToast(msg, type);
   } else {
     alert(msg);
   }
 }
 
-// ============================================================
-// RENDERIZADO DE LA AGENDA
-// ============================================================
+// ─── Renderizado de la agenda ──────────────────────────────
 function renderizarAgenda() {
   const wrap = document.getElementById('cal-wrap');
   if (!wrap) return;
+
+  const inicio = new Date(semanaInicio);
+  const fin = new Date(semanaInicio);
+  fin.setDate(fin.getDate() + 6);
+  document.getElementById('semana-label').textContent =
+    inicio.toLocaleDateString('es-AR', {day:'numeric', month:'short', year:'numeric'}) +
+    ' – ' + fin.toLocaleDateString('es-AR', {day:'numeric', month:'short', year:'numeric'});
 
   const fechas = [];
   for (let i = 0; i < 7; i++) {
@@ -216,7 +176,6 @@ function renderizarAgenda() {
     const claseCol = esHoy ? ' style="background:#fafeff"' : '';
     html += `<div class="cal-col" data-fecha="${fecha}" data-col-idx="${i}" style="position:relative;height:1536px;border-left:1px solid var(--border);${claseCol}">`;
 
-    // Fondo alternado
     const totalSlots = (HORA_FIN - HORA_INICIO) * 60 / SLOT_MINUTOS;
     for (let slot = 0; slot < totalSlots; slot++) {
       const top = slot * (PX_POR_HORA * SLOT_MINUTOS / 60);
@@ -225,13 +184,11 @@ function renderizarAgenda() {
       }
     }
 
-    // Líneas de hora
     for (let h = HORA_INICIO; h <= HORA_FIN; h++) {
       const top = (h - HORA_INICIO) * PX_POR_HORA;
       const border = h === HORA_INICIO ? 'transparent' : '#dde8f0';
       html += `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:1px solid ${border};pointer-events:none;z-index:1"></div>`;
     }
-    // Líneas de sub-slot
     for (let slot = 1; slot < totalSlots; slot++) {
       const top = slot * (PX_POR_HORA * SLOT_MINUTOS / 60);
       if (slot % 4 !== 0) {
@@ -239,10 +196,8 @@ function renderizarAgenda() {
       }
     }
 
-    // Zona click para crear turno
     html += `<div class="day-create-link" data-fecha="${fecha}" data-odontologo="0" style="position:absolute;inset:0;z-index:2;cursor:pointer" title="Crear turno"></div>`;
 
-    // Turnos
     const turnosDelDia = turnos.filter(t => t.fecha === fecha);
     turnosDelDia.forEach(turno => {
       const durSlots = Math.round(turno.duracion / SLOT_MINUTOS);
@@ -310,38 +265,29 @@ function renderizarAgenda() {
   updateNowLine();
 }
 
-// ============================================================
-// CARGA DE DATOS DESDE FIRESTORE
-// ============================================================
+// ─── Carga de datos desde Firestore ─────────────────────────
 function cargarTurnosSemana(fechaInicio) {
   if (unsubscribeTurnos) {
     unsubscribeTurnos();
     unsubscribeTurnos = null;
   }
 
+  const db = firebase.firestore(); // Obtener instancia local
   const inicioStr = formatearFecha(fechaInicio);
   const fin = new Date(fechaInicio);
   fin.setDate(fin.getDate() + 7);
-  const finStr = formatearFecha(fin);
 
-  const q = query(
-    collection(db, 'turnos'),
-    where('fecha', '>=', inicioStr),
-    where('fecha', '<', finStr),
-    orderBy('fecha'),
-    orderBy('hora')
-  );
+  const q = db.collection('turnos')
+    .where('fecha', '>=', inicioStr)
+    .where('fecha', '<', formatearFecha(fin))
+    .orderBy('fecha')
+    .orderBy('hora');
 
-  unsubscribeTurnos = onSnapshot(q, (snapshot) => {
+  unsubscribeTurnos = q.onSnapshot((snapshot) => {
     turnos = [];
     snapshot.forEach(doc => {
       const data = doc.data();
-      turnos.push({
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate?.() || null,
-        updatedAt: data.updatedAt?.toDate?.() || null
-      });
+      turnos.push({ id: doc.id, ...data });
     });
     renderizarAgenda();
   }, (error) => {
@@ -355,17 +301,15 @@ function cargarAtencionActual() {
     unsubscribeAtencion();
     unsubscribeAtencion = null;
   }
-
   if (!odontologoActual) return;
 
-  const q = query(
-    collection(db, 'turnos'),
-    where('odontologoId', '==', odontologoActual),
-    where('estado', '==', 'en_atencion'),
-    limit(1)
-  );
+  const db = firebase.firestore();
+  const q = db.collection('turnos')
+    .where('odontologoId', '==', odontologoActual)
+    .where('estado', '==', 'en_atencion')
+    .limit(1);
 
-  unsubscribeAtencion = onSnapshot(q, (snapshot) => {
+  unsubscribeAtencion = q.onSnapshot((snapshot) => {
     if (!snapshot.empty) {
       const doc = snapshot.docs[0];
       const data = doc.data();
@@ -383,7 +327,7 @@ function actualizarPanelAtencion() {
   const panel = document.getElementById('atencion-panel');
   if (!panel) return;
   if (TURNO_EN_ATENCION) {
-    panel.style.display = 'inline-flex';
+    panel.style.display = 'flex';
     document.getElementById('ap-paciente').textContent = TURNO_EN_ATENCION.paciente;
     document.getElementById('ap-hora').textContent = '';
     document.getElementById('ap-btn').onclick = function() {
@@ -396,9 +340,10 @@ function actualizarPanelAtencion() {
 
 function finalizarAtencion(id) {
   if (!id) return;
-  updateDoc(doc(db, 'turnos', id), {
+  const db = firebase.firestore();
+  db.collection('turnos').doc(id).update({
     estado: 'finalizado',
-    updatedAt: serverTimestamp()
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
     showToast('Atención finalizada', 'success');
   }).catch(err => {
@@ -407,9 +352,7 @@ function finalizarAtencion(id) {
   });
 }
 
-// ============================================================
-// EVENTOS Y LISTENERS
-// ============================================================
+// ─── Eventos y listeners ─────────────────────────────────────
 function attachAgendaListeners() {
   // Click en turno
   document.querySelectorAll('.turno-block').forEach(el => {
@@ -570,9 +513,7 @@ function _rzUp() {
   document.getElementById('confirm-resize-overlay').style.display = 'flex';
 }
 
-// ============================================================
-// POPUP DE TURNO
-// ============================================================
+// ─── Popup ────────────────────────────────────────────────────
 function mostrarPopupTurno(d, elemento) {
   const popup = document.getElementById('turno-popup');
   if (!popup) return;
@@ -675,9 +616,7 @@ function closePopup() {
   document.getElementById('tp-wa-menu').style.display = 'none';
 }
 
-// ============================================================
-// FUNCIONES GLOBALES (llamadas desde onclick en el HTML)
-// ============================================================
+// ─── Funciones globales (expuestas en window) ──────────────
 
 window.cambiarEstado = function(turnoId, estado) {
   if (estado === 'en_atencion' && TURNO_EN_ATENCION && TURNO_EN_ATENCION.id !== turnoId) {
@@ -685,9 +624,10 @@ window.cambiarEstado = function(turnoId, estado) {
     if (turno) abrirConflictoAtencion(turnoId, turno.pacienteNombre);
     return;
   }
-  updateDoc(doc(db, 'turnos', turnoId), {
+  const db = firebase.firestore();
+  db.collection('turnos').doc(turnoId).update({
     estado: estado,
-    updatedAt: serverTimestamp()
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
     showToast(`Estado cambiado a ${ESTADOS_LABELS[estado] || estado}`, 'success');
     closePopup();
@@ -714,7 +654,8 @@ window.cerrarEliminar = function() {
 window.ejecutarEliminar = function() {
   if (!_delUrl) return;
   const id = _delUrl.split('/').pop();
-  deleteDoc(doc(db, 'turnos', id))
+  const db = firebase.firestore();
+  db.collection('turnos').doc(id).delete()
     .then(() => {
       showToast('Turno eliminado', 'success');
       window.cerrarEliminar();
@@ -818,10 +759,11 @@ window.confirmarMover = function() {
   const { turnoId, fecha, hora } = pendingMover;
   const [hh, mm] = hora.split(':').map(Number);
   const horaNum = hh + mm/60;
-  updateDoc(doc(db, 'turnos', turnoId), {
+  const db = firebase.firestore();
+  db.collection('turnos').doc(turnoId).update({
     fecha: fecha,
     hora: horaNum,
-    updatedAt: serverTimestamp()
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
     showToast('Turno movido correctamente', 'success');
     pendingMover = null;
@@ -847,9 +789,10 @@ window.confirmarResize = function() {
   const id = _rzEl.dataset.id;
   const newDur = _rzPending;
   _rzEl = null;
-  updateDoc(doc(db, 'turnos', id), {
+  const db = firebase.firestore();
+  db.collection('turnos').doc(id).update({
     duracion: newDur,
-    updatedAt: serverTimestamp()
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
     showToast('Duración actualizada', 'success');
   }).catch(err => {
@@ -894,13 +837,14 @@ window.finalizarYAtender = function() {
   const nuevoId = _cacNuevoId;
   _cacNuevoId = null;
   _cacNuevoPaciente = null;
-  updateDoc(doc(db, 'turnos', idFinalizar), {
+  const db = firebase.firestore();
+  db.collection('turnos').doc(idFinalizar).update({
     estado: 'finalizado',
-    updatedAt: serverTimestamp()
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
-    return updateDoc(doc(db, 'turnos', nuevoId), {
+    return db.collection('turnos').doc(nuevoId).update({
       estado: 'en_atencion',
-      updatedAt: serverTimestamp()
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }).then(() => {
     showToast('Atención iniciada', 'success');
@@ -910,9 +854,7 @@ window.finalizarYAtender = function() {
   });
 };
 
-// ============================================================
-// LÍNEA DE HORA ACTUAL
-// ============================================================
+// ─── Línea de hora actual ────────────────────────────────────
 function updateNowLine() {
   const line = document.getElementById('now-line');
   if (!line) return;
@@ -923,17 +865,33 @@ function updateNowLine() {
 }
 setInterval(updateNowLine, 60000);
 
-// ============================================================
-// INICIALIZACIÓN (expuesta como renderAgenda)
-// ============================================================
-function init() {
-  onAuthStateChanged(auth, (user) => {
+// ─── Navegación entre semanas ────────────────────────────────
+window.cambiarSemana = function(delta) {
+  semanaInicio.setDate(semanaInicio.getDate() + delta * 7);
+  cargarTurnosSemana(semanaInicio);
+};
+
+window.irHoy = function() {
+  semanaInicio = obtenerLunes(new Date());
+  cargarTurnosSemana(semanaInicio);
+};
+
+// ─── Inicialización ──────────────────────────────────────────
+window.renderAgenda = function() {
+  if (unsubscribeTurnos) {
+    renderizarAgenda();
+  } else {
+    initAgenda();
+  }
+};
+
+function initAgenda() {
+  firebase.auth().onAuthStateChanged(function(user) {
     if (user) {
       odontologoActual = user.uid;
-      esOdontologo = false; // Cambia según tu lógica de roles
+      esOdontologo = false;
       cargarTurnosSemana(semanaInicio);
       cargarAtencionActual();
-      // Restaurar modo reprogramación
       try {
         const stored = JSON.parse(sessionStorage.getItem('ds_reprog'));
         if (stored) {
@@ -956,34 +914,15 @@ function init() {
   });
 }
 
-// Exponer la función para que navigation.js pueda llamarla
-window.renderAgenda = function() {
-  // Si ya está inicializado, solo refrescar
-  if (unsubscribeTurnos) {
-    renderizarAgenda();
-  } else {
-    init();
-  }
-};
-
-// Si el DOM ya está cargado, inicializar automáticamente
+// Si el DOM ya está cargado, esperar un poco para que navigation.js cargue
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    // No llamamos a init aquí, esperamos que navigation.js llame a renderAgenda
-    // Pero si no se llama, podemos hacerlo de forma segura después de un tiempo
-    // Para evitar duplicados, comprobamos si ya hay listeners
-    if (!unsubscribeTurnos) {
-      // Podemos iniciar en segundo plano
-      setTimeout(() => {
-        if (!unsubscribeTurnos) init();
-      }, 100);
-    }
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      if (!unsubscribeTurnos) initAgenda();
+    }, 300);
   });
 } else {
-  // Si el DOM ya está cargado y no se ha iniciado, iniciar
-  if (!unsubscribeTurnos) {
-    setTimeout(() => {
-      if (!unsubscribeTurnos) init();
-    }, 100);
-  }
+  setTimeout(function() {
+    if (!unsubscribeTurnos) initAgenda();
+  }, 300);
 }
