@@ -2,7 +2,7 @@
 // TRATAMIENTOS
 // ============================================================
 let filterCategoria = 'Todos';
-let filterEstado = 'Todos';
+let filterEstadoTratamientos = 'Todos'; // ← Renombrada para evitar conflicto
 let filterAgendaVirtual = false;
 let allTratamientosData = [];
 
@@ -26,7 +26,7 @@ function renderTratamientos() {
       <button class="btn btn-sm btn-primary" data-filter="Todos" onclick="setFilterEstado('Todos')">Todos</button>
       <button class="btn btn-sm btn-secondary" data-filter="Activos" onclick="setFilterEstado('Activos')">Activos</button>
       <button class="btn btn-sm btn-secondary" data-filter="Inactivos" onclick="setFilterEstado('Inactivos')">Inactivos</button>
-      <button class="btn btn-sm btn-secondary" data-filter="AgendaVirtual" onclick="toggleAgendaVirtual()" style="border-color:var(--accent-light,#b3d9f0);">
+      <button class="btn btn-sm btn-secondary" data-filter="AgendaVirtual" onclick="toggleAgendaVirtual()" style="border-color:var(--accent-light);">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:3px;"><rect x="3" y="3" width="18" height="14" rx="3"/><path d="M8 21l4-4 4 4"/></svg>
         Agenda virtual
       </button>
@@ -67,7 +67,6 @@ function actualizarVistaTratamientos() {
   const countEl = $('tratamientos-count');
   const pillsContainer = $('categoria-pills');
 
-  // --- Categorías (pills) ---
   const categoriasSet = new Set();
   allTratamientosData.forEach(item => {
     if (item.categoria) categoriasSet.add(item.categoria);
@@ -81,25 +80,19 @@ function actualizarVistaTratamientos() {
   let pillsHtml = '';
   cats.forEach(cat => {
     const count = cat === 'Todos' ? allTratamientosData.length : counts[cat] || 0;
-    const activa = filterCategoria === cat ? 'active' : '';
-    // Estilo inline idéntico al HTML original
-    pillsHtml += `<a href="javascript:void(0)" 
-                       onclick="setFilterCategoria('${cat}')"
-                       style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--white);border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:500;color:var(--text);text-decoration:none;${activa ? 'background:var(--accent-light);border-color:var(--accent);' : ''}">
-                    ${cat === 'Todos' ? 'Todos' : cat.charAt(0).toUpperCase() + cat.slice(1)}
-                    <span style="background:var(--bg);padding:1px 6px;border-radius:10px;font-weight:700;">${count}</span>
-                  </a>`;
+    const activa = filterCategoria === cat ? 'activa' : '';
+    pillsHtml += `<button class="pill-categoria ${activa}" onclick="setFilterCategoria('${cat}')">${cat === 'Todos' ? 'Todos' : cat.charAt(0).toUpperCase() + cat.slice(1)} <span class="contador">${count}</span></button>`;
   });
   pillsContainer.innerHTML = pillsHtml;
 
-  // --- Filtros ---
   let filtered = allTratamientosData;
   if (filterCategoria !== 'Todos') {
     filtered = filtered.filter(item => item.categoria === filterCategoria);
   }
-  if (filterEstado === 'Activos') {
+  // ⬇️ USO DE LA VARIABLE RENOMBRADA ⬇️
+  if (filterEstadoTratamientos === 'Activos') {
     filtered = filtered.filter(item => item.activo !== false);
-  } else if (filterEstado === 'Inactivos') {
+  } else if (filterEstadoTratamientos === 'Inactivos') {
     filtered = filtered.filter(item => item.activo === false);
   }
   if (filterAgendaVirtual) {
@@ -111,33 +104,11 @@ function actualizarVistaTratamientos() {
     countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'tratamiento' : 'tratamientos'}`;
   }
 
-  // --- Actualizar estado visual de los botones de filtro de estado ---
-  document.querySelectorAll('[data-filter]').forEach(btn => {
-    btn.classList.remove('btn-primary');
-    btn.classList.add('btn-secondary');
-    if (btn.dataset.filter === filterEstado) {
-      btn.classList.remove('btn-secondary');
-      btn.classList.add('btn-primary');
-    }
-  });
-  // Botón Agenda virtual
-  const btnAgenda = document.querySelector('[data-filter="AgendaVirtual"]');
-  if (btnAgenda) {
-    if (filterAgendaVirtual) {
-      btnAgenda.classList.remove('btn-secondary');
-      btnAgenda.classList.add('btn-primary');
-    } else {
-      btnAgenda.classList.remove('btn-primary');
-      btnAgenda.classList.add('btn-secondary');
-    }
-  }
-
   if (filtered.length === 0) {
     container.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;">No hay tratamientos que coincidan con los filtros.</td></tr>`;
     return;
   }
 
-  // --- Mapeo de colores de categoría ---
   const coloresCategoria = {
     'cirugia': 'badge-red',
     'consulta': 'badge-teal',
@@ -153,35 +124,31 @@ function actualizarVistaTratamientos() {
   };
   const getColorCategoria = (cat) => coloresCategoria[cat] || 'badge-gray';
 
-  // --- Construir filas de la tabla ---
   let htmlFilas = '';
   filtered.forEach((item) => {
     const activo = item.activo !== undefined ? item.activo : true;
-    const estadoBadge = activo ? 'badge-green' : 'badge-gray';
+    const estadoBadge = activo ? 'badge-estado-activo' : 'badge-estado-inactivo';
     const estadoTexto  = activo ? 'Activo' : 'Inactivo';
     const nombreCategoria = (item.categoria || 'sin categoría').charAt(0).toUpperCase() + (item.categoria || '').slice(1);
 
-    // Etiquetas (íconos y clases idénticos al HTML)
     let etiquetas = '';
     if (item.agenda_virtual) {
-      etiquetas += `<span class="badge badge-blue" style="font-size:10px;" title="Disponible para agenda virtual y asistente">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:2px"><rect x="3" y="3" width="18" height="14" rx="3"/><path d="M8 21l4-4 4 4"/></svg>Agenda virtual
-                    </span> `;
+      etiquetas += `<span class="badge-etiqueta azul"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle"><rect x="3" y="3" width="18" height="14" rx="3"/><path d="M8 21l4-4 4 4"/></svg> Agenda virtual</span> `;
     }
     if (item.requiere_lab) {
-      etiquetas += `<span class="badge badge-amber" style="font-size:10px;">Requiere laboratorio</span> `;
+      etiquetas += `<span class="badge-etiqueta ambar">Requiere laboratorio</span> `;
     }
 
     htmlFilas += `
       <tr>
         <td>
           <div style="font-weight:600">${item.nombre || ''}</div>
-          <div style="font-size:11px;color:var(--text-muted);">Cód. ${item.codigo || '—'}</div>
+          <div style="font-size:11px;color:#64748b;">Cód. ${item.codigo || '—'}</div>
           <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${etiquetas}</div>
         </td>
         <td><span class="badge ${getColorCategoria(item.categoria)}">${nombreCategoria}</span></td>
         <td style="font-weight:600">$ ${Number(item.precio_base || 0).toLocaleString()}</td>
-        <td style="font-size:13px;color:var(--text-muted);">${item.duracion || '30 min'}</td>
+        <td style="font-size:13px;color:#64748b;">${item.duracion || '30 min'}</td>
         <td>
           <button class="badge ${estadoBadge}" style="border:none;cursor:pointer;font-size:11px;" onclick="toggleEstado('${item.id}')">
             ${estadoTexto}
@@ -191,7 +158,7 @@ function actualizarVistaTratamientos() {
           <div style="display:flex;gap:6px">
             <button class="btn btn-secondary btn-sm" onclick="openModalEditarTratamiento('${item.id}')">Editar</button>
             <button class="btn btn-secondary btn-sm" onclick="openModalOS('${item.id}')" title="Configurar cobertura por obra social">🏥 OS</button>
-            <button class="btn btn-secondary btn-sm" onclick="eliminarTratamiento('${item.id}')">🗑</button>
+            <button class="btn btn-danger btn-sm" onclick="eliminarTratamiento('${item.id}')">🗑</button>
           </div>
         </td>
       </tr>
@@ -209,18 +176,31 @@ window.setFilterCategoria = function(cat) {
 };
 
 window.setFilterEstado = function(estado) {
-  filterEstado = estado;
+  filterEstadoTratamientos = estado; // ⬅️ Asignación corregida
   if (estado !== 'AgendaVirtual') filterAgendaVirtual = false;
+  document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-secondary');
+    if (btn.dataset.filter === estado) {
+      btn.classList.remove('btn-secondary');
+      btn.classList.add('btn-primary');
+    }
+  });
   actualizarVistaTratamientos();
 };
 
 window.toggleAgendaVirtual = function() {
   filterAgendaVirtual = !filterAgendaVirtual;
+  const btn = document.querySelector('[data-filter="AgendaVirtual"]');
+  if (btn) {
+    btn.classList.toggle('btn-primary', filterAgendaVirtual);
+    btn.classList.toggle('btn-secondary', !filterAgendaVirtual);
+  }
   actualizarVistaTratamientos();
 };
 
 // ============================================================
-// CRUD TRATAMIENTOS (sin cambios, solo ajuste visual en modales)
+// CRUD TRATAMIENTOS
 // ============================================================
 window.openModalNuevoTratamiento = function() {
   const categorias = ['cirugia','consulta','diagnostico','endodoncia','estetica','implante','limpieza','odontopediatria','ortodoncia','protesis','restauracion'];
