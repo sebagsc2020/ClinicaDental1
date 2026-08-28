@@ -58,7 +58,6 @@
       padding: 6px 12px;
       border-radius: var(--radius);
       transition: 0.2s;
-      cursor: pointer;
     }
     .topnav .nav-links a:hover,
     .topnav .nav-links a.active { background: rgba(255,255,255,0.15); color: #fff; }
@@ -77,13 +76,10 @@
       background: #fff; border-radius: var(--radius);
       box-shadow: 0 8px 24px rgba(0,0,0,0.15);
       min-width: 180px; padding: 8px 0; margin-top: 4px;
-      z-index: 200;
     }
-    .topnav .user-dropdown.open { display: block; }
     .topnav .user-dropdown a {
       display: flex; align-items: center; gap: 8px;
       padding: 8px 16px; color: var(--text); text-decoration: none; font-size: 13px;
-      cursor: pointer;
     }
     .topnav .user-dropdown a:hover { background: var(--bg); }
     .topnav .user-dropdown a.danger { color: var(--danger); }
@@ -121,15 +117,6 @@
     .sidebar .sidebar-item.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
     .sidebar .sidebar-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
     .sidebar .sidebar-item .sb-txt { flex: 1; }
-    .sidebar-chevron {
-      background: none; border: none; cursor: pointer;
-      padding: 4px 8px; color: var(--text-muted);
-      transition: transform 0.2s;
-    }
-    .sidebar-chevron.open { transform: rotate(180deg); }
-    .sidebar-subitems { overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
-    .sidebar-subitems.open { max-height: 500px; }
-    .sidebar-group-row { display: flex; align-items: center; }
 
     /* ===== Main ===== */
     .main { flex: 1; padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 60px); }
@@ -174,6 +161,7 @@
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
 
+    /* Badges base */
     .badge {
       display: inline-block; padding: 2px 10px; border-radius: 20px;
       font-size: 12px; font-weight: 600;
@@ -185,34 +173,56 @@
     .badge-gray { background: #f1f5f9; color: #4b5563; }
     .badge-teal { background: #ccfbf1; color: #0f766e; }
 
+    /* Badges de estado (activo/inactivo) */
     .badge-estado-activo   { background: #dcfce7; color: #15803d; }
     .badge-estado-inactivo { background: #f1f5f9; color: #4b5563; }
 
+    /* Etiquetas adicionales (Agenda virtual, Requiere laboratorio) */
     .badge-etiqueta {
-      font-size: 10px; padding: 2px 8px; border-radius: 12px;
-      font-weight: 600; display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
     }
     .badge-etiqueta.azul   { background: #dbeafe; color: #1d4ed8; }
     .badge-etiqueta.ambar  { background: #fef3c7; color: #b45309; }
 
+    /* Pills de categoría */
     .pill-categoria {
-      display: flex; align-items: center; gap: 6px;
-      padding: 6px 12px; background: #fff;
-      border: 1px solid #e2e8f0; border-radius: 20px;
-      font-size: 12px; font-weight: 500; color: #1e2d3a;
-      cursor: pointer; transition: 0.15s; text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #1e2d3a;
+      cursor: pointer;
+      transition: 0.15s;
+      text-decoration: none;
       background: none;
     }
     .pill-categoria:hover { background: #f1f5f9; }
     .pill-categoria .contador {
-      background: #f1f5f9; padding: 1px 6px; border-radius: 10px;
-      font-weight: 700; font-size: 11px;
+      background: #f1f5f9;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 11px;
     }
     .pill-categoria.activa {
-      background: #4285F4; border-color: #4285F4; color: #fff;
+      background: #4285F4;
+      border-color: #4285F4;
+      color: #fff;
     }
     .pill-categoria.activa .contador { background: rgba(255,255,255,0.2); color: #fff; }
 
+    /* Tabla */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { text-align: left; padding: 10px 12px; background: var(--bg); font-weight: 600; color: var(--text-muted); border-bottom: 2px solid var(--border); }
@@ -286,9 +296,13 @@
     .trt-item .os-split-label { display: none; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
     .trt-item .os-pct-badge { display: none; font-size: 10px; font-weight: 700; color: #0891b2; white-space: nowrap; }
 
+    /* Estilos para tarjetas de obras sociales */
     .os-card-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
     }
     @media (max-width: 768px) {
       .os-card-header { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
@@ -406,32 +420,16 @@
 <!-- Modal genérico -->
 <div class="modal-overlay" id="modal-generic"><div class="modal-box" id="modal-generic-content"></div></div>
 
-<!-- ============================================================ -->
-<!-- ===== SCRIPTS EXTERNOS ===== -->
-<!-- ============================================================ -->
+<!-- Toast notificaciones (placeholder) -->
+<div id="notif" style="position:fixed;bottom:20px;right:20px;z-index:9999;"></div>
 
-<!-- FIREBASE SDK -->
+<!-- ===== FIREBASE SDK ===== -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-<!-- CONFIGURACIÓN DE FIREBASE (GLOBAL) -->
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCsTQoWZnMmcYwt2vjRQUPNUOKbHj3ZKqA",
-    authDomain: "clinicadental1.firebaseapp.com",
-    projectId: "clinicadental1",
-    storageBucket: "clinicadental1.firebasestorage.app",
-    messagingSenderId: "85943745725",
-    appId: "1:85943745725:web:65e02bdb2c5abee1e2cbd4",
-    measurementId: "G-74CV5LL9F7"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  const auth = firebase.auth();
-</script>
-
-<!-- ARCHIVOS DE VISTA (cada uno define su función render...) -->
+<!-- ===== TUS ARCHIVOS JS EXTERNOS ===== -->
+<script src="js/config.js"></script>
+<script src="js/navigation.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/agenda.js"></script>
 <script src="js/pacientes.js"></script>
@@ -451,45 +449,26 @@
 <script src="js/whatsapp.js"></script>
 <script src="js/configuracion.js"></script>
 
-<!-- NAVEGACIÓN Y UTILIDADES GLOBALES -->
-<script src="js/navigation.js"></script>
-
-<!-- ============================================================ -->
-<!-- ===== INICIALIZACIÓN FINAL ===== -->
-<!-- ============================================================ -->
+<!-- ===== SCRIPT DE INICIALIZACIÓN (SOLO EVENTOS Y ARRANQUE) ===== -->
 <script>
-  // Aquí se cargan todas las funciones, ahora podemos iniciar la navegación
-
-  // Asegurar que los botones del sidebar y topnav llamen a navigateTo()
-  document.querySelectorAll('.sidebar .sidebar-item[data-view]').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
-      const view = this.dataset.view;
-      if (view) navigateTo(view);
+  document.addEventListener('DOMContentLoaded', function() {
+    // Configurar navegación desde sidebar y topnav (usando data-view)
+    document.querySelectorAll('.sidebar .sidebar-item[data-view], .topnav .nav-links a[data-view]').forEach(function(el) {
+      el.addEventListener('click', function(e) {
+        e.preventDefault();
+        var view = this.dataset.view;
+        if (view) navigateTo(view);
+      });
     });
-  });
 
-  document.querySelectorAll('.topnav .nav-links a[data-view]').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
-      const view = this.dataset.view;
-      if (view) navigateTo(view);
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('modal-generic').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
     });
+
+    // Cargar vista inicial
+    navigateTo('dashboard');
   });
-
-  // Cerrar dropdown del usuario al hacer clic fuera
-  document.addEventListener('click', function(e) {
-    const wrap = document.querySelector('.user-menu-wrap');
-    if (wrap && !wrap.contains(e.target)) {
-      const dd = document.getElementById('user-dropdown');
-      if (dd) dd.classList.remove('open');
-    }
-  });
-
-  // Iniciar en Dashboard
-  navigateTo('dashboard');
-
-  console.log('✅ Panel DentalSoft completamente cargado con todos los módulos.');
 </script>
 
 </body>
