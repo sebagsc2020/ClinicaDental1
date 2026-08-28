@@ -1,5 +1,5 @@
 // ============================================================
-// PROFESIONALES - VISTA EXACTA AL EJEMPLO DE DENTALSOFT
+// PROFESIONALES - 
 // ============================================================
 
 // ============================================================
@@ -441,7 +441,7 @@ window.guardarProfesional = function() {
 };
 
 // ============================================================
-// EDITAR PROFESIONAL - SIN ÍNDICE (ordenación en cliente)
+// EDITAR PROFESIONAL - SIN FOTO (simplificado)
 // ============================================================
 window.editarProfesional = function(id) {
   db.collection('profesionales').doc(id).get().then(doc => {
@@ -451,27 +451,22 @@ window.editarProfesional = function(id) {
     // Cargar especialidades y tratamientos SIN orderBy compuesto
     Promise.all([
       db.collection('especialidades').orderBy('nombre').get(),
-      db.collection('tratamientos').get() // ← sin orderBy compuesto
+      db.collection('tratamientos').get()
     ]).then(([especialidadesSnap, tratamientosSnap]) => {
       const especialidades = [];
       especialidadesSnap.forEach(d => especialidades.push({ id: d.id, ...d.data() }));
 
-      // Agrupar y ordenar tratamientos en cliente
-      const tratamientos = [];
       const tratamientosPorCategoria = {};
       tratamientosSnap.forEach(d => {
         const t = { id: d.id, ...d.data() };
-        tratamientos.push(t);
         const cat = t.categoria || 'otros';
         if (!tratamientosPorCategoria[cat]) tratamientosPorCategoria[cat] = [];
         tratamientosPorCategoria[cat].push(t);
       });
-      // Ordenar cada categoría por nombre
       for (const cat in tratamientosPorCategoria) {
         tratamientosPorCategoria[cat].sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
       }
 
-      // Construir HTML de especialidades
       let especialidadesHTML = '';
       especialidades.forEach(esp => {
         const checked = (data.especialidades_ids && data.especialidades_ids.includes(esp.id)) ? 'checked' : '';
@@ -484,7 +479,6 @@ window.editarProfesional = function(id) {
         `;
       });
 
-      // Construir HTML de tratamientos (agrupados por categoría)
       let tratamientosHTML = '';
       for (const [cat, items] of Object.entries(tratamientosPorCategoria)) {
         tratamientosHTML += `<div><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:6px">`;
@@ -503,8 +497,6 @@ window.editarProfesional = function(id) {
 
       const nombreCompleto = `${data.nombre || ''} ${data.apellido || ''}`.trim();
       const iniciales = nombreCompleto.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      const tieneFoto = data.foto ? true : false;
-      const fotoSrc = data.foto || '';
 
       openModal(`
         <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
@@ -593,27 +585,8 @@ window.editarProfesional = function(id) {
             </div>
           </div>
 
-          <!-- Columna lateral -->
+          <!-- Columna lateral (sin foto) -->
           <div style="display:flex;flex-direction:column;gap:16px;">
-
-            <!-- Foto del profesional -->
-            <div class="card">
-              <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Foto del profesional</div>
-              <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;">
-                <div id="foto-preview-wrap" style="position:relative;width:96px;height:96px;border-radius:50%;overflow:hidden;border:2px solid var(--border);flex-shrink:0;">
-                  <span id="foto-preview-initials" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#355063;color:#fff;font-size:26px;font-weight:700;">${iniciales}</span>
-                  <img id="foto-preview-img" src="${fotoSrc}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:${tieneFoto ? 'block' : 'none'}">
-                </div>
-                <div style="text-align:center;">
-                  <label for="foto_profesional_edit" class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-block;">📷 ${tieneFoto ? 'Cambiar foto' : 'Subir foto'}</label>
-                  <input type="file" id="foto_profesional_edit" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewFotoEdit(this, '${id}')">
-                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">JPG, PNG o WebP · máx 4 MB</div>
-                </div>
-              </div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.5;border-top:1px solid var(--border);padding-top:10px;">
-                Se muestra en la reserva online cuando el paciente elige profesional.
-              </div>
-            </div>
 
             <!-- Configuración -->
             <div class="card">
@@ -641,48 +614,20 @@ window.editarProfesional = function(id) {
         </div>
       `);
 
-      window._profEditId = id;
-
     }).catch(err => alert('Error al cargar datos: ' + err.message));
   }).catch(err => alert('Error al cargar profesional: ' + err.message));
 };
 
 // ============================================================
-// FUNCIONES DE PREVISUALIZACIÓN DE FOTO
+// TOGGLE CONTRASEÑA
 // ============================================================
-let _fotoFileEdit = null;
-
-window.previewFotoEdit = function(input, id) {
-  if (!input.files || !input.files[0]) return;
-  const file = input.files[0];
-  if (file.size > 4 * 1024 * 1024) {
-    alert('La imagen no puede superar los 4 MB.');
-    input.value = '';
-    return;
-  }
-  _fotoFileEdit = file;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = document.getElementById('foto-preview-img');
-    const ini = document.getElementById('foto-preview-initials');
-    if (img) {
-      img.src = e.target.result;
-      img.style.display = 'block';
-    }
-    if (ini) ini.style.visibility = 'hidden';
-  };
-  reader.readAsDataURL(file);
-  const label = document.querySelector('label[for="foto_profesional_edit"]');
-  if (label) label.textContent = '📷 Cambiar foto';
-};
-
 window.togglePwdEdit = function() {
   const input = document.getElementById('f-prof-edit-password');
   if (input) input.type = input.type === 'password' ? 'text' : 'password';
 };
 
 // ============================================================
-// GUARDAR EDICIÓN DE PROFESIONAL
+// GUARDAR EDICIÓN DE PROFESIONAL (sin foto)
 // ============================================================
 window.guardarEdicionProfesional = function(id) {
   const nombre = $('f-prof-edit-nombre').value.trim();
@@ -698,11 +643,9 @@ window.guardarEdicionProfesional = function(id) {
 
   if (!nombre || !apellido || !email) return alert('Nombre, apellido y email son obligatorios.');
 
-  // Obtener especialidades seleccionadas
   const especialidadesCheckboxes = document.querySelectorAll('input[name="especialidad_ids[]"]:checked');
   const especialidades_ids = Array.from(especialidadesCheckboxes).map(cb => cb.value);
 
-  // Obtener tratamientos seleccionados
   const tratamientosCheckboxes = document.querySelectorAll('input[name="tratamiento_ids[]"]:checked');
   const tratamiento_ids = Array.from(tratamientosCheckboxes).map(cb => cb.value);
 
@@ -716,41 +659,24 @@ window.guardarEdicionProfesional = function(id) {
   };
 
   if (password) {
-    // Opcional: si usas Firebase Auth, actualiza la contraseña de forma segura
     updateData.password = password;
   }
 
-  if (_fotoFileEdit) {
-    // Subir foto a Firebase Storage
-    const storageRef = firebase.storage().ref();
-    const fotoRef = storageRef.child(`profesionales/${id}/${Date.now()}_${_fotoFileEdit.name}`);
-    fotoRef.put(_fotoFileEdit).then(snapshot => snapshot.ref.getDownloadURL())
-      .then(url => {
-        updateData.foto = url;
-        _fotoFileEdit = null;
-        return db.collection('profesionales').doc(id).update(updateData);
-      })
-      .then(() => {
-        closeModal();
-        showToast('✅ Profesional actualizado correctamente.');
-      })
-      .catch(err => alert('❌ Error al subir foto: ' + err.message));
-  } else {
-    db.collection('profesionales').doc(id).update(updateData)
-      .then(() => {
-        closeModal();
-        showToast('✅ Profesional actualizado correctamente.');
-      })
-      .catch(err => alert('❌ Error: ' + err.message));
-  }
+  db.collection('profesionales').doc(id).update(updateData)
+    .then(() => {
+      closeModal();
+      showToast('✅ Profesional actualizado correctamente.');
+    })
+    .catch(err => {
+      alert('❌ Error al actualizar: ' + err.message);
+    });
 };
 
 // ============================================================
-// MODALES: HORARIOS Y OBRAS SOCIALES (con modales)
+// MODALES: HORARIOS Y OBRAS SOCIALES
 // ============================================================
 
 window.openModalHorarios = function(id) {
-  // Obtener nombre del profesional para mostrar
   db.collection('profesionales').doc(id).get().then(doc => {
     if (!doc.exists) return alert('Profesional no encontrado');
     const data = doc.data();
@@ -789,7 +715,6 @@ window.openModalObrasSociales = function(id) {
     const data = doc.data();
     const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
 
-    // Cargar obras sociales disponibles
     db.collection('obras_sociales').orderBy('nombre').get().then(snap => {
       let osHTML = '';
       snap.forEach(d => {
