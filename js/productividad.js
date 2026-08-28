@@ -1,10 +1,6 @@
 // ============================================================
 // PRODUCTIVIDAD - SPA (Single Page Application)
 // ============================================================
-
-// ============================================================
-// RENDER PRODUCTIVIDAD (Dashboard)
-// ============================================================
 function renderProductividad() {
   const el = document.getElementById('view-productividad');
   if (!el) return;
@@ -31,7 +27,7 @@ function renderProductividad() {
       <div class="card" style="border-left:3px solid var(--primary);">
         <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Turnos atendidos</div>
         <div style="font-size:28px;font-weight:800;color:var(--primary);" id="prod-turnos-atendidos">-</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">en el período</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="prod-turnos-atendidos-label">en el período</div>
       </div>
       <div class="card" style="border-left:3px solid #22c55e;">
         <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">Ingresos totales</div>
@@ -50,41 +46,72 @@ function renderProductividad() {
       </div>
     </div>
 
-    <!-- Gráfico de productividad por día -->
+    <!-- Turnos por día de semana -->
     <div class="card" style="margin-bottom:20px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div style="font-size:13px;font-weight:700;">Turnos por día</div>
-        <div style="font-size:11px;color:var(--text-muted);" id="prod-grafico-subtitulo">Últimos 7 días</div>
-      </div>
-      <div id="prod-grafico-barras" style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:6px;">
-        <div style="text-align:center;width:100%;color:var(--text-muted);font-size:12px;">Cargando datos...</div>
-      </div>
-      <div id="prod-grafico-etiquetas" style="display:flex;gap:4px;">
-        <!-- Etiquetas generadas por JS -->
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Turnos por día de semana</div>
+      <div style="overflow-x:auto;">
+        <table class="table" style="margin:0;">
+          <thead>
+            <tr>
+              <th>Día</th>
+              <th style="text-align:center;">Turnos atendidos</th>
+              <th style="text-align:center;">Promedio por día</th>
+            </tr>
+          </thead>
+          <tbody id="prod-dia-semana-tbody">
+            <tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-muted);">Cargando datos...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Últimos turnos atendidos -->
-    <div class="card" style="padding:0;overflow:hidden;">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);">
-        <div style="font-size:13px;font-weight:700;">Últimos turnos atendidos</div>
-        <span style="font-size:11px;color:var(--text-muted);" id="prod-ultimos-count">0 registros</span>
+    <!-- Rendimiento por profesional -->
+    <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden;">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+        <div style="font-size:13px;font-weight:700;">Rendimiento por profesional</div>
       </div>
       <div style="overflow-x:auto;">
         <table class="table" style="margin:0;">
           <thead>
             <tr>
-              <th>Fecha</th>
-              <th>Paciente</th>
               <th>Profesional</th>
-              <th>Estado</th>
-              <th style="text-align:right;">Monto</th>
+              <th style="text-align:center;">Turnos atendidos</th>
+              <th style="text-align:right;">Ingresos generados</th>
+              <th style="text-align:right;">Promedio por turno</th>
             </tr>
           </thead>
-          <tbody id="prod-ultimos-tbody">
-            <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted);">Cargando turnos...</td></tr>
+          <tbody id="prod-profesional-tbody">
+            <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">Cargando datos...</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Turnos atendidos — últimos 6 meses -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;">Turnos atendidos — últimos 6 meses</div>
+        <div style="font-size:11px;color:var(--text-muted);">Evolución mensual</div>
+      </div>
+      <div id="prod-turnos-6m" style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:6px;">
+        <div style="text-align:center;width:100%;color:var(--text-muted);font-size:12px;">Cargando datos...</div>
+      </div>
+      <div id="prod-turnos-6m-etiquetas" style="display:flex;gap:4px;">
+        <!-- Etiquetas generadas por JS -->
+      </div>
+    </div>
+
+    <!-- Ingresos cobrados — últimos 6 meses -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;">Ingresos cobrados — últimos 6 meses</div>
+        <div style="font-size:11px;color:var(--text-muted);">Evolución mensual</div>
+      </div>
+      <div id="prod-ingresos-6m" style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:6px;">
+        <div style="text-align:center;width:100%;color:var(--text-muted);font-size:12px;">Cargando datos...</div>
+      </div>
+      <div id="prod-ingresos-6m-etiquetas" style="display:flex;gap:4px;">
+        <!-- Etiquetas generadas por JS -->
       </div>
     </div>
   `;
@@ -135,80 +162,92 @@ function cargarDatosProductividad() {
   const fechaInicioStr = fechaInicio.toISOString().slice(0, 10);
   const hoyStr = ahora.toISOString().slice(0, 10);
 
-  // 1. Turnos atendidos y ausencias
+  // 1. Obtener turnos del período
   db.collection('turnos')
     .where('fecha', '>=', fechaInicioStr)
     .where('fecha', '<=', hoyStr)
     .get()
     .then(snapshot => {
+      const turnos = [];
+      snapshot.forEach(doc => {
+        turnos.push({ id: doc.id, ...doc.data() });
+      });
+      return turnos;
+    })
+    .then(turnos => {
+      // Calcular KPIs
       let atendidos = 0;
       let ausencias = 0;
-      let turnosPorDia = {};
-      const turnosLista = [];
-
-      snapshot.forEach(doc => {
-        const t = doc.data();
+      turnos.forEach(t => {
         const estado = t.estado || 'pendiente';
-        const fecha = t.fecha;
+        if (estado === 'finalizado') atendidos++;
+        else if (estado === 'ausente' || estado === 'cancelado') ausencias++;
+      });
+      document.getElementById('prod-turnos-atendidos').textContent = atendidos;
+      document.getElementById('prod-ausencias').textContent = ausencias;
+      document.getElementById('prod-turnos-atendidos-label').textContent = `en ${periodo}`;
 
-        if (estado === 'finalizado') {
-          atendidos++;
-          turnosLista.push({ id: doc.id, ...t });
-        } else if (estado === 'ausente' || estado === 'cancelado') {
-          ausencias++;
+      // Turnos por día de semana (solo finalizados)
+      const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const conteoDias = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+      turnos.forEach(t => {
+        if (t.estado === 'finalizado' && t.fecha) {
+          const fecha = new Date(t.fecha + 'T00:00:00');
+          const dia = fecha.getDay();
+          conteoDias[dia] = (conteoDias[dia] || 0) + 1;
         }
+      });
+      // Calcular promedio (número de días en el período que tuvieron turnos)
+      const diasDelPeriodo = Math.ceil((new Date(hoyStr) - new Date(fechaInicioStr)) / (1000*60*60*24)) + 1;
+      renderDiaSemana(conteoDias, diasDelPeriodo);
 
-        // Para el gráfico, contamos los finalizados por día
-        if (estado === 'finalizado' && fecha) {
-          if (!turnosPorDia[fecha]) turnosPorDia[fecha] = 0;
-          turnosPorDia[fecha]++;
+      // Rendimiento por profesional
+      return Promise.all([
+        Promise.resolve(turnos),
+        db.collection('profesionales').get(),
+        db.collection('pagos')
+          .where('fecha', '>=', fechaInicioStr)
+          .where('fecha', '<=', hoyStr)
+          .where('estado', '==', 'completado')
+          .get()
+      ]);
+    })
+    .then(([turnos, profSnap, pagosSnap]) => {
+      // Mapa de profesionales
+      const profesionales = {};
+      profSnap.forEach(doc => {
+        const data = doc.data();
+        profesionales[doc.id] = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
+      });
+
+      // Mapa de pagos por paciente o por turno (asumimos que los pagos tienen paciente_id o turno_id)
+      // Simplificamos: los turnos finalizados tienen total_paciente, y los pagos pueden estar asociados.
+      // Para este ejemplo, usamos total_paciente de cada turno finalizado como ingreso.
+      // Si hay pagos, los sumamos por profesional a través del turno (si tienen odontologo_id).
+      const ingresosPorProf = {};
+      const turnosPorProf = {};
+      turnos.forEach(t => {
+        if (t.estado === 'finalizado' && t.odontologo_id) {
+          const profId = t.odontologo_id;
+          if (!turnosPorProf[profId]) turnosPorProf[profId] = 0;
+          turnosPorProf[profId]++;
+          const monto = t.total_paciente || 0;
+          if (!ingresosPorProf[profId]) ingresosPorProf[profId] = 0;
+          ingresosPorProf[profId] += monto;
         }
       });
 
-      // Ordenar turnos por fecha descendente y limitar a 10
-      turnosLista.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
-      const ultimos = turnosLista.slice(-10).reverse();
+      // Si tenemos pagos, también podemos sumarlos (pero los pagos no tienen odontologo_id directamente)
+      // Para simplificar, usamos solo los totales de turnos.
 
-      // Actualizar KPIs
-      document.getElementById('prod-turnos-atendidos').textContent = atendidos;
-      document.getElementById('prod-ausencias').textContent = ausencias;
+      renderRendimientoProfesional(turnosPorProf, ingresosPorProf, profesionales);
 
-      // Graficar turnos por día
-      renderGraficoProductividad(turnosPorDia, fechaInicio, ahora);
-
-      // Renderizar tabla de últimos turnos
-      renderUltimosTurnos(ultimos);
-
-      // Actualizar contador
-      document.getElementById('prod-ultimos-count').textContent = `${ultimos.length} registros`;
-
-      // 2. Ingresos (desde pagos)
-      return db.collection('pagos')
-        .where('fecha', '>=', fechaInicioStr)
-        .where('fecha', '<=', hoyStr)
-        .where('estado', '==', 'completado')
-        .get();
+      // 2. Turnos atendidos últimos 6 meses
+      return cargarDatos6Meses();
     })
-    .then(snapshot => {
-      let totalIngresos = 0;
-      if (snapshot) {
-        snapshot.forEach(doc => {
-          const p = doc.data();
-          const monto = p.monto || 0;
-          totalIngresos += monto;
-        });
-      }
-      document.getElementById('prod-ingresos').textContent = '$' + Number(totalIngresos).toLocaleString();
-
-      // 3. Pacientes nuevos
-      return db.collection('pacientes')
-        .where('created_at', '>=', fechaInicio.toISOString())
-        .get();
-    })
-    .then(snapshot => {
-      if (snapshot) {
-        document.getElementById('prod-pacientes-nuevos').textContent = snapshot.size;
-      }
+    .then(([turnos6m, pagos6m]) => {
+      renderGrafico6Meses('prod-turnos-6m', 'prod-turnos-6m-etiquetas', turnos6m, 'Turnos');
+      renderGrafico6Meses('prod-ingresos-6m', 'prod-ingresos-6m-etiquetas', pagos6m, 'Ingresos');
     })
     .catch(err => {
       console.error('Error cargando datos de productividad:', err);
@@ -217,151 +256,169 @@ function cargarDatosProductividad() {
 }
 
 // ============================================================
-// RENDER GRÁFICO DE BARRAS
+// RENDER TURNOS POR DÍA DE SEMANA
 // ============================================================
-function renderGraficoProductividad(turnosPorDia, fechaInicio, fechaFin) {
-  const container = document.getElementById('prod-grafico-barras');
-  const etiquetasContainer = document.getElementById('prod-grafico-etiquetas');
-  const subtitulo = document.getElementById('prod-grafico-subtitulo');
-
-  if (!container) return;
-
-  // Generar lista de días entre fechaInicio y fechaFin (inclusive)
-  const dias = [];
-  const current = new Date(fechaInicio);
-  while (current <= fechaFin) {
-    const fechaStr = current.toISOString().slice(0, 10);
-    dias.push(fechaStr);
-    current.setDate(current.getDate() + 1);
-  }
-
-  const valores = dias.map(d => turnosPorDia[d] || 0);
-  const maxValor = Math.max(...valores, 1);
-
-  // Si hay más de 10 días, agrupar por semana o mostrar solo últimos 10
-  const diasMostrar = dias.length > 10 ? dias.slice(-10) : dias;
-  const valoresMostrar = dias.length > 10 ? valores.slice(-10) : valores;
-
-  // Actualizar subtítulo
-  if (diasMostrar.length > 1) {
-    subtitulo.textContent = `${diasMostrar[0]} → ${diasMostrar[diasMostrar.length-1]}`;
-  } else {
-    subtitulo.textContent = diasMostrar[0] || '';
-  }
-
-  // Generar barras
-  let barrasHTML = '';
-  let etiquetasHTML = '';
-
-  valoresMostrar.forEach((val, i) => {
-    const altura = Math.max(4, (val / maxValor) * 74);
-    const diaNum = new Date(diasMostrar[i] + 'T00:00:00').getDate();
-    const esHoy = diasMostrar[i] === new Date().toISOString().slice(0, 10);
-    barrasHTML += `
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;">
-        <div title="${val} turno(s)" style="width:100%;background:${esHoy ? 'var(--primary)' : 'var(--border)'};border-radius:3px 3px 0 0;height:${altura}px;min-height:4px;transition:.2s;"></div>
-      </div>
-    `;
-    etiquetasHTML += `
-      <div style="flex:1;text-align:center;font-size:9px;color:var(--text-muted);${esHoy ? 'font-weight:700;color:var(--primary);' : ''}">${diaNum}</div>
-    `;
-  });
-
-  if (valoresMostrar.length === 0) {
-    container.innerHTML = '<div style="text-align:center;width:100%;color:var(--text-muted);font-size:12px;">Sin datos en este período.</div>';
-    etiquetasContainer.innerHTML = '';
-  } else {
-    container.innerHTML = barrasHTML;
-    etiquetasContainer.innerHTML = etiquetasHTML;
-  }
-}
-
-// ============================================================
-// RENDER ÚLTIMOS TURNOS
-// ============================================================
-function renderUltimosTurnos(turnos) {
-  const tbody = document.getElementById('prod-ultimos-tbody');
+function renderDiaSemana(conteoDias, diasDelPeriodo) {
+  const tbody = document.getElementById('prod-dia-semana-tbody');
   if (!tbody) return;
 
-  if (turnos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted);">No hay turnos atendidos en este período.</td></tr>';
-    return;
-  }
-
-  const estadoBadges = {
-    'finalizado': 'badge-green',
-    'pendiente': 'badge-amber',
-    'confirmado': 'badge-blue',
-    'en_recepcion': 'badge-teal',
-    'en_atencion': 'badge-gray',
-    'cancelado': 'badge-red',
-    'ausente': 'badge-red'
-  };
-  const estadoTextos = {
-    'finalizado': 'Finalizado',
-    'pendiente': 'Pendiente',
-    'confirmado': 'Confirmado',
-    'en_recepcion': 'En recepción',
-    'en_atencion': 'En atención',
-    'cancelado': 'Cancelado',
-    'ausente': 'Ausente'
-  };
-
+  const nombres = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   let html = '';
-  turnos.slice(0, 15).forEach(t => {
-    const fecha = t.fecha || '—';
-    const paciente = t.paciente || '—';
-    const profesional = t.odontologo || '—';
-    const estado = t.estado || 'pendiente';
-    const badge = estadoBadges[estado] || 'badge-gray';
-    const texto = estadoTextos[estado] || estado;
-    const monto = t.total_paciente || 0;
-
+  for (let i = 0; i < 7; i++) {
+    const total = conteoDias[i] || 0;
+    const promedio = diasDelPeriodo > 0 ? (total / diasDelPeriodo).toFixed(1) : 0;
     html += `
       <tr>
-        <td style="font-size:12px;white-space:nowrap;">${fecha}</td>
-        <td>${paciente}</td>
-        <td style="font-size:12px;color:var(--text-muted);">${profesional}</td>
-        <td><span class="badge ${badge}">${texto}</span></td>
-        <td style="text-align:right;font-weight:600;">$${Number(monto).toLocaleString()}</td>
+        <td>${nombres[i]}</td>
+        <td style="text-align:center;">${total}</td>
+        <td style="text-align:center;">${promedio}</td>
       </tr>
     `;
-  });
-
+  }
   tbody.innerHTML = html;
 }
 
 // ============================================================
-// DATOS DE EJEMPLO (fallback cuando Firestore no está disponible)
+// RENDER RENDIMIENTO POR PROFESIONAL
+// ============================================================
+function renderRendimientoProfesional(turnosPorProf, ingresosPorProf, profesionales) {
+  const tbody = document.getElementById('prod-profesional-tbody');
+  if (!tbody) return;
+
+  const profIds = Object.keys(turnosPorProf);
+  if (profIds.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">No hay datos de profesionales en este período.</td></tr>';
+    return;
+  }
+
+  let html = '';
+  profIds.forEach(profId => {
+    const nombre = profesionales[profId] || 'Sin nombre';
+    const turnos = turnosPorProf[profId] || 0;
+    const ingresos = ingresosPorProf[profId] || 0;
+    const promedio = turnos > 0 ? ingresos / turnos : 0;
+    html += `
+      <tr>
+        <td><strong>${nombre}</strong></td>
+        <td style="text-align:center;">${turnos}</td>
+        <td style="text-align:right;">$${Number(ingresos).toLocaleString()}</td>
+        <td style="text-align:right;">$${Number(promedio).toLocaleString()}</td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = html;
+}
+
+// ============================================================
+// CARGAR DATOS DE ÚLTIMOS 6 MESES (turnos atendidos e ingresos)
+// ============================================================
+function cargarDatos6Meses() {
+  const ahora = new Date();
+  const meses = [];
+  const promesas = [];
+
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(ahora);
+    d.setMonth(ahora.getMonth() - i);
+    const mes = d.getMonth() + 1;
+    const anio = d.getFullYear();
+    const mesStr = `${anio}-${String(mes).padStart(2,'0')}`;
+    meses.push({ mes: mesStr, anio, mesNum: mes });
+
+    // Consultar turnos finalizados de ese mes
+    const inicioMes = `${mesStr}-01`;
+    const ultimoDia = new Date(anio, mes, 0).getDate();
+    const finMes = `${mesStr}-${String(ultimoDia).padStart(2,'0')}`;
+
+    promesas.push(
+      db.collection('turnos')
+        .where('fecha', '>=', inicioMes)
+        .where('fecha', '<=', finMes)
+        .where('estado', '==', 'finalizado')
+        .get()
+        .then(snap => {
+          let total = 0;
+          snap.forEach(doc => {
+            const t = doc.data();
+            total += t.total_paciente || 0;
+          });
+          return { mes: mesStr, turnos: snap.size, ingresos: total };
+        })
+    );
+  }
+
+  return Promise.all(promesas);
+}
+
+// ============================================================
+// RENDER GRÁFICO DE BARRAS PARA 6 MESES
+// ============================================================
+function renderGrafico6Meses(containerId, etiquetasId, datos, label) {
+  const container = document.getElementById(containerId);
+  const etiquetasContainer = document.getElementById(etiquetasId);
+  if (!container || !etiquetasContainer) return;
+
+  if (!datos || datos.length === 0) {
+    container.innerHTML = '<div style="text-align:center;width:100%;color:var(--text-muted);font-size:12px;">Sin datos.</div>';
+    etiquetasContainer.innerHTML = '';
+    return;
+  }
+
+  const valores = datos.map(d => d.turnos || d.ingresos || 0);
+  const maxValor = Math.max(...valores, 1);
+
+  // Nombres de meses abreviados
+  const nombresMeses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+  let barrasHTML = '';
+  let etiquetasHTML = '';
+  datos.forEach((d, i) => {
+    const val = d.turnos || d.ingresos || 0;
+    const altura = Math.max(4, (val / maxValor) * 74);
+    const mesNombre = nombresMeses[d.mesNum - 1] || d.mes;
+    barrasHTML += `
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;">
+        <div title="${label}: ${val}" style="width:100%;background:var(--primary);opacity:.75;border-radius:3px 3px 0 0;height:${altura}px;min-height:4px;transition:.2s;"></div>
+      </div>
+    `;
+    etiquetasHTML += `<div style="flex:1;text-align:center;font-size:9px;color:var(--text-muted);">${mesNombre}</div>`;
+  });
+
+  container.innerHTML = barrasHTML;
+  etiquetasContainer.innerHTML = etiquetasHTML;
+}
+
+// ============================================================
+// DATOS DE EJEMPLO (fallback)
 // ============================================================
 function mostrarDatosEjemplo() {
   document.getElementById('prod-turnos-atendidos').textContent = '12';
   document.getElementById('prod-ingresos').textContent = '$45.000';
   document.getElementById('prod-ausencias').textContent = '2';
   document.getElementById('prod-pacientes-nuevos').textContent = '21';
-
-  // Datos de ejemplo para el gráfico
-  const hoy = new Date();
-  const turnosEjemplo = {};
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(hoy);
-    d.setDate(hoy.getDate() - i);
-    const fechaStr = d.toISOString().slice(0, 10);
-    turnosEjemplo[fechaStr] = Math.floor(Math.random() * 5) + 1;
-  }
-  const fechaInicio = new Date(hoy);
-  fechaInicio.setDate(hoy.getDate() - 6);
-  renderGraficoProductividad(turnosEjemplo, fechaInicio, hoy);
-
-  // Datos de ejemplo para la tabla
-  const turnosEjemploLista = [
-    { fecha: hoy.toISOString().slice(0, 10), paciente: 'María González', odontologo: 'Dr. Hernán Pérez', estado: 'finalizado', total_paciente: 15000 },
-    { fecha: hoy.toISOString().slice(0, 10), paciente: 'Juan Pérez', odontologo: 'Dra. Martina Gutierrez', estado: 'finalizado', total_paciente: 25000 },
-    { fecha: hoy.toISOString().slice(0, 10), paciente: 'Lucía Pereyra', odontologo: 'Rodrigo Sosa', estado: 'finalizado', total_paciente: 5000 },
-  ];
-  renderUltimosTurnos(turnosEjemploLista);
-  document.getElementById('prod-ultimos-count').textContent = `${turnosEjemploLista.length} registros`;
   document.getElementById('prod-periodo').textContent = 'Últimos 7 días · Datos de ejemplo';
+
+  // Datos de ejemplo para días de semana
+  const conteoDias = {0:1,1:3,2:2,3:4,4:2,5:5,6:0};
+  renderDiaSemana(conteoDias, 7);
+
+  // Datos de ejemplo para profesionales
+  const turnosProf = {'1':5, '2':3, '3':4};
+  const ingresosProf = {'1':15000, '2':8000, '3':22000};
+  const profesionales = {'1':'Dr. Pérez', '2':'Dra. Gutierrez', '3':'Dr. Sosa'};
+  renderRendimientoProfesional(turnosProf, ingresosProf, profesionales);
+
+  // Datos de ejemplo para 6 meses
+  const meses = [
+    { mes: '2026-03', mesNum: 3, turnos: 8, ingresos: 12000 },
+    { mes: '2026-04', mesNum: 4, turnos: 12, ingresos: 18000 },
+    { mes: '2026-05', mesNum: 5, turnos: 7, ingresos: 9000 },
+    { mes: '2026-06', mesNum: 6, turnos: 15, ingresos: 25000 },
+    { mes: '2026-07', mesNum: 7, turnos: 10, ingresos: 14000 },
+    { mes: '2026-08', mesNum: 8, turnos: 18, ingresos: 32000 }
+  ];
+  renderGrafico6Meses('prod-turnos-6m', 'prod-turnos-6m-etiquetas', meses.map(d => ({turnos: d.turnos, mesNum: d.mesNum})), 'Turnos');
+  renderGrafico6Meses('prod-ingresos-6m', 'prod-ingresos-6m-etiquetas', meses.map(d => ({ingresos: d.ingresos, mesNum: d.mesNum})), 'Ingresos');
 }
 
 // ============================================================
