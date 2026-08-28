@@ -12,7 +12,7 @@ let presupuestosListener = null;
 let pacientesDataForm = [];
 let profesionalesDataForm = [];
 let tratamientosDataForm = [];
-let coberturasData = {}; // { tratamientoId: { planId: porcentaje } }
+let coberturasData = {};
 let activePlanId = 0;
 let activeObraSocialId = null;
 
@@ -97,7 +97,7 @@ function renderPresupuestos() {
 }
 
 // ============================================================
-// CARGAR PRESUPUESTOS DESDE FIRESTORE (listado)
+// CARGAR PRESUPUESTOS DESDE FIRESTORE
 // ============================================================
 function cargarPresupuestos() {
   if (presupuestosListener) {
@@ -114,11 +114,15 @@ function cargarPresupuestos() {
       });
       aplicarFiltrosPresupuestos();
     }, (error) => {
-      console.error('Error cargando presupuestos:', error);
+      // Si la colección no existe, Firestore devuelve un error de permisos o de índice
+      // Mostramos mensaje amigable en lugar de error
+      console.warn('No se pudieron cargar presupuestos:', error);
       const tbody = $('presupuestos-tbody');
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8;">Error al cargar presupuestos: ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8;">No hay presupuestos registrados. ¡Creá el primero!</td></tr>`;
       }
+      const countEl = $('presupuestos-count');
+      if (countEl) countEl.textContent = '0 registros';
     });
 }
 
@@ -491,9 +495,6 @@ function onPacienteChange(pacienteId) {
   const badge = document.getElementById('os-badge');
   const badgeText = document.getElementById('os-badge-texto');
   if (obraSocialId && planId) {
-    // Obtener nombres de obra social y plan (desde Firestore o desde datos cargados)
-    // Como no tenemos obra_sociales en este contexto, podemos mostrar solo IDs o buscar en otra colección.
-    // Simplificamos: mostramos "OS ID: X, Plan ID: Y"
     badgeText.textContent = `Obra social: ${obraSocialId} · Plan: ${planId}`;
     badge.style.display = 'block';
   } else {
@@ -663,9 +664,6 @@ function guardarPresupuesto(e) {
   const total = Math.max(0, subtotal - descuento);
   const totalPac = Math.max(0, total - totalOs);
 
-  // Generar número de presupuesto (podemos usar el ID del documento después de crear)
-  // pero lo dejamos como PRES-XXXXX, se asignará al guardar.
-
   const data = {
     paciente_id: pacienteId,
     paciente_nombre: pacienteNombre,
@@ -690,7 +688,7 @@ function guardarPresupuesto(e) {
 
   db.collection('presupuestos').add(data)
     .then(docRef => {
-      // Asignar número basado en ID
+      // Asignar número basado en una parte del ID
       const numero = `PRES-${String(docRef.id).slice(0, 6).toUpperCase()}`;
       return docRef.update({ numero: numero });
     })
