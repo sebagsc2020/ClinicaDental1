@@ -108,6 +108,7 @@ function renderCaja() {
               <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Registrado por</th>
               <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Monto</th>
               <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Estado</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Cierre</th>
               <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;"></th>
             </tr>
           </thead>
@@ -134,7 +135,9 @@ function renderCaja() {
         #caja-pagos-table .table th:nth-child(4),
         #caja-pagos-table .table td:nth-child(4),
         #caja-pagos-table .table th:nth-child(5),
-        #caja-pagos-table .table td:nth-child(5) {
+        #caja-pagos-table .table td:nth-child(5),
+        #caja-pagos-table .table th:nth-child(8),
+        #caja-pagos-table .table td:nth-child(8) {
           display: none;
         }
       }
@@ -167,7 +170,7 @@ function cargarPagos() {
     }, (error) => {
       console.error('Error cargando pagos:', error);
       document.getElementById('caja-pagos-body').innerHTML = `
-        <tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8;">
+        <tr><td colspan="9" style="text-align:center;padding:30px;color:#94a3b8;">
           Error al cargar los datos. ${error.message}
         </td></tr>
       `;
@@ -342,7 +345,7 @@ function renderTablaPagos(pagos) {
   if (!tbody) return;
 
   if (pagos.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8;">No hay pagos que coincidan con los filtros.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#94a3b8;">No hay pagos que coincidan con los filtros.</td></tr>`;
     mobList.innerHTML = '';
     contador.textContent = '0 registro(s)';
     return;
@@ -397,6 +400,7 @@ function renderTablaPagos(pagos) {
     const estadoTexto = estadoTextos[estado] || estado;
     const esAnulado = estado === 'anulado';
     const esEgreso = p.tipo === 'egreso';
+    const cierreId = p.cierre_id || null;
 
     const btnAnular = !esAnulado && !esEgreso ? `
       <button type="button" class="btn btn-sm"
@@ -408,6 +412,20 @@ function renderTablaPagos(pagos) {
 
     const signo = esEgreso ? '−' : '';
     const colorMonto = esEgreso ? 'var(--danger)' : (esAnulado ? 'var(--text-muted)' : 'var(--text)');
+
+    // Badge de cierre (si tiene)
+    let cierreBadge = '';
+    if (cierreId) {
+      cierreBadge = `
+        <a href="#" onclick="renderVerCierreView('${cierreId}')"
+           style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#1d4ed8;text-decoration:none;background:#eff6ff;padding:3px 8px;border-radius:4px;border:1px solid #bfdbfe;white-space:nowrap;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Cierre #${cierreId.slice(0,4)}
+        </a>
+      `;
+    } else {
+      cierreBadge = `<span style="font-size:11px;color:var(--text-muted);">—</span>`;
+    }
 
     html += `
       <tr style="${esAnulado ? 'opacity:0.5;' : ''}">
@@ -425,6 +443,7 @@ function renderTablaPagos(pagos) {
           ${signo}$${Number(monto).toLocaleString()}
         </td>
         <td><span class="badge ${estadoClase}">${estadoTexto}</span></td>
+        <td>${cierreBadge}</td>
         <td>${btnAnular}</td>
       </tr>
     `;
@@ -503,7 +522,6 @@ window.confirmarAnular = function() {
   .then(() => {
     cerrarAnular();
     showToast('✅ Pago anulado correctamente.');
-    // Los datos se actualizan en tiempo real gracias al onSnapshot
   })
   .catch(err => {
     alert('❌ Error al anular el pago: ' + err.message);
@@ -580,7 +598,7 @@ window.renderCierresView = function() {
             <td style="text-align:right;font-weight:600;color:${diffColor};">${diff >= 0 ? '+' : ''}$${Number(diff).toLocaleString()}</td>
             <td>${cerradoPor}</td>
             <td>
-              <button class="btn btn-sm btn-secondary" onclick="alert('Ver detalle del cierre ${c.id}')">Ver</button>
+              <button class="btn btn-sm btn-secondary" onclick="renderVerCierreView('${c.id}')">Ver</button>
             </td>
           </tr>
         `;
@@ -594,7 +612,144 @@ window.renderCierresView = function() {
 };
 
 // ============================================================
-// VISTA: REALIZAR CIERRE DE CAJA (CORREGIDO - SIN ÍNDICE COMPUESTO)
+// VISTA: VER DETALLE DE UN CIERRE
+// ============================================================
+window.renderVerCierreView = function(cierreId) {
+  const el = $('view-caja');
+  el.innerHTML = `
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="#" class="btn btn-secondary btn-sm" onclick="renderCierresView()">&larr; Volver</a>
+        <div>
+          <div class="page-title">Detalle de cierre</div>
+          <div class="page-subtitle" id="cierre-detalle-subtitle">Cargando...</div>
+        </div>
+      </div>
+    </div>
+    <div id="cierre-detalle-contenido" style="text-align:center;padding:20px;color:var(--text-muted);">Cargando datos del cierre...</div>
+  `;
+
+  // Obtener datos del cierre y sus pagos asociados
+  Promise.all([
+    db.collection('cierres').doc(cierreId).get(),
+    db.collection('pagos').where('cierre_id', '==', cierreId).get()
+  ])
+  .then(([cierreDoc, pagosSnap]) => {
+    if (!cierreDoc.exists) {
+      document.getElementById('cierre-detalle-contenido').innerHTML = '<div class="alert alert-danger">Cierre no encontrado.</div>';
+      return;
+    }
+
+    const cierre = { id: cierreDoc.id, ...cierreDoc.data() };
+    const pagos = [];
+    pagosSnap.forEach(doc => pagos.push({ id: doc.id, ...doc.data() }));
+
+    // Calcular totales
+    const totalEfectivo = pagos.filter(p => p.metodo === 'efectivo').reduce((sum, p) => sum + (p.monto || 0), 0);
+    const totalOtros = pagos.filter(p => p.metodo !== 'efectivo').reduce((sum, p) => sum + (p.monto || 0), 0);
+    const totalGeneral = pagos.reduce((sum, p) => sum + (p.monto || 0), 0);
+
+    // Mostrar fecha formateada
+    const fechaCierre = cierre.fecha_cierre ? formatDateCaja(cierre.fecha_cierre) : '—';
+    document.getElementById('cierre-detalle-subtitle').textContent = `Cierre del ${fechaCierre} · ${cierre.periodo || ''}`;
+
+    // Construir HTML
+    const diff = (cierre.efectivo_ingresado || 0) - (cierre.efectivo_esperado || 0);
+    const diffColor = Math.abs(diff) < 0.01 ? 'var(--success)' : (diff < 0 ? 'var(--danger)' : 'var(--warning)');
+
+    let pagosHTML = '';
+    if (pagos.length === 0) {
+      pagosHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No hay pagos asociados a este cierre.</div>';
+    } else {
+      pagosHTML = `
+        <table class="table" style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Fecha</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Paciente</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Método</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Comprobante</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Monto</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pagos.map(p => `
+              <tr>
+                <td style="font-size:12px;white-space:nowrap;">${formatDateCaja(p.fecha)}</td>
+                <td>${p.paciente || '—'}</td>
+                <td>${p.metodo || 'otro'}</td>
+                <td style="font-size:12px;color:var(--text-muted);">${p.comprobante || ''}</td>
+                <td style="text-align:right;font-weight:700;">$${Number(p.monto).toLocaleString()}</td>
+                <td><span class="badge badge-green">${p.estado === 'anulado' ? 'Anulado' : 'Completado'}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    const contenido = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text);">Resumen del cierre</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span>Fecha de cierre</span>
+              <span style="font-weight:600;">${fechaCierre}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span>Período</span>
+              <span style="font-weight:600;">${cierre.periodo || '—'}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding-top:8px;border-top:1px solid var(--border);">
+              <span>Efectivo esperado</span>
+              <span style="font-weight:600;">$${Number(cierre.efectivo_esperado || 0).toLocaleString()}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span>Efectivo ingresado</span>
+              <span style="font-weight:600;">$${Number(cierre.efectivo_ingresado || 0).toLocaleString()}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:${diffColor};">
+              <span>Diferencia</span>
+              <span>${diff >= 0 ? '+' : ''}$${Number(diff).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text);">Totales por método</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span>Efectivo</span>
+              <span style="font-weight:600;">$${Number(totalEfectivo).toLocaleString()}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+              <span>Otros métodos</span>
+              <span style="font-weight:600;">$${Number(totalOtros).toLocaleString()}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding-top:8px;border-top:2px solid var(--border);">
+              <span>Total general</span>
+              <span style="color:var(--primary);">$${Number(totalGeneral).toLocaleString()}</span>
+            </div>
+          </div>
+          ${cierre.observaciones ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:13px;color:var(--text-muted);"><strong>Observaciones:</strong> ${cierre.observaciones}</div>` : ''}
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text);">Pagos incluidos en este cierre <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(${pagos.length} registros)</span></div>
+        ${pagosHTML}
+      </div>
+    `;
+
+    document.getElementById('cierre-detalle-contenido').innerHTML = contenido;
+  })
+  .catch(err => {
+    document.getElementById('cierre-detalle-contenido').innerHTML = `<div class="alert alert-danger">Error al cargar el cierre: ${err.message}</div>`;
+  });
+};
+
+// ============================================================
+// VISTA: REALIZAR CIERRE DE CAJA
 // ============================================================
 window.renderRealizarCierreView = function() {
   const el = $('view-caja');
@@ -617,8 +772,6 @@ window.renderRealizarCierreView = function() {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
-  // 🔥 MODIFICACIÓN: quitamos el where('tipo', '!=', 'egreso') para evitar índice compuesto.
-  // Filtramos en cliente.
   db.collection('pagos')
     .where('estado', '==', 'completado')
     .get()
@@ -626,18 +779,15 @@ window.renderRealizarCierreView = function() {
       const pagos = [];
       snapshot.forEach(doc => {
         const data = doc.data();
-        // Excluir egresos y pagos ya cerrados
         if (data.tipo !== 'egreso' && !data.cierre_id) {
           pagos.push({ id: doc.id, ...data });
         }
       });
 
-      // Calcular efectivo esperado (suma de todos los pagos en efectivo)
       const efectivoTotal = pagos
         .filter(p => p.metodo === 'efectivo')
         .reduce((sum, p) => sum + (p.monto || 0), 0);
 
-      // Agrupar otros métodos
       const otros = {};
       pagos.forEach(p => {
         if (p.metodo !== 'efectivo') {
@@ -649,7 +799,6 @@ window.renderRealizarCierreView = function() {
 
       const totalGeneral = pagos.reduce((sum, p) => sum + (p.monto || 0), 0);
 
-      // Generar HTML del formulario
       const formHtml = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
           <!-- Efectivo -->
@@ -752,7 +901,6 @@ window.renderRealizarCierreView = function() {
       document.getElementById('cierre-datos').innerHTML = formHtml;
       document.getElementById('cierre-subtitle').textContent = `Primer cierre — todos los movimientos acumulados (${pagos.length} pagos)`;
 
-      // Almacenar datos para el guardado
       window._cierrePagos = pagos;
       window._cierreEfectivoEsperado = efectivoTotal;
       window._cierreOtros = otros;
