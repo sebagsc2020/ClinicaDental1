@@ -8,7 +8,6 @@
 function renderProfesionales() {
   const el = $('view-profesionales');
 
-  // Construir el HTML
   el.innerHTML = `
     <div class="page-header">
       <div>
@@ -87,14 +86,13 @@ function renderProfesionales() {
         </table>
       </div>
 
-      <!-- Lista mobile de profesionales (oculta en desktop) -->
       <div class="prof-mob-list" id="profesionales-mobile-list" style="display:none;border-top:1px solid var(--border);">
         <!-- Generado por JS -->
       </div>
     </div>
   `;
 
-  // Agregar estilos para mobile (si no existen)
+  // Estilos para mobile
   if (!document.getElementById('prof-mobile-styles')) {
     const style = document.createElement('style');
     style.id = 'prof-mobile-styles';
@@ -104,36 +102,28 @@ function renderProfesionales() {
         .prof-mob-list { display: block !important; }
         .card form > div { min-width: 0; }
       }
-      /* Desktop: ocultar lista mobile */
       .prof-mob-list { display: none; }
       @media (min-width: 769px) {
         .prof-mob-list { display: none !important; }
       }
-      /* Estilos para avatar */
       .avatar-prof {
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 13px;
-        flex-shrink: 0;
-        background: var(--primary, #355063);
-        color: #fff;
-        overflow: hidden;
+        width: 34px; height: 34px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 13px; flex-shrink: 0;
+        background: var(--primary, #355063); color: #fff; overflow: hidden;
       }
-      .avatar-prof img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+      .avatar-prof img { width: 100%; height: 100%; object-fit: cover; }
+      /* Estilos para el modal de edición */
+      .modal-box { max-width: 900px !important; }
+      @media (max-width: 768px) {
+        #prof-edit-grid { grid-template-columns: 1fr !important; }
+        #prof-edit-datos-grid { grid-template-columns: 1fr !important; }
+        #prof-edit-prof-grid { grid-template-columns: 1fr !important; }
       }
     `;
     document.head.appendChild(style);
   }
 
-  // Cargar profesionales en tiempo real
   cargarProfesionales();
 }
 
@@ -141,7 +131,6 @@ function renderProfesionales() {
 // CARGAR PROFESIONALES DESDE FIRESTORE
 // ============================================================
 function cargarProfesionales() {
-  // Escuchar cambios en tiempo real
   db.collection('profesionales').orderBy('nombre').onSnapshot((snapshot) => {
     const profesionales = [];
     snapshot.forEach(doc => {
@@ -169,7 +158,6 @@ window.aplicarFiltrosProfesionales = function() {
 
   let filtrados = window._profesionalesData || [];
 
-  // Filtro por búsqueda
   if (busqueda) {
     filtrados = filtrados.filter(p => {
       const nombre = `${p.nombre || ''} ${p.apellido || ''}`.toLowerCase();
@@ -178,19 +166,16 @@ window.aplicarFiltrosProfesionales = function() {
     });
   }
 
-  // Filtro por rol
   if (rol) {
     filtrados = filtrados.filter(p => p.rol === rol);
   }
 
-  // Filtro por estado
   if (estado === 'activo') {
     filtrados = filtrados.filter(p => p.estado !== false);
   } else if (estado === 'inactivo') {
     filtrados = filtrados.filter(p => p.estado === false);
   }
 
-  // Actualizar contador
   const countEl = $('profesionales-count');
   if (countEl) {
     countEl.textContent = `${filtrados.length} ${filtrados.length === 1 ? 'en total' : 'en total'}`;
@@ -212,7 +197,6 @@ function renderTablaProfesionales(profesionales) {
     return;
   }
 
-  // Mapeo de roles a badges
   const rolBadges = {
     'odontologo': 'badge-blue',
     'admin': 'badge-amber',
@@ -240,7 +224,6 @@ function renderTablaProfesionales(profesionales) {
     const colorAgenda = p.color_agenda || '#355063';
     const tieneFoto = p.foto ? true : false;
 
-    // Determinar si mostrar "Desactivar" o "Activar"
     const toggleBtn = estadoActivo
       ? `<a href="#" class="btn btn-sm" style="background:#fef3cd;color:#856404;" onclick="toggleEstadoProfesional('${p.id}')">Desactivar</a>`
       : `<a href="#" class="btn btn-sm" style="background:#d4edda;color:#155724;" onclick="toggleEstadoProfesional('${p.id}')">Activar</a>`;
@@ -361,23 +344,19 @@ window.limpiarFiltrosProfesionales = function() {
 // FUNCIONES CRUD
 // ============================================================
 
-// --- Variable global para eliminar ---
 let _eliminarProfId = null;
 
-// --- Confirmar eliminación ---
 window.confirmarEliminarProf = function(id, nombre) {
   _eliminarProfId = id;
   document.getElementById('modal-nombre-prof').textContent = nombre;
   document.getElementById('modal-eliminar-prof').style.display = 'flex';
 };
 
-// --- Cerrar modal eliminar ---
 window.cerrarEliminarProf = function() {
   document.getElementById('modal-eliminar-prof').style.display = 'none';
   _eliminarProfId = null;
 };
 
-// --- Ejecutar eliminación ---
 window.ejecutarEliminarProf = function() {
   if (!_eliminarProfId) return;
   db.collection('profesionales').doc(_eliminarProfId).delete()
@@ -388,7 +367,6 @@ window.ejecutarEliminarProf = function() {
     .catch(err => alert('❌ Error: ' + err.message));
 };
 
-// --- Toggle estado (Activar/Desactivar) ---
 window.toggleEstadoProfesional = function(id) {
   const prof = window._profesionalesData.find(p => p.id === id);
   if (!prof) return;
@@ -400,102 +378,118 @@ window.toggleEstadoProfesional = function(id) {
     .catch(err => alert('❌ Error: ' + err.message));
 };
 
-// --- Configurar horarios (placeholder) ---
 window.configurarHorarios = function(id) {
   alert('Configurar horarios para profesional ID: ' + id);
-  // Aquí puedes redirigir a una página de configuración o abrir un modal
 };
 
-// --- Configurar obras sociales (placeholder) ---
 window.configurarObrasSociales = function(id) {
   alert('Configurar obras sociales para profesional ID: ' + id);
-  // Aquí puedes redirigir a una página de configuración o abrir un modal
 };
 
 // ============================================================
 // MODAL: NUEVO PROFESIONAL
 // ============================================================
 window.openModalNuevoProfesional = function() {
+  // Versión simplificada del modal de nuevo, similar al de edición pero con campos vacíos
   openModal(`
     <div class="modal-title">➕ Nuevo profesional</div>
-    <div class="form-grid">
-      <div class="form-group">
-        <label class="form-label">Nombre *</label>
-        <input class="form-control" id="f-prof-nombre" placeholder="Nombre">
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start;">
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Datos personales</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group"><label class="form-label">Nombre *</label><input class="form-control" id="f-prof-nombre" placeholder="Nombre"></div>
+            <div class="form-group"><label class="form-label">Apellido *</label><input class="form-control" id="f-prof-apellido" placeholder="Apellido"></div>
+            <div class="form-group"><label class="form-label">Email *</label><input class="form-control" id="f-prof-email" type="email" placeholder="Email"></div>
+            <div class="form-group"><label class="form-label">Teléfono</label><input class="form-control" id="f-prof-telefono" placeholder="Teléfono"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Datos profesionales</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group" style="grid-column:1/-1;">
+              <label class="form-label">Cédula / Matrícula</label>
+              <input class="form-control" id="f-prof-cedula" placeholder="Ej: MN 12345">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Comisión (%)</label>
+              <input class="form-control" id="f-prof-comision" type="number" step="0.01" value="40">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Color en agenda</label>
+              <input class="form-control" id="f-prof-color" type="color" value="#355063" style="padding:2px;height:40px;">
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Contraseña</div>
+          <div style="max-width:320px;">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Contraseña</label>
+              <input class="form-control" id="f-prof-password" type="password" placeholder="Nueva contraseña (opcional)">
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Apellido</label>
-        <input class="form-control" id="f-prof-apellido" placeholder="Apellido">
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Configuración</div>
+          <div class="form-group">
+            <label class="form-label">Rol</label>
+            <select class="form-control" id="f-prof-rol">
+              <option value="odontologo">Odontólogo</option>
+              <option value="admin">Administrador</option>
+              <option value="secretaria">Secretaria/o</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Estado</label>
+            <select class="form-control" id="f-prof-estado">
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="guardarProfesional()">Guardar</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
       </div>
-      <div class="form-group">
-        <label class="form-label">Cédula</label>
-        <input class="form-control" id="f-prof-cedula" placeholder="Cédula profesional">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Rol</label>
-        <select class="form-control" id="f-prof-rol">
-          <option value="odontologo">Odontólogo</option>
-          <option value="admin">Administrador</option>
-          <option value="secretaria">Secretaria/o</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Especialidad</label>
-        <input class="form-control" id="f-prof-especialidad" placeholder="Ej: Ortodoncia">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input class="form-control" id="f-prof-email" type="email" placeholder="Email">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Teléfono</label>
-        <input class="form-control" id="f-prof-telefono" placeholder="Teléfono">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Color de agenda</label>
-        <input class="form-control" id="f-prof-color" type="color" value="#355063">
-      </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input type="checkbox" id="f-prof-activo" checked> Activo
-        </label>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarProfesional()">Guardar</button>
     </div>
   `);
 };
 
 // ============================================================
-// GUARDAR PROFESIONAL
+// GUARDAR PROFESIONAL (desde modal de nuevo)
 // ============================================================
 window.guardarProfesional = function() {
   const nombre = $('f-prof-nombre').value.trim();
   const apellido = $('f-prof-apellido').value.trim();
-  const cedula = $('f-prof-cedula').value.trim();
-  const rol = $('f-prof-rol').value;
-  const especialidad = $('f-prof-especialidad').value.trim();
   const email = $('f-prof-email').value.trim();
   const telefono = $('f-prof-telefono').value.trim();
-  const color_agenda = $('f-prof-color').value;
-  const activo = $('f-prof-activo').checked;
+  const cedula = $('f-prof-cedula').value.trim();
+  const comision = parseFloat($('f-prof-comision').value) || 0;
+  const color_agenda = $('f-prof-color').value || '#355063';
+  const rol = $('f-prof-rol').value;
+  const estado = $('f-prof-estado').value === 'activo';
+  const password = $('f-prof-password').value;
 
-  if (!nombre) return alert('El nombre es obligatorio.');
+  if (!nombre || !apellido || !email) return alert('Nombre, apellido y email son obligatorios.');
 
   const data = {
     nombre,
     apellido,
-    cedula,
-    rol,
-    especialidad,
     email,
     telefono,
-    color_agenda: color_agenda || '#355063',
-    estado: activo,
+    cedula,
+    comision_porcentaje: comision,
+    color_agenda,
+    rol,
+    estado,
+    especialidades_ids: [],
+    tratamiento_ids: [],
     fecha_creacion: new Date().toISOString().slice(0, 10)
   };
+
+  if (password) data.password = password; // Opcional: almacenar hash si se usa auth
 
   db.collection('profesionales').add(data)
     .then(() => {
@@ -506,96 +500,313 @@ window.guardarProfesional = function() {
 };
 
 // ============================================================
-// EDITAR PROFESIONAL
+// EDITAR PROFESIONAL - MODAL COMPLETO ESTILO DENTALSOFT
 // ============================================================
 window.editarProfesional = function(id) {
+  // Cargar datos del profesional
   db.collection('profesionales').doc(id).get().then(doc => {
     if (!doc.exists) return alert('Profesional no encontrado');
     const data = doc.data();
 
-    openModal(`
-      <div class="modal-title">✏️ Editar profesional</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label">Nombre *</label>
-          <input class="form-control" id="f-prof-edit-nombre" value="${data.nombre || ''}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Apellido</label>
-          <input class="form-control" id="f-prof-edit-apellido" value="${data.apellido || ''}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Cédula</label>
-          <input class="form-control" id="f-prof-edit-cedula" value="${data.cedula || ''}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Rol</label>
-          <select class="form-control" id="f-prof-edit-rol">
-            <option value="odontologo" ${data.rol === 'odontologo' ? 'selected' : ''}>Odontólogo</option>
-            <option value="admin" ${data.rol === 'admin' ? 'selected' : ''}>Administrador</option>
-            <option value="secretaria" ${data.rol === 'secretaria' ? 'selected' : ''}>Secretaria/o</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Especialidad</label>
-          <input class="form-control" id="f-prof-edit-especialidad" value="${data.especialidad || ''}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input class="form-control" id="f-prof-edit-email" type="email" value="${data.email || ''}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Teléfono</label>
-          <input class="form-control" id="f-prof-edit-telefono" value="${data.telefono || ''}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Color de agenda</label>
-          <input class="form-control" id="f-prof-edit-color" type="color" value="${data.color_agenda || '#355063'}">
-        </div>
-        <div class="form-group" style="grid-column:1/-1;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" id="f-prof-edit-activo" ${data.estado !== false ? 'checked' : ''}> Activo
+    // Cargar especialidades y tratamientos desde Firestore
+    Promise.all([
+      db.collection('especialidades').orderBy('nombre').get(),
+      db.collection('tratamientos').orderBy('categoria').orderBy('nombre').get()
+    ]).then(([especialidadesSnap, tratamientosSnap]) => {
+      const especialidades = [];
+      especialidadesSnap.forEach(d => especialidades.push({ id: d.id, ...d.data() }));
+
+      const tratamientos = [];
+      const tratamientosPorCategoria = {};
+      tratamientosSnap.forEach(d => {
+        const t = { id: d.id, ...d.data() };
+        tratamientos.push(t);
+        const cat = t.categoria || 'otros';
+        if (!tratamientosPorCategoria[cat]) tratamientosPorCategoria[cat] = [];
+        tratamientosPorCategoria[cat].push(t);
+      });
+
+      // Construir HTML de especialidades (checkboxes)
+      let especialidadesHTML = '';
+      especialidades.forEach(esp => {
+        const checked = (data.especialidades_ids && data.especialidades_ids.includes(esp.id)) ? 'checked' : '';
+        especialidadesHTML += `
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:13px;transition:background .1s"
+                 onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">
+            <input type="checkbox" name="especialidad_ids[]" value="${esp.id}" ${checked} style="accent-color:var(--primary)">
+            ${esp.nombre || 'Sin nombre'}
           </label>
+        `;
+      });
+
+      // Construir HTML de tratamientos (agrupados por categoría)
+      let tratamientosHTML = '';
+      for (const [cat, items] of Object.entries(tratamientosPorCategoria)) {
+        tratamientosHTML += `<div><div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:6px">`;
+        items.forEach(t => {
+          const checked = (data.tratamiento_ids && data.tratamiento_ids.includes(t.id)) ? 'checked' : '';
+          tratamientosHTML += `
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:13px;transition:background .1s"
+                   onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">
+              <input type="checkbox" name="tratamiento_ids[]" value="${t.id}" ${checked} style="accent-color:var(--primary)">
+              ${t.nombre || 'Sin nombre'}
+            </label>
+          `;
+        });
+        tratamientosHTML += `</div></div>`;
+      }
+
+      const nombreCompleto = `${data.nombre || ''} ${data.apellido || ''}`.trim();
+      const iniciales = nombreCompleto.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      const tieneFoto = data.foto ? true : false;
+      const fotoSrc = data.foto || '';
+
+      // Abrir modal con el diseño completo
+      openModal(`
+        <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+          <a href="#" class="btn btn-secondary btn-sm" onclick="closeModal();return false;">&larr; Volver</a>
+          <div>
+            <div class="modal-title" style="margin:0;">Editar profesional</div>
+            <div style="font-size:14px;color:var(--text-muted);">${nombreCompleto}</div>
+          </div>
         </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="actualizarProfesional('${id}')">Actualizar</button>
-      </div>
-    `);
+
+        <div id="prof-edit-grid" style="display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start;">
+
+          <!-- Columna principal -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Datos personales -->
+            <div class="card">
+              <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Datos personales</div>
+              <div id="prof-edit-datos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group">
+                  <label class="form-label">Nombre <span style="color:red">*</span></label>
+                  <input type="text" id="f-prof-edit-nombre" class="form-control" value="${data.nombre || ''}" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Apellido <span style="color:red">*</span></label>
+                  <input type="text" id="f-prof-edit-apellido" class="form-control" value="${data.apellido || ''}" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email <span style="color:red">*</span></label>
+                  <input type="email" id="f-prof-edit-email" class="form-control" value="${data.email || ''}" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Teléfono</label>
+                  <input type="text" id="f-prof-edit-telefono" class="form-control" value="${data.telefono || ''}">
+                </div>
+              </div>
+            </div>
+
+            <!-- Datos profesionales -->
+            <div class="card">
+              <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Datos profesionales</div>
+              <div id="prof-edit-prof-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group" style="grid-column:1/-1;">
+                  <label class="form-label">Especialidades</label>
+                  <div style="display:flex;flex-wrap:wrap;gap:8px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);">
+                    ${especialidadesHTML}
+                  </div>
+                  <span class="form-hint">Se muestra al paciente al reservar turno online</span>
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                  <label class="form-label">Tratamientos que realiza</label>
+                  <div style="border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:12px;display:flex;flex-direction:column;gap:12px;">
+                    ${tratamientosHTML}
+                  </div>
+                  <span class="form-hint">Solo se mostrarán profesionales que realizan el tratamiento seleccionado al reservar turno online</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Cédula / Matrícula profesional</label>
+                  <input type="text" id="f-prof-edit-cedula" class="form-control" value="${data.cedula || ''}">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Comisión (%)</label>
+                  <input type="number" id="f-prof-edit-comision" class="form-control" value="${data.comision_porcentaje || 40}" min="0" max="100" step="0.01">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Color en agenda</label>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <input type="color" id="f-prof-edit-color" value="${data.color_agenda || '#355063'}" style="width:44px;height:36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;padding:2px;">
+                    <span style="font-size:12px;color:var(--text-muted)">Se usa para identificar al profesional en la agenda</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cambiar contraseña -->
+            <div class="card">
+              <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Cambiar contraseña</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Dejá en blanco para mantener la contraseña actual.</div>
+              <div style="max-width:320px;">
+                <div class="form-group" style="margin:0;position:relative;">
+                  <label class="form-label">Contraseña</label>
+                  <input type="password" id="f-prof-edit-password" class="form-control" placeholder="Nueva contraseña (opcional)" autocomplete="new-password">
+                  <button type="button" onclick="togglePwdEdit()" style="position:absolute;right:10px;top:32px;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;" tabindex="-1">👁</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna lateral -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Foto del profesional -->
+            <div class="card">
+              <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Foto del profesional</div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;">
+                <div id="foto-preview-wrap" style="position:relative;width:96px;height:96px;border-radius:50%;overflow:hidden;border:2px solid var(--border);flex-shrink:0;">
+                  <span id="foto-preview-initials" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#355063;color:#fff;font-size:26px;font-weight:700;">${iniciales}</span>
+                  <img id="foto-preview-img" src="${fotoSrc}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:${tieneFoto ? 'block' : 'none'}">
+                </div>
+                <div style="text-align:center;">
+                  <label for="foto_profesional_edit" class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-block;">📷 ${tieneFoto ? 'Cambiar foto' : 'Subir foto'}</label>
+                  <input type="file" id="foto_profesional_edit" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewFotoEdit(this, '${id}')">
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">JPG, PNG o WebP · máx 4 MB</div>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.5;border-top:1px solid var(--border);padding-top:10px;">
+                Se muestra en la reserva online cuando el paciente elige profesional.
+              </div>
+            </div>
+
+            <!-- Configuración -->
+            <div class="card">
+              <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Configuración</div>
+              <div class="form-group">
+                <label class="form-label">Rol</label>
+                <select id="f-prof-edit-rol" class="form-control">
+                  <option value="odontologo" ${data.rol === 'odontologo' ? 'selected' : ''}>Odontólogo</option>
+                  <option value="admin" ${data.rol === 'admin' ? 'selected' : ''}>Administrador</option>
+                  <option value="secretaria" ${data.rol === 'secretaria' ? 'selected' : ''}>Secretaria/o</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">Estado</label>
+                <select id="f-prof-edit-estado" class="form-control">
+                  <option value="activo" ${data.estado !== false ? 'selected' : ''}>Activo</option>
+                  <option value="inactivo" ${data.estado === false ? 'selected' : ''}>Inactivo</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="guardarEdicionProfesional('${id}')" style="width:100%;">Guardar cambios</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal()" style="width:100%;text-align:center;">Cancelar</button>
+          </div>
+        </div>
+      `);
+
+      // Guardar referencia al ID del profesional para la subida de foto
+      window._profEditId = id;
+
+    }).catch(err => alert('Error al cargar datos: ' + err.message));
   });
 };
 
 // ============================================================
-// ACTUALIZAR PROFESIONAL
+// FUNCIONES DE PREVISUALIZACIÓN DE FOTO (modal de edición)
 // ============================================================
-window.actualizarProfesional = function(id) {
+let _fotoFileEdit = null;
+
+window.previewFotoEdit = function(input, id) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 4 * 1024 * 1024) {
+    alert('La imagen no puede superar los 4 MB.');
+    input.value = '';
+    return;
+  }
+  _fotoFileEdit = file;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById('foto-preview-img');
+    const ini = document.getElementById('foto-preview-initials');
+    if (img) {
+      img.src = e.target.result;
+      img.style.display = 'block';
+    }
+    if (ini) ini.style.visibility = 'hidden';
+  };
+  reader.readAsDataURL(file);
+  const label = document.querySelector('label[for="foto_profesional_edit"]');
+  if (label) label.textContent = '📷 Cambiar foto';
+};
+
+window.togglePwdEdit = function() {
+  const input = document.getElementById('f-prof-edit-password');
+  if (input) input.type = input.type === 'password' ? 'text' : 'password';
+};
+
+// ============================================================
+// GUARDAR EDICIÓN DE PROFESIONAL (desde modal de edición)
+// ============================================================
+window.guardarEdicionProfesional = function(id) {
+  // Obtener valores de los campos
   const nombre = $('f-prof-edit-nombre').value.trim();
   const apellido = $('f-prof-edit-apellido').value.trim();
-  const cedula = $('f-prof-edit-cedula').value.trim();
-  const rol = $('f-prof-edit-rol').value;
-  const especialidad = $('f-prof-edit-especialidad').value.trim();
   const email = $('f-prof-edit-email').value.trim();
   const telefono = $('f-prof-edit-telefono').value.trim();
-  const color_agenda = $('f-prof-edit-color').value;
-  const activo = $('f-prof-edit-activo').checked;
+  const cedula = $('f-prof-edit-cedula').value.trim();
+  const comision = parseFloat($('f-prof-edit-comision').value) || 0;
+  const color_agenda = $('f-prof-edit-color').value || '#355063';
+  const rol = $('f-prof-edit-rol').value;
+  const estado = $('f-prof-edit-estado').value === 'activo';
+  const password = $('f-prof-edit-password').value;
 
-  if (!nombre) return alert('El nombre es obligatorio.');
+  if (!nombre || !apellido || !email) return alert('Nombre, apellido y email son obligatorios.');
 
-  db.collection('profesionales').doc(id).update({
+  // Obtener especialidades seleccionadas
+  const especialidadesCheckboxes = document.querySelectorAll('input[name="especialidad_ids[]"]:checked');
+  const especialidades_ids = Array.from(especialidadesCheckboxes).map(cb => cb.value);
+
+  // Obtener tratamientos seleccionados
+  const tratamientosCheckboxes = document.querySelectorAll('input[name="tratamiento_ids[]"]:checked');
+  const tratamiento_ids = Array.from(tratamientosCheckboxes).map(cb => cb.value);
+
+  // Preparar datos para actualizar
+  const updateData = {
     nombre,
     apellido,
-    cedula,
-    rol,
-    especialidad,
     email,
     telefono,
-    color_agenda: color_agenda || '#355063',
-    estado: activo
-  }).then(() => {
-    closeModal();
-    showToast('✅ Profesional actualizado.');
-  }).catch(err => alert('❌ Error: ' + err.message));
+    cedula,
+    comision_porcentaje: comision,
+    color_agenda,
+    rol,
+    estado,
+    especialidades_ids,
+    tratamiento_ids
+  };
+
+  if (password) {
+    // Opcional: si usas autenticación de Firebase, aquí podrías actualizar la contraseña
+    updateData.password = password; // Nota: esto no es seguro, se recomienda usar Firebase Auth
+  }
+
+  // Si hay una foto nueva, subir a Firebase Storage
+  if (_fotoFileEdit) {
+    const storageRef = firebase.storage().ref();
+    const fotoRef = storageRef.child(`profesionales/${id}/${Date.now()}_${_fotoFileEdit.name}`);
+    fotoRef.put(_fotoFileEdit).then(snapshot => {
+      return snapshot.ref.getDownloadURL();
+    }).then(url => {
+      updateData.foto = url;
+      _fotoFileEdit = null;
+      return db.collection('profesionales').doc(id).update(updateData);
+    }).then(() => {
+      closeModal();
+      showToast('✅ Profesional actualizado correctamente.');
+    }).catch(err => alert('❌ Error al subir foto: ' + err.message));
+  } else {
+    // Sin foto nueva, solo actualizar datos
+    db.collection('profesionales').doc(id).update(updateData)
+      .then(() => {
+        closeModal();
+        showToast('✅ Profesional actualizado correctamente.');
+      })
+      .catch(err => alert('❌ Error: ' + err.message));
+  }
 };
 
 // ============================================================
@@ -611,7 +822,6 @@ window.eliminarProfesional = function(id) {
 // ============================================================
 // INICIALIZACIÓN
 // ============================================================
-// Cerrar modal de eliminación al hacer clic fuera
 document.addEventListener('click', function(e) {
   const modal = document.getElementById('modal-eliminar-prof');
   if (modal && e.target === modal) {
