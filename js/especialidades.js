@@ -187,15 +187,18 @@ window.guardarNuevaEspecialidad = function() {
 };
 
 // ============================================================
-// MODAL: EDITAR ESPECIALIDAD
+// MODAL: EDITAR ESPECIALIDAD (CORREGIDO)
 // ============================================================
 window.openModalEditarEspecialidad = function(id) {
-  // Mostrar modal de carga
+  // 1. Mostrar modal de carga
   openModal(`
     <div class="modal-title">✏️ Editar especialidad</div>
-    <div style="text-align:center;padding:20px;color:var(--text-muted);">Cargando datos...</div>
+    <div style="text-align:center;padding:20px;color:var(--text-muted);">
+      <div style="font-size:14px;">Cargando datos...</div>
+    </div>
   `);
 
+  // 2. Obtener datos de Firestore
   db.collection('especialidades').doc(id).get()
     .then((doc) => {
       if (!doc.exists) {
@@ -210,40 +213,40 @@ window.openModalEditarEspecialidad = function(id) {
       const orden = data.orden || 0;
       const estado = data.estado || 'activa';
 
-      // Reemplazar contenido del modal con el formulario de edición
-      const modalContent = document.querySelector('#modal-container .modal-content');
-      if (modalContent) {
-        modalContent.innerHTML = `
-          <div class="modal-title">✏️ Editar especialidad</div>
-          <form id="form-editar-especialidad" onsubmit="event.preventDefault(); guardarEdicionEspecialidad('${id}')">
+      // 3. Cerrar el modal de carga y abrir el formulario de edición
+      closeModal();
+      
+      // Abrir nuevo modal con el formulario
+      openModal(`
+        <div class="modal-title">✏️ Editar especialidad</div>
+        <form id="form-editar-especialidad" onsubmit="event.preventDefault(); guardarEdicionEspecialidad('${id}')">
+          <div class="form-group">
+            <label class="form-label">Nombre *</label>
+            <input class="form-control" id="f-esp-edit-nombre" value="${escapeHtml(nombre)}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Descripción</label>
+            <input class="form-control" id="f-esp-edit-descripcion" value="${escapeHtml(descripcion)}">
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr;">
             <div class="form-group">
-              <label class="form-label">Nombre *</label>
-              <input class="form-control" id="f-esp-edit-nombre" value="${escapeHtml(nombre)}" required>
+              <label class="form-label">Orden</label>
+              <input class="form-control" id="f-esp-edit-orden" type="number" min="0" value="${orden}">
             </div>
             <div class="form-group">
-              <label class="form-label">Descripción</label>
-              <input class="form-control" id="f-esp-edit-descripcion" value="${escapeHtml(descripcion)}">
+              <label class="form-label">Estado</label>
+              <select class="form-control" id="f-esp-edit-estado">
+                <option value="activa" ${estado === 'activa' ? 'selected' : ''}>Activa</option>
+                <option value="inactiva" ${estado === 'inactiva' ? 'selected' : ''}>Inactiva</option>
+              </select>
             </div>
-            <div class="form-grid" style="grid-template-columns:1fr 1fr;">
-              <div class="form-group">
-                <label class="form-label">Orden</label>
-                <input class="form-control" id="f-esp-edit-orden" type="number" min="0" value="${orden}">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Estado</label>
-                <select class="form-control" id="f-esp-edit-estado">
-                  <option value="activa" ${estado === 'activa' ? 'selected' : ''}>Activa</option>
-                  <option value="inactiva" ${estado === 'inactiva' ? 'selected' : ''}>Inactiva</option>
-                </select>
-              </div>
-            </div>
-            <div class="modal-actions">
-              <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-              <button type="submit" class="btn btn-primary">Actualizar</button>
-            </div>
-          </form>
-        `;
-      }
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Actualizar</button>
+          </div>
+        </form>
+      `);
     })
     .catch((err) => {
       closeModal();
