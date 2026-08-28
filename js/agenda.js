@@ -487,139 +487,649 @@ window.cambiarVista = function(vista) {
 };
 
 // ============================================================
-// MODAL: NUEVO TURNO (desde agenda)
+// MODAL: NUEVO TURNO (con diseño completo del HTML)
 // ============================================================
+// Variables globales para el formulario del modal
+let _currentPlanId = 0;
+let _pendingIrACaja = false;
+const _DIAS_SEMANA = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+const _DIAS_LARGO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const _MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const _DUR_PRESETS = [15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240];
+
+// Datos de ejemplo (simulados, se cargarán desde Firestore realmente)
+let HORARIOS_PROF = {};
+let PACIENTES_OS = {};
+let COBERTURAS = {};
+let PACIENTES_TEL = {};
+let PACIENTES_EMAIL = {};
+let CONFIRM_CANALES = ["whatsapp","email"];
+
+// Cargar datos de coberturas, horarios, etc. desde Firestore al abrir el modal
+function cargarDatosParaModal() {
+  return Promise.all([
+    db.collection('profesionales').get().then(snap => {
+      HORARIOS_PROF = {};
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (data.horarios) {
+          HORARIOS_PROF[doc.id] = data.horarios;
+        }
+      });
+    }),
+    db.collection('pacientes').get().then(snap => {
+      PACIENTES_OS = {};
+      PACIENTES_TEL = {};
+      PACIENTES_EMAIL = {};
+      snap.forEach(doc => {
+        const data = doc.data();
+        PACIENTES_OS[doc.id] = { obra_social_id: data.obra_social_id || null, plan_id: data.plan_id || 0 };
+        PACIENTES_TEL[doc.id] = data.telefono || '';
+        PACIENTES_EMAIL[doc.id] = data.email || '';
+      });
+    }),
+    db.collection('coberturas').get().then(snap => {
+      COBERTURAS = {};
+      snap.forEach(doc => {
+        const data = doc.data();
+        COBERTURAS[doc.id] = data; // { tratamiento_id: { plan_id: porcentaje } }
+      });
+    }),
+    db.collection('configuracion').doc('notificaciones').get().then(doc => {
+      if (doc.exists) {
+        CONFIRM_CANALES = doc.data().canales || ["whatsapp","email"];
+      }
+    }).catch(() => {})
+  ]);
+}
+
 window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '09:00') {
-  let pacientesHTML = '<option value="">— Seleccionar paciente —</option>';
-  let profesionalesHTML = '<option value="">— Seleccionar profesional —</option>';
-  let sucursalesHTML = '<option value="">— Seleccionar sucursal —</option>';
+  // Cargar datos antes de mostrar el modal
+  cargarDatosParaModal().then(() => {
+    // Obtener listas para selects
+    let pacientesHTML = '<option value="">— Seleccionar paciente —</option>';
+    let profesionalesHTML = '<option value="">— Seleccionar profesional —</option>';
+    let sucursalesHTML = '<option value="">— Seleccionar sucursal —</option>';
 
-  db.collection('pacientes').orderBy('nombre').get().then(snap => {
-    snap.forEach(doc => {
-      const data = doc.data();
-      const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
-      pacientesHTML += `<option value="${doc.id}">${nombre}</option>`;
+    // Cargar pacientes, profesionales y sucursales desde Firestore (ya están en caché)
+    db.collection('pacientes').orderBy('nombre').get().then(snap => {
+      snap.forEach(doc => {
+        const data = doc.data();
+        const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
+        pacientesHTML += `<option value="${doc.id}">${nombre}</option>`;
+      });
+      document.getElementById('f-turno-paciente').innerHTML = pacientesHTML;
     });
-    document.getElementById('f-turno-paciente').innerHTML = pacientesHTML;
-  });
 
-  db.collection('profesionales').orderBy('nombre').get().then(snap => {
-    snap.forEach(doc => {
-      const data = doc.data();
-      const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
-      profesionalesHTML += `<option value="${doc.id}">${nombre}</option>`;
+    db.collection('profesionales').orderBy('nombre').get().then(snap => {
+      snap.forEach(doc => {
+        const data = doc.data();
+        const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
+        const especialidad = data.especialidad || '';
+        profesionalesHTML += `<option value="${doc.id}">${nombre} ${especialidad ? '· ' + especialidad : ''}</option>`;
+      });
+      document.getElementById('f-turno-profesional').innerHTML = profesionalesHTML;
     });
-    document.getElementById('f-turno-profesional').innerHTML = profesionalesHTML;
-  });
 
-  db.collection('sucursales').orderBy('nombre').get().then(snap => {
-    snap.forEach(doc => {
-      const data = doc.data();
-      sucursalesHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`;
+    db.collection('sucursales').orderBy('nombre').get().then(snap => {
+      snap.forEach(doc => {
+        const data = doc.data();
+        sucursalesHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`;
+      });
+      document.getElementById('f-turno-sucursal').innerHTML = sucursalesHTML;
     });
-    document.getElementById('f-turno-sucursal').innerHTML = sucursalesHTML;
-  });
 
-  const modalHTML = `
-    <div class="modal-title">${esUrgencia ? '⚡ Nuevo turno de urgencia' : '📋 Nuevo turno'}</div>
-    <form id="form-nuevo-turno-agenda" style="margin-top:8px;">
-      <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:12px;">
-        <div class="form-group" style="grid-column:1/-1;">
-          <label class="form-label">Paciente *</label>
-          <select id="f-turno-paciente" class="form-control" required>
-            <option value="">— Seleccionar paciente —</option>
-          </select>
-        </div>
-        <div class="form-group" style="grid-column:1/-1;">
-          <label class="form-label">Profesional *</label>
-          <select id="f-turno-profesional" class="form-control" required>
-            <option value="">— Seleccionar profesional —</option>
-          </select>
-        </div>
-        <div class="form-group" style="grid-column:1/-1;">
-          <label class="form-label">Sucursal *</label>
-          <select id="f-turno-sucursal" class="form-control" required>
-            <option value="">— Seleccionar sucursal —</option>
-          </select>
-        </div>
-      </div>
+    // Obtener lista de tratamientos para mostrar en el modal
+    let tratamientosHTML = '';
+    db.collection('tratamientos').orderBy('categoria').orderBy('nombre').get().then(snap => {
+      let grupos = {};
+      snap.forEach(doc => {
+        const data = doc.data();
+        const cat = data.categoria || 'sin-categoria';
+        if (!grupos[cat]) grupos[cat] = [];
+        grupos[cat].push({ id: doc.id, ...data });
+      });
 
-      <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
-        <div class="form-group">
-          <label class="form-label">Fecha *</label>
-          <input type="date" id="f-turno-fecha" class="form-control" value="${fecha}" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Hora de inicio *</label>
-          <input type="time" id="f-turno-hora" class="form-control" step="900" value="${hora}" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Duración *</label>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <select id="dur-select" class="form-control" style="width:130px;" onchange="document.getElementById('dur-input').value = this.value === 'custom' ? '' : this.value">
-              ${[15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240].map(m => `<option value="${m}" ${m===30?'selected':''}>${m} min</option>`).join('')}
-              <option value="custom">Personalizado…</option>
-            </select>
-            <input type="number" id="dur-input" min="15" step="1" value="30" class="form-control" style="width:72px;" oninput="document.getElementById('dur-select').value = 'custom'">
-            <span style="font-size:13px;color:var(--text-muted);white-space:nowrap;">min</span>
+      // Construir HTML de tratamientos agrupados
+      let gruposHTML = '';
+      Object.keys(grupos).sort().forEach(cat => {
+        const items = grupos[cat];
+        gruposHTML += `<div class="trt-grupo" data-cat="${cat}">
+          <div style="padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);background:var(--bg);position:sticky;top:0">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>`;
+        items.forEach(trat => {
+          const precio = trat.precio_base || 0;
+          gruposHTML += `
+            <label class="trt-item" data-nombre="${(trat.nombre || '').toLowerCase()}"
+                   style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-top:1px solid var(--border)"
+                   onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+              <input type="checkbox" name="tratamientos_realizados_ids[]" value="${trat.id}"
+                     data-precio="${precio}"
+                     data-trat-id="${trat.id}"
+                     onchange="recalcPrecio()"
+                     style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${trat.nombre || ''}</div>
+                <div class="os-split-label" style="display:none;font-size:11px;color:var(--text-muted);margin-top:1px"></div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap">$${precio.toLocaleString()}</div>
+                <div class="os-pct-badge" style="display:none;font-size:10px;font-weight:700;color:#0891b2;white-space:nowrap"></div>
+              </div>
+            </label>`;
+        });
+        gruposHTML += `</div>`;
+      });
+      tratamientosHTML = gruposHTML;
+      document.getElementById('trt-lista').innerHTML = tratamientosHTML;
+      // Inicializar recálculo
+      recalcPrecio();
+    });
+
+    // Construir el HTML del modal
+    const modalHTML = `
+      <div style="max-height:80vh;overflow-y:auto;padding-right:4px;">
+        <div class="modal-title">${esUrgencia ? '⚡ Nuevo turno de urgencia' : '📋 Nuevo turno'}</div>
+
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;margin-top:8px;">
+
+          <!-- Columna principal -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Paciente y profesional -->
+            <div class="card">
+              <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Paciente y profesional</div>
+              <div class="form-grid">
+                <div class="form-group" style="grid-column:1/-1">
+                  <label class="form-label">Paciente *</label>
+                  <select id="f-turno-paciente" class="form-control" required onchange="onPacienteChange()">
+                    <option value="">— Seleccionar paciente —</option>
+                  </select>
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                  <label class="form-label">Profesional *</label>
+                  <select id="f-turno-profesional" class="form-control" required>
+                    <option value="">— Seleccionar profesional —</option>
+                  </select>
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                  <label class="form-label">Sucursal *</label>
+                  <select id="f-turno-sucursal" class="form-control" required>
+                    <option value="">— Seleccionar sucursal —</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fecha, hora y urgencia -->
+            <div class="card">
+              <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Fecha y horario</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Fecha *</label>
+                  <input type="date" id="f-turno-fecha" class="form-control" value="${fecha}" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Hora de inicio *</label>
+                  <input type="time" id="f-turno-hora" class="form-control" step="900" value="${hora}" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Duración *</label>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <select id="dur-select" class="form-control" style="width:130px" onchange="durSelectChange(this.value)">
+                      ${[15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240].map(m => `<option value="${m}" ${m===30?'selected':''}>${m} min</option>`).join('')}
+                      <option value="custom">Personalizado…</option>
+                    </select>
+                    <input type="number" id="dur-input" min="15" step="1" value="30" class="form-control" style="width:72px" oninput="durInputChange(this.value)">
+                    <span style="font-size:13px;color:var(--text-muted);white-space:nowrap">min</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Estado</label>
+                  <select id="f-turno-estado" class="form-control">
+                    <option value="pendiente" ${esUrgencia ? '' : 'selected'}>Pendiente</option>
+                    <option value="confirmado" ${esUrgencia ? 'selected' : ''}>Confirmado</option>
+                    <option value="en_recepcion">En recepción</option>
+                    <option value="en_atencion">En atención</option>
+                    <option value="finalizado">Finalizado</option>
+                    <option value="cancelado">Cancelado</option>
+                    <option value="ausente">Ausente</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Urgencia/Sobreturno -->
+              <div style="margin-top:14px;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border)">
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                  <input type="checkbox" id="f-turno-urgencia" value="1" ${esUrgencia ? 'checked' : ''} onchange="toggleUrgencia(this)" style="width:16px;height:16px;cursor:pointer">
+                  <div>
+                    <div style="font-weight:700;font-size:13px;color:var(--text)">⚡ Urgencia / Sobreturno</div>
+                    <div style="font-size:12px;color:var(--text-muted)">Permite asignar el turno aunque el profesional esté ocupado. Se muestra en rojo en la agenda.</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Clínico -->
+            <div class="card">
+              <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Clínico</div>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div class="form-group">
+                  <label class="form-label">Motivo de consulta</label>
+                  <textarea id="f-turno-motivo" class="form-control" rows="2"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna lateral -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Botones -->
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button type="button" class="btn btn-primary btn-block" onclick="mostrarConfirmCrear()">Crear turno</button>
+              <button type="button" class="btn btn-secondary btn-block" onclick="closeModal()">Cancelar</button>
+            </div>
+
+            <!-- Tratamientos realizados -->
+            <div class="card">
+              <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Tratamientos realizados</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Marcá los realizados durante este turno — se usarán al registrar el pago en Caja</div>
+
+              <div id="os-banner" style="display:none;margin-bottom:10px;padding:8px 12px;background:#e0f2fe;border-radius:8px;font-size:12px;color:#0369a1">
+                <strong id="os-banner-nombre"></strong> — se muestra la cobertura por tratamiento
+              </div>
+
+              <input type="text" id="trt-buscar" class="form-control" placeholder="Buscar tratamiento…" style="margin-bottom:8px;font-size:13px" oninput="filtrarTrts(this.value)">
+
+              <div id="trt-lista" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+                <!-- Se llena dinámicamente -->
+              </div>
+
+              <input type="hidden" id="inp-total-paciente" value="">
+              <input type="hidden" id="inp-total-obra-social" value="">
+
+              <div id="trt-subtotal" style="display:none;margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:12px;color:var(--text-muted)"><span id="trt-count">0</span> tratamiento(s)</span>
+                  <span style="font-size:14px;font-weight:700;color:var(--primary)">$<span id="trt-total-val">0</span></span>
+                </div>
+                <div id="os-totales" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">
+                  <div style="display:flex;justify-content:space-between;font-size:12px">
+                    <span style="color:var(--text-muted)">Tratamientos paciente:</span>
+                    <span style="font-weight:700;color:#15803d">$<span id="trt-paciente-val">0</span></span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px">
+                    <span style="color:var(--text-muted)">Cubre obra social:</span>
+                    <span style="font-weight:700;color:#0891b2">$<span id="trt-os-val">0</span></span>
+                  </div>
+                </div>
+                <div id="coseguro-row" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">
+                  <div style="display:flex;justify-content:space-between;font-size:12px">
+                    <span style="color:var(--text-muted)">Coseguro:</span>
+                    <span style="font-weight:700;color:#f59e0b">$<span id="trt-coseguro-val">0</span></span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px;padding-top:4px;border-top:1px solid var(--border)">
+                    <span style="font-weight:600;color:var(--text)">Paciente paga total:</span>
+                    <span style="font-weight:700;color:#15803d">$<span id="trt-paciente-total-val">0</span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Coseguro -->
+              <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg)">
+                <div>
+                  <div style="font-size:12px;font-weight:600;color:var(--text)">Coseguro</div>
+                  <div style="font-size:11px;color:var(--text-muted)">Pago adicional del paciente (opcional)</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span style="font-size:13px;color:var(--text-muted);font-weight:600">$</span>
+                  <input type="number" id="coseguro-input" min="0" step="0.01" value="" oninput="recalcPrecio()" style="width:90px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px;text-align:right" placeholder="0.00">
+                </div>
+              </div>
+
+              <button type="button" id="btn-pago-caja" onclick="guardarYPagar()" class="btn btn-block" disabled style="margin-top:12px;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;opacity:.45;cursor:not-allowed">
+                💰 Guardar y Registrar pago en Caja
+              </button>
+            </div>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Estado</label>
-          <select id="f-turno-estado" class="form-control">
-            <option value="pendiente" ${esUrgencia ? '' : 'selected'}>Pendiente</option>
-            <option value="confirmado" ${esUrgencia ? 'selected' : ''}>Confirmado</option>
-            <option value="en_recepcion">En recepción</option>
-            <option value="en_atencion">En atención</option>
-            <option value="finalizado">Finalizado</option>
-            <option value="cancelado">Cancelado</option>
-            <option value="ausente">Ausente</option>
-          </select>
-        </div>
       </div>
+    `;
 
-      ${esUrgencia ? `
-        <div style="margin-top:14px;padding:12px;border-radius:10px;background:#fef2f2;border:1px solid #fca5a5;">
-          <div style="font-weight:700;font-size:13px;color:#b91c1c;">⚡ Turno de urgencia / Sobreturno</div>
-          <div style="font-size:12px;color:#64748b;">Se mostrará en rojo en la agenda y se asignará aunque el profesional esté ocupado.</div>
-        </div>
-      ` : ''}
+    // Abrir el modal con el HTML
+    openModal(modalHTML);
 
-      <div class="form-group" style="margin-top:14px;">
-        <label class="form-label">Motivo de consulta</label>
-        <textarea id="f-turno-motivo" class="form-control" rows="2"></textarea>
-      </div>
+    // Inicializar eventos y recálculo después de que el modal esté en el DOM
+    setTimeout(() => {
+      // Forzar la carga de los selects (ya se hizo arriba con get().then)
+      // Vincular evento change del paciente
+      const selPac = document.getElementById('f-turno-paciente');
+      if (selPac) selPac.addEventListener('change', onPacienteChange);
+      onPacienteChange(); // inicializar
 
-      <div class="modal-actions" style="margin-top:16px;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="guardarTurnoAgenda(${esUrgencia})">${esUrgencia ? 'Guardar urgencia' : 'Crear turno'}</button>
-      </div>
-    </form>
-  `;
+      // Si es urgencia, marcar el checkbox y ajustar estilo
+      if (esUrgencia) {
+        const cb = document.getElementById('f-turno-urgencia');
+        if (cb) toggleUrgencia(cb);
+      }
 
-  openModal(modalHTML);
+      // Trigger recálculo inicial
+      recalcPrecio();
+    }, 100);
+  });
 };
 
 // ============================================================
-// GUARDAR TURNO DESDE AGENDA
+// FUNCIONES DEL FORMULARIO (copiadas del HTML)
 // ============================================================
-window.guardarTurnoAgenda = function(esUrgencia = false) {
-  const pacienteId = $('f-turno-paciente').value;
-  const profesionalId = $('f-turno-profesional').value;
-  const sucursalId = $('f-turno-sucursal').value;
-  const fecha = $('f-turno-fecha').value;
-  const hora = $('f-turno-hora').value;
-  const duracion = parseInt($('dur-input').value) || 30;
-  const estado = $('f-turno-estado').value;
-  const motivo = $('f-turno-motivo').value.trim();
 
-  if (!pacienteId) return alert('Selecciona un paciente.');
-  if (!profesionalId) return alert('Selecciona un profesional.');
-  if (!sucursalId) return alert('Selecciona una sucursal.');
-  if (!fecha || !hora) return alert('Completa fecha y hora.');
+window.onPacienteChange = function() {
+  const sel = document.getElementById('f-turno-paciente');
+  const pid = sel ? parseInt(sel.value) : 0;
+  const osData = pid ? PACIENTES_OS[pid] : null;
+  _currentPlanId = osData ? (osData.plan_id || 0) : 0;
 
-  const pacienteNombre = $('f-turno-paciente').options[$('f-turno-paciente').selectedIndex].text;
-  const profesionalNombre = $('f-turno-profesional').options[$('f-turno-profesional').selectedIndex].text;
+  const banner = document.getElementById('os-banner');
+  if (banner) {
+    if (osData && _currentPlanId) {
+      const opt = sel.options[sel.selectedIndex];
+      banner.style.display = 'block';
+      document.getElementById('os-banner-nombre').textContent = opt.textContent.trim().split('—')[0].trim();
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+
+  // Update each treatment row with coverage info
+  document.querySelectorAll('input[name="tratamientos_realizados_ids[]"]').forEach(function(cb) {
+    const tid = parseInt(cb.dataset.tratId);
+    const precio = parseFloat(cb.dataset.precio) || 0;
+    const label = cb.closest('label');
+    const splitEl = label ? label.querySelector('.os-split-label') : null;
+    const badgeEl = label ? label.querySelector('.os-pct-badge') : null;
+
+    let pct = 0;
+    if (_currentPlanId && COBERTURAS[tid] && COBERTURAS[tid][_currentPlanId]) {
+      pct = parseFloat(COBERTURAS[tid][_currentPlanId]);
+    }
+
+    if (splitEl) {
+      if (pct > 0 && precio > 0) {
+        const montoOS = precio * pct / 100;
+        const montoPac = precio - montoOS;
+        splitEl.textContent = 'Pte: $' + fmtNum(montoPac) + ' · OS ' + pct + '%: $' + fmtNum(montoOS);
+        splitEl.style.display = 'block';
+      } else {
+        splitEl.style.display = 'none';
+      }
+    }
+    if (badgeEl) {
+      if (pct > 0) {
+        badgeEl.textContent = 'OS ' + pct + '%';
+        badgeEl.style.display = 'block';
+      } else {
+        badgeEl.style.display = 'none';
+      }
+    }
+  });
+
+  recalcPrecio();
+};
+
+function fmtNum(n) {
+  return n.toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+
+window.recalcPrecio = function() {
+  const checks = document.querySelectorAll('input[name="tratamientos_realizados_ids[]"]:checked');
+  let total = 0, totalPac = 0, totalOS = 0, count = 0;
+  checks.forEach(function(cb) {
+    const precio = parseFloat(cb.dataset.precio) || 0;
+    const tid = parseInt(cb.dataset.tratId);
+    let pct = 0;
+    if (_currentPlanId && COBERTURAS[tid] && COBERTURAS[tid][_currentPlanId]) {
+      pct = parseFloat(COBERTURAS[tid][_currentPlanId]);
+    }
+    const montoOS = precio * pct / 100;
+    total += precio;
+    totalOS += montoOS;
+    totalPac += precio - montoOS;
+    count++;
+  });
+
+  const coseguroInp = document.getElementById('coseguro-input');
+  const coseguro = coseguroInp ? (parseFloat(coseguroInp.value) || 0) : 0;
+
+  const subtDiv = document.getElementById('trt-subtotal');
+  const countEl = document.getElementById('trt-count');
+  const totalEl = document.getElementById('trt-total-val');
+  const pacEl = document.getElementById('trt-paciente-val');
+  const osEl = document.getElementById('trt-os-val');
+  const osTotDiv = document.getElementById('os-totales');
+  const coseguroRow = document.getElementById('coseguro-row');
+  const coseguroEl = document.getElementById('trt-coseguro-val');
+  const pacTotalEl = document.getElementById('trt-paciente-total-val');
+  const btnCaja = document.getElementById('btn-pago-caja');
+  const inpPac = document.getElementById('inp-total-paciente');
+  const inpOS = document.getElementById('inp-total-obra-social');
+
+  const hasContent = count > 0 || coseguro > 0;
+
+  if (hasContent) {
+    if (countEl) countEl.textContent = count;
+    if (totalEl) totalEl.textContent = fmtNum(total);
+    subtDiv.style.display = 'block';
+
+    if (_currentPlanId && totalOS > 0) {
+      if (pacEl) pacEl.textContent = fmtNum(totalPac);
+      if (osEl) osEl.textContent = fmtNum(totalOS);
+      if (osTotDiv) osTotDiv.style.display = 'block';
+    } else {
+      if (osTotDiv) osTotDiv.style.display = 'none';
+    }
+
+    if (coseguro > 0) {
+      if (coseguroEl) coseguroEl.textContent = fmtNum(coseguro);
+      if (pacTotalEl) pacTotalEl.textContent = fmtNum(totalPac + coseguro);
+      if (coseguroRow) coseguroRow.style.display = 'block';
+    } else {
+      if (coseguroRow) coseguroRow.style.display = 'none';
+    }
+
+    if (inpPac) inpPac.value = totalPac.toFixed(2);
+    if (inpOS) inpOS.value = totalOS.toFixed(2);
+
+    if (btnCaja) { btnCaja.disabled = false; btnCaja.style.opacity = '1'; btnCaja.style.cursor = ''; }
+  } else {
+    subtDiv.style.display = 'none';
+    if (coseguroRow) coseguroRow.style.display = 'none';
+    if (inpPac) inpPac.value = '';
+    if (inpOS) inpOS.value = '';
+    if (btnCaja) { btnCaja.disabled = true; btnCaja.style.opacity = '.45'; btnCaja.style.cursor = 'not-allowed'; }
+  }
+};
+
+window.filtrarTrts = function(q) {
+  q = q.toLowerCase().trim();
+  document.querySelectorAll('.trt-item').forEach(function(item) {
+    item.style.display = (!q || (item.dataset.nombre || '').indexOf(q) !== -1) ? '' : 'none';
+  });
+  document.querySelectorAll('.trt-grupo').forEach(function(grupo) {
+    const vis = Array.from(grupo.querySelectorAll('.trt-item')).filter(function(i){ return i.style.display !== 'none'; });
+    grupo.style.display = vis.length > 0 ? '' : 'none';
+  });
+};
+
+window.durSelectChange = function(val) {
+  if (val === 'custom') return;
+  document.getElementById('dur-input').value = val;
+};
+
+window.durInputChange = function(val) {
+  const sel = document.getElementById('dur-select');
+  sel.value = _DUR_PRESETS.indexOf(parseInt(val)) !== -1 ? val : 'custom';
+};
+
+window.toggleUrgencia = function(cb) {
+  const wrap = cb.closest('div[style]');
+  if (cb.checked) {
+    wrap.style.background = '#fef2f2';
+    wrap.style.border = '1px solid #fca5a5';
+    cb.nextElementSibling.querySelector('div').style.color = '#b91c1c';
+  } else {
+    wrap.style.background = '#f8fafc';
+    wrap.style.border = '1px solid var(--border)';
+    cb.nextElementSibling.querySelector('div').style.color = 'var(--text)';
+  }
+};
+
+// ============================================================
+// CONFIRMACIÓN Y GUARDADO DEL TURNO
+// ============================================================
+
+window.mostrarConfirmCrear = function() {
+  // Validar campos obligatorios
+  const pac = document.getElementById('f-turno-paciente');
+  const prof = document.getElementById('f-turno-profesional');
+  const suc = document.getElementById('f-turno-sucursal');
+  const fecha = document.getElementById('f-turno-fecha');
+  const hora = document.getElementById('f-turno-hora');
+  if (!pac.value || !prof.value || !suc.value || !fecha.value || !hora.value) {
+    alert('Completá todos los campos obligatorios (*).');
+    return;
+  }
+
+  const dur = parseInt(document.getElementById('dur-input').value) || 30;
+  const motivo = document.getElementById('f-turno-motivo').value.trim();
+  const pacId = parseInt(pac.value);
+  const profId = parseInt(prof.value);
+  const pacText = pac.options[pac.selectedIndex].textContent.trim();
+  const profText = prof.options[prof.selectedIndex].textContent.trim();
+  const fechaVal = fecha.value;
+  const horaIni = hora.value;
+
+  // Calcular hora fin
+  const hh = parseInt(horaIni.split(':')[0]);
+  const mm = parseInt(horaIni.split(':')[1]);
+  const endTot = hh * 60 + mm + dur;
+  const horaFin = String(Math.floor(endTot / 60)).padStart(2,'0') + ':' + String(endTot % 60).padStart(2,'0');
+
+  // Formatear fecha
+  const dp = fechaVal.split('-');
+  const d = new Date(parseInt(dp[0]), parseInt(dp[1]) - 1, parseInt(dp[2]));
+  const fechaFmt = _DIAS_LARGO[d.getDay()] + ' ' + d.getDate() + ' de ' + _MESES_LARGO[d.getMonth()] + ' ' + dp[0];
+
+  // Tratamientos seleccionados
+  const checked = Array.from(document.querySelectorAll('input[name="tratamientos_realizados_ids[]"]:checked'));
+  const trtNames = checked.map(function(cb) {
+    const nameDiv = cb.closest('label').querySelector('div > div:first-child');
+    return nameDiv ? nameDiv.textContent.trim() : '';
+  }).filter(Boolean);
+
+  // Construir HTML de confirmación
+  let confirmHTML = `
+    <div class="modal-title">📋 Confirmar nuevo turno</div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:13px;margin-bottom:18px;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid var(--border)">
+      <span style="color:var(--text-muted);white-space:nowrap">Paciente</span>
+      <span style="font-weight:700;color:var(--text)">${pacText}</span>
+      <span style="color:var(--text-muted);white-space:nowrap">Profesional</span>
+      <span style="font-weight:600;color:var(--text)">${profText}</span>
+      <span style="color:var(--text-muted);white-space:nowrap">Fecha</span>
+      <span style="font-weight:600;color:var(--text)">${fechaFmt}</span>
+      <span style="color:var(--text-muted);white-space:nowrap">Horario</span>
+      <span style="font-weight:600;color:var(--text)">${horaIni} – ${horaFin} (${dur} min)</span>
+      ${trtNames.length > 0 ? `<span style="color:var(--text-muted)">Tratamientos</span><span style="font-weight:600;color:var(--text)">${trtNames.join(', ')}</span>` : ''}
+      ${motivo ? `<span style="color:var(--text-muted)">Motivo</span><span style="color:var(--text)">${motivo}</span>` : ''}
+    </div>
+  `;
+
+  // Advertencia de horario
+  const urgCb = document.getElementById('f-turno-urgencia');
+  let warnMsg = '';
+  if (!(urgCb && urgCb.checked)) {
+    const horarios = HORARIOS_PROF[profId];
+    if (horarios) {
+      const dia = _DIAS_SEMANA[d.getDay()];
+      const hcfg = horarios[dia];
+      const profNombre = profText.split('·')[0].trim();
+      if (!hcfg || !hcfg.activo) {
+        warnMsg = profNombre + ' no trabaja este día.';
+      } else {
+        const horaMin = hh * 60 + mm;
+        const iniMin = parseInt(hcfg.inicio.split(':')[0]) * 60 + parseInt(hcfg.inicio.split(':')[1]);
+        const finMin = parseInt(hcfg.fin.split(':')[0]) * 60 + parseInt(hcfg.fin.split(':')[1]);
+        if (horaMin < iniMin || horaMin >= finMin) {
+          warnMsg = 'El horario ' + horaIni + ' está fuera del horario laboral de ' + profNombre + ' (' + hcfg.inicio + ' – ' + hcfg.fin + ').';
+        }
+      }
+    }
+  }
+  if (warnMsg) {
+    confirmHTML += `<div style="margin-bottom:12px;padding:10px 14px;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;font-size:12px;color:#92400e"><strong>⚠️ Atención:</strong> ${warnMsg}</div>`;
+  }
+
+  // Notificaciones (canales)
+  const tel = PACIENTES_TEL[pacId] || '';
+  const email = PACIENTES_EMAIL[pacId] || '';
+  const hasWa = CONFIRM_CANALES.indexOf('whatsapp') !== -1;
+  const hasEmail = CONFIRM_CANALES.indexOf('email') !== -1;
+
+  let notifRows = [];
+  if (hasWa) {
+    if (tel) notifRows.push(`<div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12px;color:#15803d"><strong>📲 Notificación por WhatsApp</strong> Se enviará confirmación al número <strong>${tel}</strong>.</div>`);
+    else notifRows.push(`<div style="padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;font-size:12px;color:#b91c1c"><strong>📵 Sin teléfono registrado</strong> El paciente no tiene teléfono. No se enviará por WhatsApp.</div>`);
+  }
+  if (hasEmail) {
+    if (email) notifRows.push(`<div style="padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12px;color:#15803d"><strong>✉️ Notificación por Email</strong> Se enviará confirmación a <strong>${email}</strong>.</div>`);
+    else notifRows.push(`<div style="padding:10px 14px;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;font-size:12px;color:#92400e"><strong>📧 Sin email registrado</strong> El paciente no tiene email. No se enviará por email.</div>`);
+  }
+  if (notifRows.length) {
+    confirmHTML += `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">${notifRows.join('')}</div>`;
+  }
+
+  confirmHTML += `
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="confirmarCrearTurno()">✓ Confirmar turno</button>
+    </div>
+  `;
+
+  // Guardar referencia al modal actual para poder cerrarlo después
+  // Abrimos un nuevo modal con la confirmación
+  openModal(confirmHTML);
+  // Guardamos el estado para saber si debe ir a caja
+  _pendingIrACaja = false; // se setea con guardarYPagar
+};
+
+window.guardarYPagar = function() {
+  _pendingIrACaja = true;
+  mostrarConfirmCrear();
+};
+
+window.confirmarCrearTurno = function() {
+  // Recoger todos los datos del formulario
+  const pacienteId = document.getElementById('f-turno-paciente').value;
+  const profesionalId = document.getElementById('f-turno-profesional').value;
+  const sucursalId = document.getElementById('f-turno-sucursal').value;
+  const fecha = document.getElementById('f-turno-fecha').value;
+  const hora = document.getElementById('f-turno-hora').value;
+  const duracion = parseInt(document.getElementById('dur-input').value) || 30;
+  const estado = document.getElementById('f-turno-estado').value;
+  const esUrgencia = document.getElementById('f-turno-urgencia').checked;
+  const motivo = document.getElementById('f-turno-motivo').value.trim();
+
+  // Tratamientos seleccionados
+  const tratamientosIds = Array.from(document.querySelectorAll('input[name="tratamientos_realizados_ids[]"]:checked')).map(cb => cb.value);
+  // Totales (ya calculados en recalcPrecio)
+  const totalPaciente = parseFloat(document.getElementById('inp-total-paciente').value) || 0;
+  const totalOS = parseFloat(document.getElementById('inp-total-obra-social').value) || 0;
+  const coseguro = parseFloat(document.getElementById('coseguro-input').value) || 0;
+
+  // Obtener nombres para mostrar
+  const pacSel = document.getElementById('f-turno-paciente');
+  const profSel = document.getElementById('f-turno-profesional');
+  const pacienteNombre = pacSel.options[pacSel.selectedIndex].textContent.trim();
+  const profesionalNombre = profSel.options[profSel.selectedIndex].textContent.trim();
 
   const turnoData = {
     paciente_id: pacienteId,
@@ -633,23 +1143,32 @@ window.guardarTurnoAgenda = function(esUrgencia = false) {
     estado: estado,
     es_urgencia: esUrgencia,
     motivo_consulta: motivo,
-    tratamientos_realizados: [],
-    total_paciente: 0,
-    total_obra_social: 0,
+    tratamientos_realizados_ids: tratamientosIds,
+    total_paciente: totalPaciente,
+    total_obra_social: totalOS,
+    coseguro: coseguro,
     creado: new Date().toISOString()
   };
 
   db.collection('turnos').add(turnoData)
     .then(() => {
-      closeModal();
+      closeModal(); // cierra el modal de confirmación
       showToast('✅ Turno creado exitosamente.');
       renderAgenda();
+      if (_pendingIrACaja) {
+        // Redirigir a caja con el turno recién creado? (opcional)
+        // Por ahora solo mostramos mensaje
+        showToast('💰 Redirigiendo a Caja... (simulado)');
+        _pendingIrACaja = false;
+      }
     })
-    .catch(err => alert('❌ Error: ' + err.message));
+    .catch(err => {
+      alert('❌ Error al crear turno: ' + err.message);
+    });
 };
 
 // ============================================================
-// MODAL: BLOQUEAR HORARIO
+// MODAL: BLOQUEAR HORARIO (sin cambios)
 // ============================================================
 window.openModalBloqueo = function() {
   let profesionalesHTML = '<option value="">Toda la clínica</option>';
@@ -704,12 +1223,12 @@ window.openModalBloqueo = function() {
 };
 
 window.guardarBloqueo = function() {
-  const profesionalId = $('f-bloqueo-profesional').value;
-  const fechaInicio = $('f-bloqueo-fecha-inicio').value;
-  const fechaFin = $('f-bloqueo-fecha-fin').value;
-  const horaInicio = $('f-bloqueo-hora-inicio').value;
-  const horaFin = $('f-bloqueo-hora-fin').value;
-  const motivo = $('f-bloqueo-motivo').value.trim();
+  const profesionalId = document.getElementById('f-bloqueo-profesional').value;
+  const fechaInicio = document.getElementById('f-bloqueo-fecha-inicio').value;
+  const fechaFin = document.getElementById('f-bloqueo-fecha-fin').value;
+  const horaInicio = document.getElementById('f-bloqueo-hora-inicio').value;
+  const horaFin = document.getElementById('f-bloqueo-hora-fin').value;
+  const motivo = document.getElementById('f-bloqueo-motivo').value.trim();
 
   if (!fechaInicio || !fechaFin) return alert('Las fechas son obligatorias.');
 
@@ -729,7 +1248,7 @@ window.guardarBloqueo = function() {
 };
 
 // ============================================================
-// REPROGRAMAR MODO
+// REPROGRAMAR MODO (sin cambios)
 // ============================================================
 let _reprogData = null;
 
