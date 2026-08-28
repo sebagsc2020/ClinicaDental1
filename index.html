@@ -85,22 +85,8 @@
     .topnav .user-dropdown a.danger { color: var(--danger); }
     .user-menu-wrap { position: relative; }
 
-    /* ===== Botón hamburguesa ===== */
-    .topnav-hamburger {
-      background: none;
-      border: none;
-      color: #fff;
-      font-size: 24px;
-      cursor: pointer;
-      display: none;  /* Oculto por defecto (desktop) */
-      padding: 4px 8px;
-      border-radius: 6px;
-      transition: background 0.15s;
-    }
-    .topnav-hamburger:hover { background: rgba(255,255,255,0.12); }
-
     /* ===== Layout ===== */
-    .app-layout { display: flex; flex: 1; position: relative; }
+    .app-layout { display: flex; flex: 1; }
 
     /* ===== Sidebar ===== */
     .sidebar {
@@ -113,8 +99,6 @@
       height: calc(100vh - 60px);
       position: sticky;
       top: 60px;
-      transition: transform 0.3s ease, margin-left 0.3s ease;
-      z-index: 50;
     }
     .sidebar .sidebar-section { margin-bottom: 24px; }
     .sidebar .sidebar-label {
@@ -134,7 +118,7 @@
     .sidebar .sidebar-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
     .sidebar .sidebar-item .sb-txt { flex: 1; }
 
-    /* ─── Submenús colapsables ─── */
+    /* ─── Submenús colapsables (MEJORADO) ─── */
     .sidebar-group-row {
       display: flex;
       align-items: stretch;
@@ -165,89 +149,14 @@
       transition: max-height 0.25s ease;
     }
     .sidebar-subitems.open {
-      max-height: 200px;
+      max-height: 200px; /* suficiente para los subítems */
     }
-
-    /* ─── Botón toggle colapsar sidebar (desktop) ─── */
-    #sb-toggle-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 2px 8px 2px 16px;
-    }
-    #sb-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 3px 6px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-muted);
-      border-radius: 6px;
-      transition: background 0.15s, color 0.15s;
-    }
-    #sb-toggle:hover {
-      background: var(--bg);
-      color: var(--text);
-    }
-    #sb-toggle-icon {
-      transition: transform 0.22s ease;
-    }
-
-    /* ===== Overlay para móvil ===== */
-    #sidebar-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.35);
-      z-index: 40;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      pointer-events: none;
-    }
-    #sidebar-overlay.active {
-      display: block;
-      opacity: 1;
-      pointer-events: auto;
-    }
+    /* ────────────────────────────────────── */
 
     /* ===== Main ===== */
-    .main {
-      flex: 1;
-      padding: 24px 28px;
-      overflow-y: auto;
-      max-height: calc(100vh - 60px);
-      transition: margin-left 0.3s ease;
-    }
+    .main { flex: 1; padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 60px); }
 
-    /* ===== Sidebar colapsado (desktop) ===== */
-    html.sidebar-collapsed .sidebar {
-      width: 60px;
-    }
-    html.sidebar-collapsed .sidebar .sb-txt,
-    html.sidebar-collapsed .sidebar .sidebar-label,
-    html.sidebar-collapsed .sidebar-chevron,
-    html.sidebar-collapsed #sb-toggle-wrap .sb-txt {
-      display: none;
-    }
-    html.sidebar-collapsed .sidebar .sidebar-item {
-      justify-content: center;
-      padding: 10px;
-      margin: 0 4px;
-    }
-    html.sidebar-collapsed .sidebar .sidebar-item .icon {
-      margin: 0;
-    }
-    html.sidebar-collapsed #sb-toggle-wrap {
-      justify-content: center;
-      padding: 2px;
-    }
-    html.sidebar-collapsed #sb-toggle-icon {
-      transform: rotate(180deg);
-    }
-
-    /* ===== Componentes (párrafos, cards, etc.) ===== */
+    /* ===== Componentes ===== */
     .page-header {
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
@@ -287,6 +196,7 @@
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
 
+    /* Badges base */
     .badge {
       display: inline-block; padding: 2px 10px; border-radius: 20px;
       font-size: 12px; font-weight: 600;
@@ -298,9 +208,11 @@
     .badge-gray { background: #f1f5f9; color: #4b5563; }
     .badge-teal { background: #ccfbf1; color: #0f766e; }
 
+    /* Badges de estado (activo/inactivo) */
     .badge-estado-activo   { background: #dcfce7; color: #15803d; }
     .badge-estado-inactivo { background: #f1f5f9; color: #4b5563; }
 
+    /* Etiquetas adicionales (Agenda virtual, Requiere laboratorio) */
     .badge-etiqueta {
       font-size: 10px;
       padding: 2px 8px;
@@ -313,6 +225,7 @@
     .badge-etiqueta.azul   { background: #dbeafe; color: #1d4ed8; }
     .badge-etiqueta.ambar  { background: #fef3c7; color: #b45309; }
 
+    /* Pills de categoría */
     .pill-categoria {
       display: flex;
       align-items: center;
@@ -344,6 +257,7 @@
     }
     .pill-categoria.activa .contador { background: rgba(255,255,255,0.2); color: #fff; }
 
+    /* Tabla */
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { text-align: left; padding: 10px 12px; background: var(--bg); font-weight: 600; color: var(--text-muted); border-bottom: 2px solid var(--border); }
@@ -378,6 +292,22 @@
     .text-right { text-align: right; }
     .w-full { width: 100%; }
 
+    /* ===== Responsive ===== */
+    @media (max-width: 768px) {
+      .sidebar { width: 60px; padding: 12px 0; }
+      .sidebar .sb-txt { display: none; }
+      .sidebar .sidebar-item { justify-content: center; padding: 10px; }
+      .sidebar .sidebar-label { text-align: center; font-size: 0; }
+      .main { padding: 16px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .topnav .nav-links { display: none; }
+      .topnav .nav-clinic { display: none; }
+    }
+
+    /* ===== Vistas (inicialmente ocultas) ===== */
+    .view { display: none; }
+    .view.active { display: block; }
+
     /* ===== Modal ===== */
     .modal-overlay {
       display: none; position: fixed; inset: 0;
@@ -394,12 +324,14 @@
     .modal-box .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
     .modal-box .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 
+    /* Estilos para tratamientos en el modal */
     .trt-grupo { margin-bottom: 4px; }
     .trt-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; border-top: 1px solid var(--border); }
     .trt-item:hover { background: var(--bg); }
     .trt-item .os-split-label { display: none; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
     .trt-item .os-pct-badge { display: none; font-size: 10px; font-weight: 700; color: #0891b2; white-space: nowrap; }
 
+    /* Estilos para tarjetas de obras sociales */
     .os-card-header {
       display: flex;
       justify-content: space-between;
@@ -410,50 +342,6 @@
     @media (max-width: 768px) {
       .os-card-header { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
     }
-
-    /* ─── RESPONSIVE ─── */
-    @media (max-width: 768px) {
-      .topnav-hamburger {
-        display: block !important;
-      }
-      .topnav .nav-links {
-        display: none !important;
-      }
-      .topnav .nav-clinic {
-        display: none !important;
-      }
-      .sidebar {
-        position: fixed;
-        top: 60px;
-        left: 0;
-        height: calc(100vh - 60px);
-        transform: translateX(-100%);
-        width: 280px;
-        z-index: 50;
-        box-shadow: 2px 0 20px rgba(0,0,0,0.15);
-        border-right: none;
-        transition: transform 0.3s ease;
-      }
-      .sidebar.open {
-        transform: translateX(0);
-      }
-      /* El overlay se activa con JS */
-      .main {
-        max-height: calc(100vh - 60px);
-        padding: 16px;
-      }
-      .form-grid { grid-template-columns: 1fr; }
-      /* Ocultar botón colapsar en móvil */
-      #sb-toggle-wrap {
-        display: none !important;
-      }
-      /* En móvil, los submenús siempre se muestran expandidos (opcional) */
-      /* .sidebar-subitems { max-height: 200px !important; } */
-    }
-
-    /* ===== Vistas (inicialmente ocultas) ===== */
-    .view { display: none; }
-    .view.active { display: block; }
   </style>
 </head>
 <body>
@@ -461,14 +349,7 @@
 <!-- ===== TOP NAV ===== -->
 <nav class="topnav">
   <div style="display:flex;align-items:center;gap:12px;">
-    <!-- Botón hamburguesa (visible en móvil) -->
-    <button class="topnav-hamburger" onclick="toggleSidebar()" aria-label="Abrir menú">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <line x1="3" y1="12" x2="21" y2="12"/>
-        <line x1="3" y1="18" x2="21" y2="18"/>
-      </svg>
-    </button>
+    <button class="topnav-hamburger" onclick="toggleSidebar()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;display:none;">☰</button>
     <div class="logo">Dental<span>Soft</span></div>
     <div class="nav-links">
       <a href="#" class="active" data-view="dashboard">Dashboard</a>
@@ -495,23 +376,10 @@
 
 <!-- ===== LAYOUT ===== -->
 <div class="app-layout">
-  <!-- Overlay (fondo oscuro) para móvil -->
-  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
-
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-section">
-      <!-- Toggle colapsar (desktop) -->
-      <div class="sidebar-label" id="sb-toggle-wrap">
-        <span class="sb-txt">Principal</span>
-        <button id="sb-toggle" onclick="toggleSidebarCollapse()" title="Colapsar menú">
-          <svg id="sb-toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="11 17 6 12 11 7"/>
-            <polyline points="18 17 13 12 18 7"/>
-          </svg>
-        </button>
-      </div>
-
+      <div class="sidebar-label">Principal</div>
       <button class="sidebar-item active" data-view="dashboard"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="sb-txt">Dashboard</span></button>
       <button class="sidebar-item" data-view="agenda"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="sb-txt">Agenda</span></button>
       <button class="sidebar-item" data-view="pacientes"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="sb-txt">Pacientes</span></button>
@@ -519,18 +387,16 @@
       <button class="sidebar-item" data-view="liquidaciones"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="sb-txt">Liquidaciones</span></button>
       <button class="sidebar-item" data-view="automatizaciones"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="sb-txt">Automatizaciones</span></button>
     </div>
-
     <div class="sidebar-section">
       <div class="sidebar-label">Finanzas</div>
       <button class="sidebar-item" data-view="caja"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg><span class="sb-txt">Caja</span></button>
       <button class="sidebar-item" data-view="presupuestos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span class="sb-txt">Presupuestos</span></button>
       <button class="sidebar-item" data-view="productividad"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="sb-txt">Productividad</span></button>
     </div>
-
     <div class="sidebar-section">
       <div class="sidebar-label">Clínica</div>
 
-      <!-- Obras sociales (colapsable) -->
+      <!-- Obras sociales con submenú (colapsable) -->
       <div class="sidebar-group">
         <div class="sidebar-group-row">
           <button class="sidebar-item" onclick="toggleGroup('grp-os')" title="Obras sociales" style="flex:1;background:none;border:none;cursor:pointer;text-align:left">
@@ -553,7 +419,7 @@
         </div>
       </div>
 
-      <!-- Inventario (colapsable) -->
+      <!-- Inventario con submenú (colapsable) -->
       <div class="sidebar-group">
         <div class="sidebar-group-row">
           <button class="sidebar-item" onclick="toggleGroup('grp-inventario')" title="Inventario" style="flex:1;background:none;border:none;cursor:pointer;text-align:left">
@@ -611,7 +477,7 @@
 <!-- Modal genérico -->
 <div class="modal-overlay" id="modal-generic"><div class="modal-box" id="modal-generic-content"></div></div>
 
-<!-- Toast notificaciones -->
+<!-- Toast notificaciones (placeholder) -->
 <div id="notif" style="position:fixed;bottom:20px;right:20px;z-index:9999;"></div>
 
 <!-- ===== FIREBASE SDK ===== -->
@@ -641,36 +507,11 @@
 <script src="js/whatsapp.js"></script>
 <script src="js/configuracion.js"></script>
 
-<!-- ===== SCRIPT DE INICIALIZACIÓN Y NAVEGACIÓN ===== -->
+<!-- ===== SCRIPT DE INICIALIZACIÓN Y TOGGLEGROUP ===== -->
 <script>
-  // ─── Funciones del sidebar (hamburguesa y colapso) ───
-
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('active');
-  }
-
-  function closeSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    sidebar.classList.remove('open');
-    overlay.classList.remove('active');
-  }
-
-  // Cerrar sidebar al hacer clic en un enlace (mobile)
-  document.addEventListener('click', function(e) {
-    const sidebar = document.getElementById('sidebar');
-    const target = e.target.closest('.sidebar-item');
-    if (target && window.innerWidth <= 768) {
-      closeSidebar();
-    }
-  });
-
-  // ─── Toggle subgrupos (colapsables) ───
+  // ─── Función toggleGroup (mejorada) ───
   function toggleGroup(id) {
-    // Si el sidebar está colapsado (desktop), expandirlo primero
+    // Si el sidebar está colapsado, expandirlo primero
     if (document.documentElement.classList.contains('sidebar-collapsed')) {
       setSidebarCollapsed(false);
       return;
@@ -683,7 +524,7 @@
     if (btn) btn.classList.toggle('open', !open);
   }
 
-  // ─── Colapsar/expandir sidebar (desktop) ───
+  // ─── Función para colapsar/expandir el sidebar completo ───
   function setSidebarCollapsed(collapsed) {
     document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
     localStorage.setItem('ds_sidebar_collapsed', collapsed ? '1' : '0');
@@ -695,107 +536,16 @@
     setSidebarCollapsed(!document.documentElement.classList.contains('sidebar-collapsed'));
   }
 
-  // Restaurar estado colapsado
+  // ─── Restaurar estado del sidebar ───
   (function() {
     if (localStorage.getItem('ds_sidebar_collapsed') === '1') {
       document.documentElement.classList.add('sidebar-collapsed');
     }
   })();
 
-  // ─── User dropdown ───
-  function toggleUserMenu() {
-    var dd = document.getElementById('user-dropdown');
-    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
-  }
-  document.addEventListener('click', function(e) {
-    var wrap = document.querySelector('.user-menu-wrap');
-    if (wrap && !wrap.contains(e.target)) {
-      document.getElementById('user-dropdown').style.display = 'none';
-    }
-  });
-
-  // ─── Modal y Toast (compatibles con navigation.js) ───
-  function openModal(html) {
-    var content = document.getElementById('modal-generic-content');
-    if (content) {
-      content.innerHTML = html;
-      document.getElementById('modal-generic').classList.add('active');
-    }
-  }
-  function closeModal() {
-    document.getElementById('modal-generic').classList.remove('active');
-  }
-  function showToast(msg) {
-    var el = document.getElementById('notif');
-    if (!el) return;
-    el.innerHTML = '<div style="background:#16a34a;color:#fff;padding:10px 20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-size:14px;">'+msg+'</div>';
-    clearTimeout(el._timer);
-    el._timer = setTimeout(function(){ el.innerHTML = ''; }, 3000);
-  }
-
-  // ─── cerrarSesión (placeholder) ───
-  function cerrarSesion() {
-    if (confirm('¿Cerrar sesión?')) {
-      // Redirigir a logout o limpiar sesión
-      alert('Sesión cerrada (simulado)');
-    }
-  }
-
-  // ─── NAVEGACIÓN SPA (usando data-view) ───
-
-  const views = ['dashboard','agenda','pacientes','profesionales','liquidaciones','automatizaciones',
-                 'caja','presupuestos','productividad','obras_sociales','liquidaciones_os','inventario',
-                 'proveedores','tratamientos','especialidades','web','whatsapp','configuracion'];
-  let currentView = 'dashboard';
-
-  function navigateTo(view) {
-    if (!views.includes(view)) return;
-    currentView = view;
-    // Actualizar clase active en sidebar y topnav
-    document.querySelectorAll('.sidebar .sidebar-item[data-view], .topnav .nav-links a[data-view]').forEach(function(el) {
-      el.classList.toggle('active', el.dataset.view === view);
-    });
-    // Ocultar todas las vistas y mostrar la seleccionada
-    document.querySelectorAll('.view').forEach(function(el) {
-      el.classList.remove('active');
-    });
-    var target = document.getElementById('view-'+view);
-    if (target) {
-      target.classList.add('active');
-      // Si la vista está vacía, cargar su contenido (si existe la función render)
-      if (target.innerHTML.trim() === '') {
-        loadView(view);
-      }
-    }
-  }
-
-  function loadView(view) {
-    switch(view) {
-      case 'dashboard': if (typeof renderDashboard === 'function') renderDashboard(); break;
-      case 'agenda': if (typeof renderAgenda === 'function') renderAgenda(); break;
-      case 'pacientes': if (typeof renderPacientes === 'function') renderPacientes(); break;
-      case 'profesionales': if (typeof renderProfesionales === 'function') renderProfesionales(); break;
-      case 'liquidaciones': if (typeof renderLiquidaciones === 'function') renderLiquidaciones(); break;
-      case 'automatizaciones': if (typeof renderAutomatizaciones === 'function') renderAutomatizaciones(); break;
-      case 'caja': if (typeof renderCaja === 'function') renderCaja(); break;
-      case 'presupuestos': if (typeof renderPresupuestos === 'function') renderPresupuestos(); break;
-      case 'productividad': if (typeof renderProductividad === 'function') renderProductividad(); break;
-      case 'obras_sociales': if (typeof renderObrasSociales === 'function') renderObrasSociales(); break;
-      case 'liquidaciones_os': if (typeof renderLiquidacionesOS === 'function') renderLiquidacionesOS(); break;
-      case 'inventario': if (typeof renderInventario === 'function') renderInventario(); break;
-      case 'proveedores': if (typeof renderProveedores === 'function') renderProveedores(); break;
-      case 'tratamientos': if (typeof renderTratamientos === 'function') renderTratamientos(); break;
-      case 'especialidades': if (typeof renderEspecialidades === 'function') renderEspecialidades(); break;
-      case 'web': if (typeof renderWeb === 'function') renderWeb(); break;
-      case 'whatsapp': if (typeof renderWhatsApp === 'function') renderWhatsApp(); break;
-      case 'configuracion': if (typeof renderConfiguracion === 'function') renderConfiguracion(); break;
-      default: break;
-    }
-  }
-
   // ─── Inicialización ───
   document.addEventListener('DOMContentLoaded', function() {
-    // Eventos de navegación (sidebar y topnav)
+    // Configurar navegación desde sidebar y topnav (usando data-view)
     document.querySelectorAll('.sidebar .sidebar-item[data-view], .topnav .nav-links a[data-view]').forEach(function(el) {
       el.addEventListener('click', function(e) {
         e.preventDefault();
