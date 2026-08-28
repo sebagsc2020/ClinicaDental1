@@ -1,10 +1,6 @@
 // ============================================================
 // CAJA - SPA (Single Page Application)
 // ============================================================
-
-// ============================================================
-// RENDER CAJA PRINCIPAL (LISTA DE PAGOS Y RESUMEN)
-// ============================================================
 function renderCaja() {
   const el = $('view-caja');
 
@@ -588,9 +584,10 @@ window.renderCierresView = function() {
         const diff = efectivoIngresado - efectivoEsperado;
         const diffColor = Math.abs(diff) < 0.01 ? 'var(--success)' : (diff < 0 ? 'var(--danger)' : 'var(--warning)');
         const cerradoPor = c.cerrado_por || '—';
+        const numeroCierre = index + 1;
         html += `
           <tr>
-            <td style="font-weight:600;">${index + 1}</td>
+            <td style="font-weight:600;">${numeroCierre}</td>
             <td>${fecha}</td>
             <td>${periodo}</td>
             <td style="text-align:right;">$${Number(efectivoEsperado).toLocaleString()}</td>
@@ -598,7 +595,7 @@ window.renderCierresView = function() {
             <td style="text-align:right;font-weight:600;color:${diffColor};">${diff >= 0 ? '+' : ''}$${Number(diff).toLocaleString()}</td>
             <td>${cerradoPor}</td>
             <td>
-              <button class="btn btn-sm btn-secondary" onclick="renderVerCierreView('${c.id}')">Ver</button>
+              <button class="btn btn-sm btn-secondary" onclick="renderVerCierreView('${c.id}', ${numeroCierre})">Ver</button>
             </td>
           </tr>
         `;
@@ -612,19 +609,23 @@ window.renderCierresView = function() {
 };
 
 // ============================================================
-// VISTA: VER DETALLE DE UN CIERRE
+// VISTA: VER DETALLE DE UN CIERRE (ESTILO EJEMPLO)
 // ============================================================
-window.renderVerCierreView = function(cierreId) {
+window.renderVerCierreView = function(cierreId, numeroCierre) {
   const el = $('view-caja');
   el.innerHTML = `
     <div class="page-header">
       <div style="display:flex;align-items:center;gap:12px;">
-        <a href="#" class="btn btn-secondary btn-sm" onclick="renderCierresView()">&larr; Volver</a>
+        <a href="#" class="btn btn-secondary btn-sm" onclick="renderCierresView()">&larr; Cierres</a>
         <div>
-          <div class="page-title">Detalle de cierre</div>
+          <div class="page-title">Cierre de caja #${numeroCierre || '?'}</div>
           <div class="page-subtitle" id="cierre-detalle-subtitle">Cargando...</div>
         </div>
       </div>
+      <button class="btn btn-secondary" onclick="alert('Función de PDF en desarrollo')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px;vertical-align:-2px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Exportar PDF
+      </button>
     </div>
     <div id="cierre-detalle-contenido" style="text-align:center;padding:20px;color:var(--text-muted);">Cargando datos del cierre...</div>
   `;
@@ -644,24 +645,112 @@ window.renderVerCierreView = function(cierreId) {
     const pagos = [];
     pagosSnap.forEach(doc => pagos.push({ id: doc.id, ...doc.data() }));
 
-    // Calcular totales
+    // --- Calcular totales ---
     const totalEfectivo = pagos.filter(p => p.metodo === 'efectivo').reduce((sum, p) => sum + (p.monto || 0), 0);
     const totalOtros = pagos.filter(p => p.metodo !== 'efectivo').reduce((sum, p) => sum + (p.monto || 0), 0);
     const totalGeneral = pagos.reduce((sum, p) => sum + (p.monto || 0), 0);
 
-    // Mostrar fecha formateada
-    const fechaCierre = cierre.fecha_cierre ? formatDateCaja(cierre.fecha_cierre) : '—';
-    document.getElementById('cierre-detalle-subtitle').textContent = `Cierre del ${fechaCierre} · ${cierre.periodo || ''}`;
+    // --- Fechas ---
+    const fechaCierre = cierre.fecha_cierre ? formatDateCaja(cierre.fecha_cierre) + ' ' + new Date(cierre.fecha_cierre).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—';
+    const fechaInicio = cierre.periodo_inicio ? formatDateCaja(cierre.periodo_inicio) : '—';
+    const fechaFin = cierre.periodo_fin ? formatDateCaja(cierre.periodo_fin) : '—';
+    const periodoTexto = cierre.periodo || '—';
 
-    // Construir HTML
-    const diff = (cierre.efectivo_ingresado || 0) - (cierre.efectivo_esperado || 0);
-    const diffColor = Math.abs(diff) < 0.01 ? 'var(--success)' : (diff < 0 ? 'var(--danger)' : 'var(--warning)');
+    // --- Diferencia ---
+    const efectivoEsperado = cierre.efectivo_esperado || 0;
+    const efectivoIngresado = cierre.efectivo_ingresado || 0;
+    const diff = efectivoIngresado - efectivoEsperado;
+    const diffSign = diff >= 0 ? '+' : '';
+    const diffColor = Math.abs(diff) < 0.01 ? '#166534' : (diff > 0 ? '#92400e' : '#b91c1c');
+    const diffBg = Math.abs(diff) < 0.01 ? '#f0fdf4' : (diff > 0 ? '#fffbeb' : '#fef2f2');
+    const diffBorder = Math.abs(diff) < 0.01 ? '#bbf7d0' : (diff > 0 ? '#fde68a' : '#fecaca');
+    const diffText = Math.abs(diff) < 0.01 ? 'Caja exacta' : (diff > 0 ? 'Sobrante en caja' : 'Faltante en caja');
 
-    let pagosHTML = '';
-    if (pagos.length === 0) {
-      pagosHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No hay pagos asociados a este cierre.</div>';
-    } else {
-      pagosHTML = `
+    // --- Banner ---
+    const bannerBg = diff > 0 ? 'linear-gradient(135deg,#92400e,#d97706)' :
+                     diff < 0 ? 'linear-gradient(135deg,#991b1b,#dc2626)' :
+                                'linear-gradient(135deg,#065f46,#059669)';
+    const bannerTitle = diff > 0 ? 'Sobrante en caja' :
+                        diff < 0 ? 'Faltante en caja' :
+                                   'Caja exacta';
+
+    // --- Otros métodos (agrupados) ---
+    const otrosMetodos = {};
+    pagos.forEach(p => {
+      if (p.metodo !== 'efectivo') {
+        const key = p.metodo || 'otro';
+        if (!otrosMetodos[key]) otrosMetodos[key] = 0;
+        otrosMetodos[key] += p.monto || 0;
+      }
+    });
+
+    // --- Construir HTML ---
+    const contenido = `
+      <!-- Hero banner con resultado del cierre -->
+      <div style="background:${bannerBg};border-radius:16px;padding:28px 32px;margin-bottom:20px;color:#fff;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-bottom:4px;">Diferencia de caja</div>
+          <div style="font-size:40px;font-weight:800;letter-spacing:-1px;">${diffSign}$${Number(diff).toLocaleString()}</div>
+          <div style="font-size:13px;opacity:.75;margin-top:4px;">${bannerTitle}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-bottom:4px;">Total del período</div>
+          <div style="font-size:32px;font-weight:800;">$${Number(totalGeneral).toLocaleString()}</div>
+          <div style="font-size:12px;opacity:.7;margin-top:4px;">
+            ${fechaInicio} → ${fechaFin}
+          </div>
+        </div>
+      </div>
+
+      <!-- Grilla de detalles -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+        <!-- Efectivo -->
+        <div class="card" style="padding:20px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:14px;">Efectivo</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:13px;color:var(--text-muted);">Esperado en caja</span>
+            <span style="font-size:16px;font-weight:700;color:var(--text);">$${Number(efectivoEsperado).toLocaleString()}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:13px;color:var(--text-muted);">Contado físicamente</span>
+            <span style="font-size:16px;font-weight:700;color:var(--text);">$${Number(efectivoIngresado).toLocaleString()}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;margin-top:10px;border-radius:10px;background:${diffBg};border:1px solid ${diffBorder};">
+            <span style="font-size:13px;font-weight:700;color:${diffColor};">Diferencia</span>
+            <span style="font-size:20px;font-weight:800;color:${diffColor};">${diffSign}$${Number(diff).toLocaleString()}</span>
+          </div>
+        </div>
+
+        <!-- Otros métodos -->
+        <div class="card" style="padding:20px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:14px;">Otros métodos de pago</div>
+          ${Object.keys(otrosMetodos).length === 0 ? '<div style="color:var(--text-muted);font-size:13px;padding:10px 0;">Sin movimientos de otros métodos en este período.</div>' : ''}
+          ${Object.entries(otrosMetodos).map(([metodo, monto]) => {
+            const nombres = { 'tarjeta_credito': 'Tarjeta crédito', 'tarjeta_debito': 'Tarjeta débito', 'transferencia': 'Transferencia', 'mercadopago': 'MercadoPago', 'obra_social': 'Obra social', 'otro': 'Otro' };
+            return `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+                <span style="font-size:13px;color:var(--text);">${nombres[metodo] || metodo}</span>
+                <span style="font-size:15px;font-weight:700;color:var(--text);">$${Number(monto).toLocaleString()}</span>
+              </div>
+            `;
+          }).join('')}
+          <div style="margin-top:12px;padding-top:12px;border-top:2px solid var(--border);display:flex;justify-content:space-between;">
+            <span style="font-size:13px;font-weight:700;color:var(--text-muted);">Total otros</span>
+            <span style="font-size:16px;font-weight:700;color:var(--text);">$${Number(totalOtros).toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de pagos -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);">Detalle de pagos incluidos</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${pagos.length} registros</div>
+          </div>
+        </div>
+        ${pagos.length === 0 ? '<div style="text-align:center;padding:28px;color:var(--text-muted);font-size:13px;">No hay registros asociados a este cierre.</div>' : `
         <table class="table" style="width:100%;border-collapse:collapse;font-size:13px;">
           <thead>
             <tr>
@@ -686,60 +775,13 @@ window.renderVerCierreView = function(cierreId) {
             `).join('')}
           </tbody>
         </table>
-      `;
-    }
-
-    const contenido = `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
-        <div class="card">
-          <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text);">Resumen del cierre</div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:13px;">
-              <span>Fecha de cierre</span>
-              <span style="font-weight:600;">${fechaCierre}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;">
-              <span>Período</span>
-              <span style="font-weight:600;">${cierre.periodo || '—'}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;padding-top:8px;border-top:1px solid var(--border);">
-              <span>Efectivo esperado</span>
-              <span style="font-weight:600;">$${Number(cierre.efectivo_esperado || 0).toLocaleString()}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;">
-              <span>Efectivo ingresado</span>
-              <span style="font-weight:600;">$${Number(cierre.efectivo_ingresado || 0).toLocaleString()}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:${diffColor};">
-              <span>Diferencia</span>
-              <span>${diff >= 0 ? '+' : ''}$${Number(diff).toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text);">Totales por método</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;justify-content:space-between;font-size:13px;">
-              <span>Efectivo</span>
-              <span style="font-weight:600;">$${Number(totalEfectivo).toLocaleString()}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;">
-              <span>Otros métodos</span>
-              <span style="font-weight:600;">$${Number(totalOtros).toLocaleString()}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;padding-top:8px;border-top:2px solid var(--border);">
-              <span>Total general</span>
-              <span style="color:var(--primary);">$${Number(totalGeneral).toLocaleString()}</span>
-            </div>
-          </div>
-          ${cierre.observaciones ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:13px;color:var(--text-muted);"><strong>Observaciones:</strong> ${cierre.observaciones}</div>` : ''}
-        </div>
-      </div>
-      <div class="card">
-        <div style="font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text);">Pagos incluidos en este cierre <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(${pagos.length} registros)</span></div>
-        ${pagosHTML}
+        `}
       </div>
     `;
+
+    // Actualizar subtítulo
+    const cerradoPor = cierre.cerrado_por || 'Admin';
+    document.getElementById('cierre-detalle-subtitle').textContent = `${fechaCierre} · ${cerradoPor}`;
 
     document.getElementById('cierre-detalle-contenido').innerHTML = contenido;
   })
@@ -949,9 +991,19 @@ window.confirmarCierre = function() {
   const pagos = window._cierrePagos || [];
   const efectivoEsperado = window._cierreEfectivoEsperado || 0;
 
+  // Calcular período (fecha del primer y último pago)
+  let periodoInicio = null, periodoFin = null;
+  if (pagos.length > 0) {
+    const fechas = pagos.map(p => new Date(p.fecha));
+    periodoInicio = new Date(Math.min(...fechas));
+    periodoFin = new Date(Math.max(...fechas));
+  }
+
   const cierreData = {
     fecha_cierre: new Date().toISOString(),
-    periodo: new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }),
+    periodo: periodoInicio ? `${formatDateCaja(periodoInicio)} → ${formatDateCaja(periodoFin)}` : new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }),
+    periodo_inicio: periodoInicio ? periodoInicio.toISOString() : null,
+    periodo_fin: periodoFin ? periodoFin.toISOString() : null,
     efectivo_esperado: efectivoEsperado,
     efectivo_ingresado: efectivoIngresado,
     otros_metodos: window._cierreOtros || {},
