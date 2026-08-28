@@ -1,5 +1,5 @@
 // ============================================================
-// TRATAMIENTOS - Estilo DentalSoft
+// TRATAMIENTOS - Estilo DentalSoft (tablas consistentes con dashboard)
 // ============================================================
 
 let filterCategoria = 'Todos';
@@ -26,7 +26,7 @@ function renderTratamientos() {
     <!-- Resumen por categoría (pills) -->
     <div id="categoria-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;"></div>
 
-    <!-- Filtros activo/inactivo -->
+    <!-- Filtros -->
     <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
       <button class="btn btn-sm btn-primary" data-filter="Todos" onclick="setFilterEstado('Todos')">Todos</button>
       <button class="btn btn-sm btn-secondary" data-filter="Activos" onclick="setFilterEstado('Activos')">Activos</button>
@@ -37,7 +37,7 @@ function renderTratamientos() {
       </button>
     </div>
 
-    <!-- Tabla -->
+    <!-- Tabla (mismo estilo que dashboard) -->
     <div class="table-wrap">
       <table>
         <thead>
@@ -69,7 +69,6 @@ function renderTratamientos() {
       console.error('Error en snapshot de tratamientos:', error);
     });
   } else {
-    // Fallback: datos de ejemplo si no hay Firebase
     allTratamientosData = [];
     actualizarVistaTratamientos();
   }
@@ -126,7 +125,7 @@ function actualizarVistaTratamientos() {
     return;
   }
 
-  // Colores por categoría (estilo DentalSoft)
+  // Colores por categoría (badges estilo dashboard)
   const coloresCategoria = {
     'cirugia': 'badge-red',
     'consulta': 'badge-teal',
@@ -142,7 +141,7 @@ function actualizarVistaTratamientos() {
   };
   const getColorCategoria = (cat) => coloresCategoria[cat] || 'badge-gray';
 
-  // Generar filas de la tabla
+  // Generar filas (sin estilos inline, solo clases)
   let htmlFilas = '';
   filtered.forEach((item) => {
     const activo = item.activo !== undefined ? item.activo : true;
@@ -175,7 +174,7 @@ function actualizarVistaTratamientos() {
           </button>
         </td>
         <td style="font-weight:600">$ ${Number(item.precio_base || 0).toLocaleString()}</td>
-        <td style="font-size:13px;color:var(--text-muted)">${item.duracion || '30 min'}</td>
+        <td>${item.duracion || '30 min'}</td>
         <td>
           <form onsubmit="event.preventDefault(); toggleEstado('${item.id}')" style="display:inline">
             <button type="submit" class="badge ${estadoBadge}"
@@ -294,8 +293,6 @@ window.guardarTratamiento = function() {
   if (!categoria) return alert('Selecciona una categoría.');
 
   if (typeof db === 'undefined') {
-    alert('Firebase no está disponible. Los datos se guardarán en memoria.');
-    // Simular guardado
     const newItem = { id: Date.now().toString(), nombre, codigo, categoria, precio_base, duracion, activo };
     allTratamientosData.push(newItem);
     if (typeof closeModal === 'function') closeModal();
@@ -381,7 +378,6 @@ window.guardarEdicionTratamiento = function(id) {
   if (!categoria) return alert('Selecciona una categoría.');
 
   if (typeof db === 'undefined') {
-    // Simular actualización
     const index = allTratamientosData.findIndex(t => t.id === id);
     if (index !== -1) {
       allTratamientosData[index] = { ...allTratamientosData[index], nombre, codigo, categoria, precio_base, duracion, activo };
@@ -497,10 +493,9 @@ window.toggleEstado = function(id) {
 };
 
 // ============================================================
-// MODAL: CAMBIAR ESPECIALIDAD (estilo DentalSoft)
+// MODAL: CAMBIAR ESPECIALIDAD
 // ============================================================
 window.abrirEspecialidadModal = function(id, nombre, especialidadId) {
-  // Cargar especialidades desde Firestore o usar datos de ejemplo
   let especialidadesHTML = '<option value="">Sin especialidad</option>';
 
   if (typeof db !== 'undefined') {
@@ -514,7 +509,6 @@ window.abrirEspecialidadModal = function(id, nombre, especialidadId) {
         mostrarModalEspecialidad(id, nombre, especialidadesHTML);
       })
       .catch(() => {
-        // Fallback: especialidades de ejemplo
         const espEjemplo = ['Implantologia', 'Ortodoncia', 'Perodoncia', 'Endodoncia', 'Odontopediatría'];
         espEjemplo.forEach((e, i) => {
           const val = (i + 1).toString();
@@ -524,7 +518,6 @@ window.abrirEspecialidadModal = function(id, nombre, especialidadId) {
         mostrarModalEspecialidad(id, nombre, especialidadesHTML);
       });
   } else {
-    // Fallback sin Firebase
     const espEjemplo = ['Implantologia', 'Ortodoncia', 'Perodoncia', 'Endodoncia', 'Odontopediatría'];
     espEjemplo.forEach((e, i) => {
       const val = (i + 1).toString();
@@ -582,7 +575,7 @@ window.guardarEspecialidadTratamiento = function(id) {
 };
 
 // ============================================================
-// INICIALIZACIÓN (si se ejecuta directamente)
+// INICIALIZACIÓN
 // ============================================================
 if (document.getElementById('view-tratamientos')) {
   renderTratamientos();
