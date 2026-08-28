@@ -23,7 +23,6 @@ function renderPacientes() {
     <div class="page-header">
       <div>
         <div class="page-title">Pacientes</div>
-        <div class="page-subtitle" id="pacientes-count">Cargando...</div>
       </div>
       <button class="btn btn-primary" onclick="renderNuevoPaciente()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -31,6 +30,7 @@ function renderPacientes() {
       </button>
     </div>
 
+    <!-- Búsqueda y filtros -->
     <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
       <div style="position:relative;flex:1;max-width:400px;">
         <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.4" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -44,6 +44,10 @@ function renderPacientes() {
       <button class="btn btn-secondary" onclick="aplicarFiltrosPacientes()">Buscar</button>
     </div>
 
+    <!-- Contador de resultados (ÚNICO) -->
+    <div id="pacientes-count" style="margin-bottom:8px;font-size:13px;color:var(--text-muted);">Cargando...</div>
+
+    <!-- Modal confirmar eliminación -->
     <div id="modal-eliminar-paciente" style="display:none;position:fixed;inset:0;z-index:9000;align-items:center;justify-content:center;background:rgba(0,0,0,.45);">
       <div class="card" style="width:100%;max-width:420px;margin:0 16px;padding:28px 24px;">
         <div style="font-weight:700;font-size:16px;margin-bottom:8px;">Eliminar paciente</div>
@@ -58,6 +62,7 @@ function renderPacientes() {
       </div>
     </div>
 
+    <!-- Tabla (desktop) -->
     <div class="table-wrap">
       <table>
         <thead>
@@ -75,6 +80,7 @@ function renderPacientes() {
       </table>
     </div>
 
+    <!-- Lista mobile (único contenedor) -->
     <div class="pac-mob-list" id="pac-mob-list" style="border-radius:10px;border:1px solid var(--border);overflow:hidden;background:#fff;display:none;"></div>
   `;
 
@@ -82,7 +88,7 @@ function renderPacientes() {
 }
 
 // ============================================================
-// CARGAR PACIENTES DESDE FIRESTORE
+// CARGAR PACIENTES DESDE FIRESTORE (con listener único)
 // ============================================================
 function cargarPacientes() {
   if (pacientesListener) {
@@ -96,6 +102,7 @@ function cargarPacientes() {
       pacientesData.push({ id: doc.id, ...doc.data() });
     });
 
+    // Ordenar manualmente (evita índice compuesto)
     pacientesData.sort((a, b) => {
       const apellidoA = (a.apellido || '').toLowerCase();
       const apellidoB = (b.apellido || '').toLowerCase();
@@ -115,7 +122,7 @@ function cargarPacientes() {
 }
 
 // ============================================================
-// FILTROS Y RENDERIZADO
+// APLICAR FILTROS Y RENDERIZAR
 // ============================================================
 function aplicarFiltrosPacientes() {
   const searchInput = $('pac-search-input');
@@ -124,9 +131,11 @@ function aplicarFiltrosPacientes() {
   if (estadoSelect) filterEstado = estadoSelect.value;
 
   let filtered = [...pacientesData];
+
   if (filterEstado !== 'todos') {
     filtered = filtered.filter(p => p.estado === filterEstado);
   }
+
   if (searchQuery) {
     filtered = filtered.filter(p => {
       const nombre = `${p.nombre || ''} ${p.apellido || ''}`.toLowerCase();
@@ -137,6 +146,7 @@ function aplicarFiltrosPacientes() {
     });
   }
 
+  // Actualizar contador (único)
   const countEl = $('pacientes-count');
   if (countEl) countEl.textContent = `${filtered.length} ${filtered.length === 1 ? 'resultado' : 'resultados'}`;
 
@@ -144,6 +154,9 @@ function aplicarFiltrosPacientes() {
   renderMobilePacientes(filtered);
 }
 
+// ============================================================
+// RENDER TABLA (desktop)
+// ============================================================
 function renderTablaPacientes(pacientes) {
   const tbody = $('pac-tbody');
   if (!tbody) return;
@@ -195,12 +208,18 @@ function renderTablaPacientes(pacientes) {
   tbody.innerHTML = html;
 }
 
+// ============================================================
+// RENDER MOBILE (cards) - LIMPIA el contenedor antes de renderizar
+// ============================================================
 function renderMobilePacientes(pacientes) {
   const container = $('pac-mob-list');
   if (!container) return;
 
+  // Limpia el contenedor antes de agregar nuevo contenido
+  container.innerHTML = '';
+
   if (pacientes.length === 0) {
-    container.innerHTML = `<div style="padding:20px;text-align:center;color:#94a3b8;">No hay pacientes.</div>`;
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:#94a3b8;">No hay pacientes.</div>';
     container.style.display = 'block';
     return;
   }
@@ -267,6 +286,7 @@ function confirmarEliminarPaciente() {
     .catch(err => alert('❌ Error al eliminar: ' + err.message));
 }
 
+// Cerrar modal al hacer clic fuera
 document.addEventListener('click', function(e) {
   const modal = $('modal-eliminar-paciente');
   if (modal && e.target === modal) cerrarEliminarPaciente();
@@ -290,7 +310,7 @@ function verPaciente(id) {
 }
 
 // ============================================================
-// RENDER VISTA DETALLE (resumida, como antes)
+// RENDER VISTA DETALLE
 // ============================================================
 function renderVerPaciente(paciente) {
   const el = $('view-pacientes');
@@ -327,9 +347,7 @@ function renderVerPaciente(paciente) {
 
     <div class="page-header">
       <div style="display:flex;align-items:center;gap:14px;">
-        <div class="avatar avatar-lg" style="background:var(--teal-light);color:var(--teal);font-size:20px;font-weight:700;width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:50%;">
-          ${iniciales}
-        </div>
+        <div class="avatar avatar-lg" style="background:var(--teal-light);color:var(--teal);font-size:20px;font-weight:700;width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:50%;">${iniciales}</div>
         <div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <div class="page-title">${nombreCompleto}</div>
@@ -392,6 +410,7 @@ function renderVerPaciente(paciente) {
         </div>
       </div>
 
+      <!-- Ficha médica (placeholder) -->
       <div id="tab-ficha" data-tab style="display:none;">
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -433,6 +452,7 @@ function renderVerPaciente(paciente) {
         </div>
       </div>
 
+      <!-- Placeholders para el resto de pestañas -->
       <div id="tab-odontograma" data-tab style="display:none;">
         <div class="card" style="text-align:center;padding:60px 20px;">
           <div style="font-size:48px;opacity:0.2;">🦷</div>
@@ -445,7 +465,7 @@ function renderVerPaciente(paciente) {
         <div class="card" style="text-align:center;padding:60px 20px;">
           <div style="font-size:48px;opacity:0.2;">🦷</div>
           <div style="font-size:16px;font-weight:600;margin-top:12px;">Ortodoncia</div>
-          <p style="color:var(--text-muted);font-size:13px;">Funcionalidad en desarrollo. Próximamente podrás gestionar el tratamiento ortodóncico.</p>
+          <p style="color:var(--text-muted);font-size:13px;">Funcionalidad en desarrollo.</p>
         </div>
       </div>
 
@@ -453,7 +473,7 @@ function renderVerPaciente(paciente) {
         <div class="card" style="text-align:center;padding:60px 20px;">
           <div style="font-size:48px;opacity:0.2;">📐</div>
           <div style="font-size:16px;font-weight:600;margin-top:12px;">Escaneos 3D</div>
-          <p style="color:var(--text-muted);font-size:13px;">Funcionalidad en desarrollo. Próximamente podrás gestionar escaneos 3D.</p>
+          <p style="color:var(--text-muted);font-size:13px;">Funcionalidad en desarrollo.</p>
         </div>
       </div>
 
@@ -461,10 +481,11 @@ function renderVerPaciente(paciente) {
         <div class="card" style="text-align:center;padding:60px 20px;">
           <div style="font-size:48px;opacity:0.2;">📝</div>
           <div style="font-size:16px;font-weight:600;margin-top:12px;">Notas</div>
-          <p style="color:var(--text-muted);font-size:13px;">Funcionalidad en desarrollo. Próximamente podrás agregar notas.</p>
+          <p style="color:var(--text-muted);font-size:13px;">Funcionalidad en desarrollo.</p>
         </div>
       </div>
 
+      <!-- TAB: TURNOS (carga real) -->
       <div id="tab-turnos" data-tab style="display:none;">
         <div class="card">
           <div id="turnos-container">
@@ -477,7 +498,7 @@ function renderVerPaciente(paciente) {
         <div class="card" style="text-align:center;padding:60px 20px;">
           <div style="font-size:48px;opacity:0.2;">💰</div>
           <div style="font-size:16px;font-weight:600;margin-top:12px;">Presupuestos</div>
-          <p style="color:var(--text-muted);font-size:13px;">Funcionalidad en desarrollo. Próximamente podrás gestionar presupuestos.</p>
+          <p style="color:var(--text-muted);font-size:13px;">Funcionalidad en desarrollo.</p>
         </div>
       </div>
 
@@ -485,17 +506,18 @@ function renderVerPaciente(paciente) {
         <div class="card" style="text-align:center;padding:60px 20px;">
           <div style="font-size:48px;opacity:0.2;">💳</div>
           <div style="font-size:16px;font-weight:600;margin-top:12px;">Pagos</div>
-          <p style="color:var(--text-muted);font-size:13px;">Funcionalidad en desarrollo. Próximamente podrás gestionar pagos.</p>
+          <p style="color:var(--text-muted);font-size:13px;">Funcionalidad en desarrollo.</p>
         </div>
       </div>
     </div>
   `;
 
+  // Cargar turnos
   cargarTurnosPaciente(paciente.id);
 }
 
 // ============================================================
-// CARGAR TURNOS DEL PACIENTE
+// CARGAR TURNOS DEL PACIENTE (con índice ya creado)
 // ============================================================
 function cargarTurnosPaciente(pacienteId) {
   const container = document.getElementById('turnos-container');
@@ -572,6 +594,7 @@ function cargarTurnosPaciente(pacienteId) {
       html += `</tbody></table>`;
       container.innerHTML = html;
 
+      // Actualizar contador del tab
       const badge = document.querySelector('#ver-tabs-wrapper .tabs .tab:nth-child(7) .badge');
       if (badge) badge.textContent = snapshot.size;
     })
@@ -608,7 +631,6 @@ function renderEditarPaciente(id) {
     }
     const paciente = { id: doc.id, ...doc.data() };
 
-    // Construir el HTML del formulario de edición (igual al HTML proporcionado)
     el.innerHTML = `
       <div class="page-header">
         <div>
@@ -831,7 +853,7 @@ function cargarObrasSocialesYPlanesEdit(paciente) {
       selObra.innerHTML += `<option value="${doc.id}" ${selected}>${data.nombre || 'Sin nombre'} (${data.codigo || ''})</option>`;
     });
 
-    // Cargar planes para la obra social seleccionada
+    // Cargar planes para la obra social seleccionada (sin `where` para evitar permisos)
     const obraId = paciente.obra_social_id || '';
     if (obraId) {
       cargarPlanesPacienteEdit(obraId, paciente.plan_id);
@@ -841,22 +863,29 @@ function cargarObrasSocialesYPlanesEdit(paciente) {
   }).catch(err => console.error('Error cargando obras sociales:', err));
 }
 
+// ============================================================
+// CARGAR PLANES (sin `where` para evitar errores de permisos)
+// ============================================================
 function cargarPlanesPacienteEdit(obraSocialId, selectedPlanId) {
   const selPlan = document.getElementById('sel-plan-edit');
   if (!selPlan) return;
   selPlan.innerHTML = '<option value="">— Sin plan —</option>';
   if (!obraSocialId) return;
 
-  db.collection('planes')
-    .where('obra_social_id', '==', obraSocialId)
-    .where('activo', '==', true)
-    .orderBy('nombre')
-    .get()
+  // Cargar todos los planes y filtrar en cliente
+  db.collection('planes').get()
     .then(snap => {
+      const planes = [];
       snap.forEach(doc => {
         const data = doc.data();
-        const selected = (selectedPlanId && selectedPlanId === doc.id) ? 'selected' : '';
-        selPlan.innerHTML += `<option value="${doc.id}" ${selected}>${data.nombre || 'Sin nombre'}</option>`;
+        if (data.obra_social_id === obraSocialId && data.activo !== false) {
+          planes.push({ id: doc.id, ...data });
+        }
+      });
+      planes.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+      planes.forEach(p => {
+        const selected = (selectedPlanId && selectedPlanId === p.id) ? 'selected' : '';
+        selPlan.innerHTML += `<option value="${p.id}" ${selected}>${p.nombre || 'Sin nombre'}</option>`;
       });
     })
     .catch(err => console.error('Error cargando planes:', err));
@@ -885,7 +914,7 @@ function guardarEdicionPaciente(e, id) {
     return;
   }
 
-  // Obtener nombres de obra social y plan para mostrar en el listado
+  // Obtener nombres de obra social y plan
   const obraSelect = document.getElementById('sel-obra-social-edit');
   if (obraSelect) {
     const selectedOption = obraSelect.options[obraSelect.selectedIndex];
@@ -897,45 +926,12 @@ function guardarEdicionPaciente(e, id) {
     data.plan_nombre = selectedOption ? selectedOption.textContent.trim() : '';
   }
 
-  // Actualizar en Firestore
   db.collection('pacientes').doc(id).update(data)
     .then(() => {
       showToast('✅ Paciente actualizado exitosamente.');
-      verPaciente(id); // Volver a la vista detalle
+      verPaciente(id);
     })
-    .catch(err => {
-      alert('❌ Error al actualizar paciente: ' + err.message);
-    });
-}
-
-// ============================================================
-// FUNCIONES AUXILIARES
-// ============================================================
-function formatearFecha(fechaISO) {
-  if (!fechaISO) return '—';
-  const d = new Date(fechaISO);
-  return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function calcularHoraFin(horaInicio, duracionMinutos) {
-  if (!horaInicio || horaInicio === '—') return '—';
-  try {
-    const [h, m] = horaInicio.split(':').map(Number);
-    const totalMin = h * 60 + m + duracionMinutos;
-    const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
-    const mm = String(totalMin % 60).padStart(2, '0');
-    return `${hh}:${mm}`;
-  } catch (e) {
-    return '—';
-  }
-}
-
-function showToast(mensaje) {
-  const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1e2d3a;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
-  el.textContent = mensaje;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
+    .catch(err => alert('❌ Error al actualizar paciente: ' + err.message));
 }
 
 // ============================================================
@@ -1158,33 +1154,38 @@ function switchTabPaciente(tabEl, tabId) {
 // CARGAR OBRAS SOCIALES Y PLANES (para nuevo paciente)
 // ============================================================
 function cargarObrasSocialesYPlanes() {
+  const selObra = document.getElementById('sel-obra-social');
+  if (!selObra) return;
+
   db.collection('obras_sociales').orderBy('nombre').get().then(snap => {
-    const sel = $('sel-obra-social');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">— Sin obra social —</option>';
+    selObra.innerHTML = '<option value="">— Sin obra social —</option>';
     snap.forEach(doc => {
       const data = doc.data();
-      sel.innerHTML += `<option value="${doc.id}">${data.nombre || 'Sin nombre'} (${data.codigo || ''})</option>`;
+      selObra.innerHTML += `<option value="${doc.id}">${data.nombre || 'Sin nombre'} (${data.codigo || ''})</option>`;
     });
-    if (sel.value) cargarPlanesPaciente(sel.value);
+    if (selObra.value) cargarPlanesPaciente(selObra.value);
   }).catch(err => console.error('Error cargando obras sociales:', err));
 }
 
 function cargarPlanesPaciente(obraSocialId) {
-  const selPlan = $('sel-plan');
+  const selPlan = document.getElementById('sel-plan');
   if (!selPlan) return;
   selPlan.innerHTML = '<option value="">— Sin plan —</option>';
   if (!obraSocialId) return;
 
-  db.collection('planes')
-    .where('obra_social_id', '==', obraSocialId)
-    .where('activo', '==', true)
-    .orderBy('nombre')
-    .get()
+  // Cargar todos los planes y filtrar en cliente (evita permisos)
+  db.collection('planes').get()
     .then(snap => {
+      const planes = [];
       snap.forEach(doc => {
         const data = doc.data();
-        selPlan.innerHTML += `<option value="${doc.id}">${data.nombre || 'Sin nombre'}</option>`;
+        if (data.obra_social_id === obraSocialId && data.activo !== false) {
+          planes.push({ id: doc.id, ...data });
+        }
+      });
+      planes.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+      planes.forEach(p => {
+        selPlan.innerHTML += `<option value="${p.id}">${p.nombre || 'Sin nombre'}</option>`;
       });
     })
     .catch(err => console.error('Error cargando planes:', err));
@@ -1216,12 +1217,12 @@ function guardarPaciente(e) {
   data.creado = new Date().toISOString();
   data.estado = data.estado || 'activo';
 
-  const obraSelect = $('sel-obra-social');
+  const obraSelect = document.getElementById('sel-obra-social');
   if (obraSelect) {
     const selectedOption = obraSelect.options[obraSelect.selectedIndex];
     data.obra_social_nombre = selectedOption ? selectedOption.textContent.trim().split('(')[0].trim() : '';
   }
-  const planSelect = $('sel-plan');
+  const planSelect = document.getElementById('sel-plan');
   if (planSelect) {
     const selectedOption = planSelect.options[planSelect.selectedIndex];
     data.plan_nombre = selectedOption ? selectedOption.textContent.trim() : '';
@@ -1233,6 +1234,36 @@ function guardarPaciente(e) {
       renderPacientes();
     })
     .catch(err => alert('❌ Error al crear paciente: ' + err.message));
+}
+
+// ============================================================
+// FUNCIONES AUXILIARES
+// ============================================================
+function formatearFecha(fechaISO) {
+  if (!fechaISO) return '—';
+  const d = new Date(fechaISO);
+  return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function calcularHoraFin(horaInicio, duracionMinutos) {
+  if (!horaInicio || horaInicio === '—') return '—';
+  try {
+    const [h, m] = horaInicio.split(':').map(Number);
+    const totalMin = h * 60 + m + duracionMinutos;
+    const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
+    const mm = String(totalMin % 60).padStart(2, '0');
+    return `${hh}:${mm}`;
+  } catch (e) {
+    return '—';
+  }
+}
+
+function showToast(mensaje) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1e2d3a;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
+  el.textContent = mensaje;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }
 
 // ============================================================
