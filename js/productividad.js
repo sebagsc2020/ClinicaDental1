@@ -1,6 +1,10 @@
 // ============================================================
 // PRODUCTIVIDAD - SPA (Single Page Application)
 // ============================================================
+
+// ============================================================
+// RENDER PRODUCTIVIDAD (Dashboard completo)
+// ============================================================
 function renderProductividad() {
   const el = document.getElementById('view-productividad');
   if (!el) return;
@@ -120,7 +124,7 @@ function renderProductividad() {
 }
 
 // ============================================================
-// CARGAR DATOS DE PRODUCTIVIDAD DESDE FIRESTORE
+// CARGAR DATOS DE PRODUCTIVIDAD DESDE FIRESTORE (CORREGIDO - SIN ÍNDICES COMPUESTOS)
 // ============================================================
 function cargarDatosProductividad() {
   const periodo = document.getElementById('prod-filtro-periodo')?.value || 'semana';
@@ -205,14 +209,24 @@ function cargarDatosProductividad() {
       return Promise.all([
         Promise.resolve(turnos),
         db.collection('profesionales').get(),
+        // 🔥 CORRECCIÓN: eliminamos where('estado') para evitar índice compuesto.
+        // Filtramos en cliente.
         db.collection('pagos')
           .where('fecha', '>=', fechaInicioStr)
           .where('fecha', '<=', hoyStr)
-          .where('estado', '==', 'completado')
           .get()
       ]);
     })
     .then(([turnos, profSnap, pagosSnap]) => {
+      // 🔥 Filtrar pagos en cliente (estado completado y no egresos)
+      const pagosCompletados = [];
+      pagosSnap.forEach(doc => {
+        const p = doc.data();
+        if (p.estado === 'completado' && p.tipo !== 'egreso') {
+          pagosCompletados.push({ id: doc.id, ...p });
+        }
+      });
+
       // Mapa de profesionales
       const profesionales = {};
       profSnap.forEach(doc => {
@@ -220,10 +234,7 @@ function cargarDatosProductividad() {
         profesionales[doc.id] = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
       });
 
-      // Mapa de pagos por paciente o por turno (asumimos que los pagos tienen paciente_id o turno_id)
-      // Simplificamos: los turnos finalizados tienen total_paciente, y los pagos pueden estar asociados.
-      // Para este ejemplo, usamos total_paciente de cada turno finalizado como ingreso.
-      // Si hay pagos, los sumamos por profesional a través del turno (si tienen odontologo_id).
+      // Ingresos y turnos por profesional (solo finalizados)
       const ingresosPorProf = {};
       const turnosPorProf = {};
       turnos.forEach(t => {
@@ -237,17 +248,16 @@ function cargarDatosProductividad() {
         }
       });
 
-      // Si tenemos pagos, también podemos sumarlos (pero los pagos no tienen odontologo_id directamente)
-      // Para simplificar, usamos solo los totales de turnos.
-
       renderRendimientoProfesional(turnosPorProf, ingresosPorProf, profesionales);
 
       // 2. Turnos atendidos últimos 6 meses
       return cargarDatos6Meses();
     })
-    .then(([turnos6m, pagos6m]) => {
-      renderGrafico6Meses('prod-turnos-6m', 'prod-turnos-6m-etiquetas', turnos6m, 'Turnos');
-      renderGrafico6Meses('prod-ingresos-6m', 'prod-ingresos-6m-etiquetas', pagos6m, 'Ingresos');
+    .then(datosMeses => {
+      // datosMeses es un array con objetos { mes, mesNum, turnos, ingresos }
+      // Usamos el mismo array para ambos gráficos
+      renderGrafico6Meses('prod-turnos-6m', 'prod-turnos-6m-etiquetas', datosMeses, 'Turnos');
+      renderGrafico6Meses('prod-ingresos-6m', 'prod-ingresos-6m-etiquetas', datosMeses, 'Ingresos');
     })
     .catch(err => {
       console.error('Error cargando datos de productividad:', err);
@@ -310,11 +320,10 @@ function renderRendimientoProfesional(turnosPorProf, ingresosPorProf, profesiona
 }
 
 // ============================================================
-// CARGAR DATOS DE ÚLTIMOS 6 MESES (turnos atendidos e ingresos)
+// CARGAR DATOS DE ÚLTIMOS 6 MESES (CORREGIDO - SIN ÍNDICE COMPUESTO)
 // ============================================================
 function cargarDatos6Meses() {
   const ahora = new Date();
-  const meses = [];
   const promesas = [];
 
   for (let i = 5; i >= 0; i--) {
@@ -323,26 +332,34 @@ function cargarDatos6Meses() {
     const mes = d.getMonth() + 1;
     const anio = d.getFullYear();
     const mesStr = `${anio}-${String(mes).padStart(2,'0')}`;
-    meses.push({ mes: mesStr, anio, mesNum: mes });
 
-    // Consultar turnos finalizados de ese mes
     const inicioMes = `${mesStr}-01`;
     const ultimoDia = new Date(anio, mes, 0).getDate();
     const finMes = `${mesStr}-${String(ultimoDia).padStart(2,'0')}`;
 
+    // 🔥 CORRECCIÓN: eliminamos where('estado') para evitar índice compuesto.
+    // Filtramos en cliente.
     promesas.push(
       db.collection('turnos')
         .where('fecha', '>=', inicioMes)
         .where('fecha', '<=', finMes)
-        .where('estado', '==', 'finalizado')
         .get()
         .then(snap => {
-          let total = 0;
+          let turnosFinalizados = 0;
+          let ingresos = 0;
           snap.forEach(doc => {
             const t = doc.data();
-            total += t.total_paciente || 0;
+            if (t.estado === 'finalizado') {
+              turnosFinalizados++;
+              ingresos += t.total_paciente || 0;
+            }
           });
-          return { mes: mesStr, turnos: snap.size, ingresos: total };
+          return {
+            mes: mesStr,
+            mesNum: mes,
+            turnos: turnosFinalizados,
+            ingresos: ingresos
+          };
         })
     );
   }
@@ -364,16 +381,20 @@ function renderGrafico6Meses(containerId, etiquetasId, datos, label) {
     return;
   }
 
-  const valores = datos.map(d => d.turnos || d.ingresos || 0);
+  // Determinar qué propiedad usar según el label
+  const valores = datos.map(d => {
+    if (label === 'Turnos') return d.turnos || 0;
+    if (label === 'Ingresos') return d.ingresos || 0;
+    return 0;
+  });
   const maxValor = Math.max(...valores, 1);
 
-  // Nombres de meses abreviados
   const nombresMeses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
   let barrasHTML = '';
   let etiquetasHTML = '';
   datos.forEach((d, i) => {
-    const val = d.turnos || d.ingresos || 0;
+    const val = label === 'Turnos' ? (d.turnos || 0) : (d.ingresos || 0);
     const altura = Math.max(4, (val / maxValor) * 74);
     const mesNombre = nombresMeses[d.mesNum - 1] || d.mes;
     barrasHTML += `
@@ -417,8 +438,8 @@ function mostrarDatosEjemplo() {
     { mes: '2026-07', mesNum: 7, turnos: 10, ingresos: 14000 },
     { mes: '2026-08', mesNum: 8, turnos: 18, ingresos: 32000 }
   ];
-  renderGrafico6Meses('prod-turnos-6m', 'prod-turnos-6m-etiquetas', meses.map(d => ({turnos: d.turnos, mesNum: d.mesNum})), 'Turnos');
-  renderGrafico6Meses('prod-ingresos-6m', 'prod-ingresos-6m-etiquetas', meses.map(d => ({ingresos: d.ingresos, mesNum: d.mesNum})), 'Ingresos');
+  renderGrafico6Meses('prod-turnos-6m', 'prod-turnos-6m-etiquetas', meses, 'Turnos');
+  renderGrafico6Meses('prod-ingresos-6m', 'prod-ingresos-6m-etiquetas', meses, 'Ingresos');
 }
 
 // ============================================================
