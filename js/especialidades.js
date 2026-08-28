@@ -2,53 +2,31 @@
 // ESPECIALIDADES - SPA (Single Page Application)
 // ============================================================
 
+let allEspecialidadesData = [];
+
 // ============================================================
-// RENDER ESPECIALIDADES PRINCIPAL
+// RENDER LISTA DE ESPECIALIDADES
 // ============================================================
 function renderEspecialidades() {
-  const el = $('view-especialidades');
+  const el = document.getElementById('view-especialidades');
   if (!el) return;
 
   el.innerHTML = `
     <div class="page-header">
       <div>
         <div class="page-title">Especialidades</div>
-        <div class="page-subtitle">Especialidades que ofrecen los profesionales de la clínica</div>
+        <div class="page-subtitle" id="especialidades-count">Cargando...</div>
       </div>
-      <button class="btn btn-primary" onclick="openModalNuevaEspecialidad()">+ Nueva especialidad</button>
+      <button class="btn btn-primary" onclick="renderNuevaEspecialidad()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva especialidad
+      </button>
     </div>
 
+    <!-- Tabla dentro de un card (mismo estilo que formularios) -->
     <div class="card" style="padding:0;overflow:hidden;">
-      <div id="especialidades-list">
-        <div style="text-align:center;padding:30px;color:var(--text-muted);">Cargando especialidades...</div>
-      </div>
-    </div>
-  `;
-
-  cargarEspecialidades();
-}
-
-// ============================================================
-// CARGAR ESPECIALIDADES DESDE FIRESTORE
-// ============================================================
-function cargarEspecialidades() {
-  db.collection('especialidades')
-    .orderBy('nombre')
-    .onSnapshot((snapshot) => {
-      const container = document.getElementById('especialidades-list');
-      if (!container) return;
-
-      if (snapshot.empty) {
-        container.innerHTML = `
-          <div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">
-            No hay especialidades registradas.
-          </div>
-        `;
-        return;
-      }
-
-      let html = `
-        <table class="table" style="margin:0;">
+      <div class="table-wrap">
+        <table>
           <thead>
             <tr>
               <th>Nombre</th>
@@ -58,60 +36,88 @@ function cargarEspecialidades() {
               <th style="text-align:right;">Acciones</th>
             </tr>
           </thead>
-          <tbody>
-      `;
+          <tbody id="tbody-especialidades">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const id = doc.id;
-        const nombre = data.nombre || '';
-        const descripcion = data.descripcion || '—';
-        const orden = data.orden || 0;
-        const estado = data.estado || 'activa';
-        const estadoLabel = estado === 'activa' ? 'Activa' : 'Inactiva';
-        const estadoColor = estado === 'activa' ? '#dcfce7' : '#fef2f2';
-        const estadoTextColor = estado === 'activa' ? '#15803d' : '#b91c1c';
-
-        html += `
-          <tr>
-            <td style="font-weight:600;">${escapeHtml(nombre)}</td>
-            <td style="color:var(--text-muted);font-size:13px;">${escapeHtml(descripcion)}</td>
-            <td style="text-align:center;color:var(--text-muted);font-size:13px;">${orden}</td>
-            <td style="text-align:center;">
-              <span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;
-                           background:${estadoColor};color:${estadoTextColor};">
-                ${estadoLabel}
-              </span>
-            </td>
-            <td style="text-align:right;">
-              <button class="btn btn-sm btn-secondary" onclick="openModalEditarEspecialidad('${id}')">Editar</button>
-              <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;"
-                      onclick="eliminarEspecialidad('${id}', '${escapeHtml(nombre)}')">
-                Eliminar
-              </button>
-            </td>
-          </tr>
-        `;
+  // Cargar datos desde Firestore
+  if (typeof db !== 'undefined') {
+    db.collection('especialidades')
+      .orderBy('nombre')
+      .onSnapshot(snap => {
+        allEspecialidadesData = [];
+        snap.forEach(doc => {
+          const data = doc.data();
+          allEspecialidadesData.push({ id: doc.id, ...data });
+        });
+        actualizarVistaEspecialidades();
+      }, (error) => {
+        console.error('Error en snapshot de especialidades:', error);
       });
-
-      html += `</tbody></table>`;
-      container.innerHTML = html;
-
-    }, (error) => {
-      console.error('Error cargando especialidades:', error);
-      const container = document.getElementById('especialidades-list');
-      if (container) {
-        container.innerHTML = `
-          <div style="text-align:center;padding:30px;color:#dc2626;">
-            Error al cargar los datos: ${error.message}
-          </div>
-        `;
-      }
-    });
+  } else {
+    allEspecialidadesData = [];
+    actualizarVistaEspecialidades();
+  }
 }
 
 // ============================================================
-// ESCAPAR HTML PARA EVITAR INYECCIONES
+// ACTUALIZAR VISTA (tabla y contador)
+// ============================================================
+function actualizarVistaEspecialidades() {
+  const container = document.getElementById('tbody-especialidades');
+  const countEl = document.getElementById('especialidades-count');
+
+  if (!container) return;
+
+  // Actualizar contador
+  if (countEl) {
+    countEl.textContent = `${allEspecialidadesData.length} ${allEspecialidadesData.length === 1 ? 'especialidad' : 'especialidades'}`;
+  }
+
+  if (allEspecialidadesData.length === 0) {
+    container.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:#94a3b8;">No hay especialidades registradas.</td></tr>`;
+    return;
+  }
+
+  // Generar filas
+  let htmlFilas = '';
+  allEspecialidadesData.forEach((item) => {
+    const estado = item.estado || 'activa';
+    const estadoLabel = estado === 'activa' ? 'Activa' : 'Inactiva';
+    const estadoColor = estado === 'activa' ? '#dcfce7' : '#fef2f2';
+    const estadoTextColor = estado === 'activa' ? '#15803d' : '#b91c1c';
+
+    htmlFilas += `
+      <tr>
+        <td style="font-weight:600;">${escapeHtml(item.nombre || '')}</td>
+        <td style="color:var(--text-muted);font-size:13px;">${escapeHtml(item.descripcion || '—')}</td>
+        <td style="text-align:center;color:var(--text-muted);font-size:13px;">${item.orden || 0}</td>
+        <td style="text-align:center;">
+          <span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;
+                       background:${estadoColor};color:${estadoTextColor};">
+            ${estadoLabel}
+          </span>
+        </td>
+        <td style="text-align:right;">
+          <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="renderEditarEspecialidad('${item.id}')">Editar</button>
+            <button class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;"
+                    onclick="eliminarEspecialidad('${item.id}', '${escapeHtml(item.nombre || '')}')">
+              Eliminar
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+  container.innerHTML = htmlFilas;
+}
+
+// ============================================================
+// ESCAPAR HTML
 // ============================================================
 function escapeHtml(text) {
   if (!text) return '';
@@ -121,39 +127,51 @@ function escapeHtml(text) {
 }
 
 // ============================================================
-// MODAL: NUEVA ESPECIALIDAD
+// RENDER: NUEVA ESPECIALIDAD (SPA)
 // ============================================================
-window.openModalNuevaEspecialidad = function() {
-  openModal(`
-    <div class="modal-title">➕ Nueva especialidad</div>
-    <form id="form-nueva-especialidad" onsubmit="event.preventDefault(); guardarNuevaEspecialidad()">
-      <div class="form-group">
-        <label class="form-label">Nombre *</label>
-        <input class="form-control" id="f-esp-nombre" placeholder="Ej: Ortodoncia" required>
+window.renderNuevaEspecialidad = function() {
+  const el = document.getElementById('view-especialidades');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">➕ Nueva especialidad</div>
+        <div class="page-subtitle">Completa los datos de la nueva especialidad</div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Descripción</label>
-        <input class="form-control" id="f-esp-descripcion" placeholder="Breve descripción de la especialidad">
-      </div>
-      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+      <button class="btn btn-secondary" onclick="renderEspecialidades()">← Volver</button>
+    </div>
+
+    <div class="card">
+      <form id="form-nueva-especialidad" onsubmit="event.preventDefault(); guardarNuevaEspecialidad()">
         <div class="form-group">
-          <label class="form-label">Orden</label>
-          <input class="form-control" id="f-esp-orden" type="number" min="0" value="0" placeholder="0">
+          <label class="form-label">Nombre *</label>
+          <input class="form-control" id="f-esp-nombre" placeholder="Ej: Ortodoncia" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Estado</label>
-          <select class="form-control" id="f-esp-estado">
-            <option value="activa">Activa</option>
-            <option value="inactiva">Inactiva</option>
-          </select>
+          <label class="form-label">Descripción</label>
+          <input class="form-control" id="f-esp-descripcion" placeholder="Breve descripción de la especialidad">
         </div>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
-      </div>
-    </form>
-  `);
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Orden</label>
+            <input class="form-control" id="f-esp-orden" type="number" min="0" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Estado</label>
+            <select class="form-control" id="f-esp-estado">
+              <option value="activa">Activa</option>
+              <option value="inactiva">Inactiva</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions" style="margin-top:16px;">
+          <button type="button" class="btn btn-secondary" onclick="renderEspecialidades()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar especialidad</button>
+        </div>
+      </form>
+    </div>
+  `;
 };
 
 // ============================================================
@@ -170,16 +188,24 @@ window.guardarNuevaEspecialidad = function() {
     return;
   }
 
+  if (typeof db === 'undefined') {
+    const newItem = { id: Date.now().toString(), nombre, descripcion, orden, estado };
+    allEspecialidadesData.push(newItem);
+    if (typeof showToast === 'function') showToast('✅ Especialidad creada exitosamente.');
+    renderEspecialidades();
+    return;
+  }
+
   db.collection('especialidades').add({
-    nombre: nombre,
-    descripcion: descripcion,
-    orden: orden,
-    estado: estado,
+    nombre,
+    descripcion: descripcion || null,
+    orden,
+    estado,
     created_at: new Date().toISOString()
   })
   .then(() => {
-    closeModal();
-    showToast('✅ Especialidad creada exitosamente.');
+    if (typeof showToast === 'function') showToast('✅ Especialidad creada exitosamente.');
+    renderEspecialidades();
   })
   .catch((err) => {
     alert('❌ Error al guardar: ' + err.message);
@@ -187,71 +213,57 @@ window.guardarNuevaEspecialidad = function() {
 };
 
 // ============================================================
-// MODAL: EDITAR ESPECIALIDAD (CORREGIDO)
+// RENDER: EDITAR ESPECIALIDAD (SPA)
 // ============================================================
-window.openModalEditarEspecialidad = function(id) {
-  // 1. Mostrar modal de carga
-  openModal(`
-    <div class="modal-title">✏️ Editar especialidad</div>
-    <div style="text-align:center;padding:20px;color:var(--text-muted);">
-      <div style="font-size:14px;">Cargando datos...</div>
+window.renderEditarEspecialidad = function(id) {
+  const item = allEspecialidadesData.find(e => e.id === id);
+  if (!item) {
+    alert('Especialidad no encontrada');
+    return;
+  }
+
+  const el = document.getElementById('view-especialidades');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">✏️ Editar especialidad</div>
+        <div class="page-subtitle">Actualiza los datos de la especialidad</div>
+      </div>
+      <button class="btn btn-secondary" onclick="renderEspecialidades()">← Volver</button>
     </div>
-  `);
 
-  // 2. Obtener datos de Firestore
-  db.collection('especialidades').doc(id).get()
-    .then((doc) => {
-      if (!doc.exists) {
-        closeModal();
-        alert('Especialidad no encontrada.');
-        return;
-      }
-
-      const data = doc.data();
-      const nombre = data.nombre || '';
-      const descripcion = data.descripcion || '';
-      const orden = data.orden || 0;
-      const estado = data.estado || 'activa';
-
-      // 3. Cerrar el modal de carga y abrir el formulario de edición
-      closeModal();
-      
-      // Abrir nuevo modal con el formulario
-      openModal(`
-        <div class="modal-title">✏️ Editar especialidad</div>
-        <form id="form-editar-especialidad" onsubmit="event.preventDefault(); guardarEdicionEspecialidad('${id}')">
+    <div class="card">
+      <form id="form-editar-especialidad" onsubmit="event.preventDefault(); guardarEdicionEspecialidad('${id}')">
+        <div class="form-group">
+          <label class="form-label">Nombre *</label>
+          <input class="form-control" id="f-esp-edit-nombre" value="${escapeHtml(item.nombre || '')}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <input class="form-control" id="f-esp-edit-descripcion" value="${escapeHtml(item.descripcion || '')}">
+        </div>
+        <div class="form-grid">
           <div class="form-group">
-            <label class="form-label">Nombre *</label>
-            <input class="form-control" id="f-esp-edit-nombre" value="${escapeHtml(nombre)}" required>
+            <label class="form-label">Orden</label>
+            <input class="form-control" id="f-esp-edit-orden" type="number" min="0" value="${item.orden || 0}">
           </div>
           <div class="form-group">
-            <label class="form-label">Descripción</label>
-            <input class="form-control" id="f-esp-edit-descripcion" value="${escapeHtml(descripcion)}">
+            <label class="form-label">Estado</label>
+            <select class="form-control" id="f-esp-edit-estado">
+              <option value="activa" ${item.estado === 'activa' ? 'selected' : ''}>Activa</option>
+              <option value="inactiva" ${item.estado === 'inactiva' ? 'selected' : ''}>Inactiva</option>
+            </select>
           </div>
-          <div class="form-grid" style="grid-template-columns:1fr 1fr;">
-            <div class="form-group">
-              <label class="form-label">Orden</label>
-              <input class="form-control" id="f-esp-edit-orden" type="number" min="0" value="${orden}">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Estado</label>
-              <select class="form-control" id="f-esp-edit-estado">
-                <option value="activa" ${estado === 'activa' ? 'selected' : ''}>Activa</option>
-                <option value="inactiva" ${estado === 'inactiva' ? 'selected' : ''}>Inactiva</option>
-              </select>
-            </div>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Actualizar</button>
-          </div>
-        </form>
-      `);
-    })
-    .catch((err) => {
-      closeModal();
-      alert('❌ Error al cargar: ' + err.message);
-    });
+        </div>
+        <div class="modal-actions" style="margin-top:16px;">
+          <button type="button" class="btn btn-secondary" onclick="renderEspecialidades()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Actualizar especialidad</button>
+        </div>
+      </form>
+    </div>
+  `;
 };
 
 // ============================================================
@@ -268,16 +280,26 @@ window.guardarEdicionEspecialidad = function(id) {
     return;
   }
 
+  if (typeof db === 'undefined') {
+    const index = allEspecialidadesData.findIndex(e => e.id === id);
+    if (index !== -1) {
+      allEspecialidadesData[index] = { ...allEspecialidadesData[index], nombre, descripcion, orden, estado };
+    }
+    if (typeof showToast === 'function') showToast('✅ Especialidad actualizada.');
+    renderEspecialidades();
+    return;
+  }
+
   db.collection('especialidades').doc(id).update({
-    nombre: nombre,
-    descripcion: descripcion,
-    orden: orden,
-    estado: estado,
+    nombre,
+    descripcion: descripcion || null,
+    orden,
+    estado,
     updated_at: new Date().toISOString()
   })
   .then(() => {
-    closeModal();
-    showToast('✅ Especialidad actualizada.');
+    if (typeof showToast === 'function') showToast('✅ Especialidad actualizada.');
+    renderEspecialidades();
   })
   .catch((err) => {
     alert('❌ Error al actualizar: ' + err.message);
@@ -290,9 +312,16 @@ window.guardarEdicionEspecialidad = function(id) {
 window.eliminarEspecialidad = function(id, nombre) {
   if (!confirm(`¿Eliminar la especialidad «${nombre}»?`)) return;
 
+  if (typeof db === 'undefined') {
+    allEspecialidadesData = allEspecialidadesData.filter(e => e.id !== id);
+    if (typeof showToast === 'function') showToast('🗑 Especialidad eliminada.');
+    actualizarVistaEspecialidades();
+    return;
+  }
+
   db.collection('especialidades').doc(id).delete()
     .then(() => {
-      showToast('🗑 Especialidad eliminada.');
+      if (typeof showToast === 'function') showToast('🗑 Especialidad eliminada.');
     })
     .catch((err) => {
       alert('❌ Error al eliminar: ' + err.message);
@@ -300,6 +329,8 @@ window.eliminarEspecialidad = function(id, nombre) {
 };
 
 // ============================================================
-// NOTA: Las funciones showToast, $, db, openModal, closeModal
-// deben estar definidas globalmente.
+// INICIALIZACIÓN
 // ============================================================
+if (document.getElementById('view-especialidades')) {
+  renderEspecialidades();
+}
