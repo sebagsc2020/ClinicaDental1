@@ -627,7 +627,7 @@ window.cambiarVista = function(vista) {
 };
 
 // ============================================================
-// MODAL: NUEVO TURNO (VERSIÓN CORREGIDA CON CARGA DE DATOS)
+// MODAL: NUEVO TURNO (VERSIÓN CORREGIDA - SIN orderBy en tratamientos)
 // ============================================================
 
 // Variables globales
@@ -688,7 +688,7 @@ function cargarDatosParaModal() {
 }
 
 // ============================================================
-// ABRIR NUEVO TURNO EN EL CONTENEDOR PRINCIPAL (CORREGIDO)
+// ABRIR NUEVO TURNO EN EL CONTENEDOR PRINCIPAL (CORREGIDO - SIN orderBy)
 // ============================================================
 window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '09:00') {
   const el = $('view-agenda');
@@ -875,7 +875,7 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
   // Inyectar en el contenedor
   el.innerHTML = html;
 
-  // Función mejorada para cargar datos con reintentos y logs
+  // Función mejorada para cargar datos con reintentos y logs (SIN orderBy en tratamientos)
   function cargarDatosCuandoExistan(intentos = 0) {
     const maxIntentos = 20;
     const pacSelect = document.getElementById('f-turno-paciente');
@@ -899,28 +899,34 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
     cargarDatosParaModal().then(() => {
       console.log('Datos auxiliares cargados (PACIENTES_OS, COBERTURAS, etc.)');
 
-      // Cargar pacientes, profesionales, sucursales y tratamientos
+      // Cargar pacientes, profesionales, sucursales y tratamientos (SIN orderBy para evitar índices)
       const promesas = [
-        db.collection('pacientes').orderBy('nombre').get(),
+        db.collection('pacientes').get(),
         db.collection('profesionales').orderBy('nombre').get(),
         db.collection('sucursales').orderBy('nombre').get(),
-        db.collection('tratamientos').orderBy('categoria').orderBy('nombre').get()
+        db.collection('tratamientos').get() // SIN orderBy, se ordena en cliente
       ];
 
       Promise.all(promesas).then(([pacSnap, profSnap, sucSnap, tratSnap]) => {
         console.log(`Pacientes: ${pacSnap.size}, Profesionales: ${profSnap.size}, Sucursales: ${sucSnap.size}, Tratamientos: ${tratSnap.size}`);
 
-        // Llenar pacientes
+        // --- Llenar pacientes (ordenar en cliente) ---
+        let pacientes = [];
+        pacSnap.forEach(doc => pacientes.push({ id: doc.id, ...doc.data() }));
+        pacientes.sort((a, b) => {
+          const nomA = (a.nombre || '').toLowerCase();
+          const nomB = (b.nombre || '').toLowerCase();
+          return nomA.localeCompare(nomB);
+        });
         pacSelect.innerHTML = '<option value="">— Seleccionar paciente —</option>';
-        pacSnap.forEach(doc => {
-          const data = doc.data();
-          const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
-          pacSelect.innerHTML += `<option value="${doc.id}">${nombre}</option>`;
+        pacientes.forEach(p => {
+          const nombre = `${p.nombre || ''} ${p.apellido || ''}`.trim() || 'Sin nombre';
+          pacSelect.innerHTML += `<option value="${p.id}">${nombre}</option>`;
         });
         pacSelect.addEventListener('change', onPacienteChange);
         onPacienteChange();
 
-        // Llenar profesionales
+        // --- Llenar profesionales ---
         profSelect.innerHTML = '<option value="">— Seleccionar profesional —</option>';
         profSnap.forEach(doc => {
           const data = doc.data();
@@ -929,20 +935,32 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
           profSelect.innerHTML += `<option value="${doc.id}">${nombre} ${especialidad ? '· ' + especialidad : ''}</option>`;
         });
 
-        // Llenar sucursales
+        // --- Llenar sucursales ---
         sucSelect.innerHTML = '<option value="">— Seleccionar sucursal —</option>';
         sucSnap.forEach(doc => {
           const data = doc.data();
           sucSelect.innerHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`;
         });
 
-        // Llenar tratamientos
+        // --- Llenar tratamientos (ordenar en cliente) ---
+        let tratamientos = [];
+        tratSnap.forEach(doc => tratamientos.push({ id: doc.id, ...doc.data() }));
+        // Ordenar por categoría y luego por nombre
+        tratamientos.sort((a, b) => {
+          const catA = (a.categoria || '').toLowerCase();
+          const catB = (b.categoria || '').toLowerCase();
+          if (catA < catB) return -1;
+          if (catA > catB) return 1;
+          const nomA = (a.nombre || '').toLowerCase();
+          const nomB = (b.nombre || '').toLowerCase();
+          return nomA.localeCompare(nomB);
+        });
+
         let grupos = {};
-        tratSnap.forEach(doc => {
-          const data = doc.data();
-          const cat = data.categoria || 'sin-categoria';
+        tratamientos.forEach(trat => {
+          const cat = trat.categoria || 'sin-categoria';
           if (!grupos[cat]) grupos[cat] = [];
-          grupos[cat].push({ id: doc.id, ...data });
+          grupos[cat].push(trat);
         });
 
         let htmlTrat = '';
