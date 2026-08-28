@@ -1,5 +1,5 @@
 // ============================================================
-// TRATAMIENTOS - Estilo DentalSoft (tablas consistentes con dashboard)
+// TRATAMIENTOS - SPA (Single Page Application)
 // ============================================================
 
 let filterCategoria = 'Todos';
@@ -7,6 +7,9 @@ let filterEstadoTratamientos = 'Todos';
 let filterAgendaVirtual = false;
 let allTratamientosData = [];
 
+// ============================================================
+// RENDER LISTA DE TRATAMIENTOS
+// ============================================================
 function renderTratamientos() {
   const el = document.getElementById('view-tratamientos');
   if (!el) return;
@@ -17,10 +20,10 @@ function renderTratamientos() {
         <div class="page-title">Catálogo de tratamientos</div>
         <div class="page-subtitle" id="tratamientos-count">Cargando...</div>
       </div>
-      <a href="#" class="btn btn-primary" onclick="openModalNuevoTratamiento()">
+      <button class="btn btn-primary" onclick="renderNuevoTratamiento()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Nuevo tratamiento
-      </a>
+      </button>
     </div>
 
     <!-- Resumen por categoría (pills) -->
@@ -37,7 +40,7 @@ function renderTratamientos() {
       </button>
     </div>
 
-    <!-- Tabla (mismo estilo que dashboard) -->
+    <!-- Tabla -->
     <div class="table-wrap">
       <table>
         <thead>
@@ -74,10 +77,15 @@ function renderTratamientos() {
   }
 }
 
+// ============================================================
+// ACTUALIZAR VISTA (filtros y tabla)
+// ============================================================
 function actualizarVistaTratamientos() {
   const container = document.getElementById('tbody-tratamientos');
   const countEl = document.getElementById('tratamientos-count');
   const pillsContainer = document.getElementById('categoria-pills');
+
+  if (!container) return;
 
   // Calcular categorías y contadores
   const categoriasSet = new Set();
@@ -98,7 +106,7 @@ function actualizarVistaTratamientos() {
     const activa = filterCategoria === cat ? 'activa' : '';
     pillsHtml += `<button class="pill-categoria ${activa}" onclick="setFilterCategoria('${cat}')">${cat === 'Todos' ? 'Todos' : cat.charAt(0).toUpperCase() + cat.slice(1)} <span class="contador">${count}</span></button>`;
   });
-  pillsContainer.innerHTML = pillsHtml;
+  if (pillsContainer) pillsContainer.innerHTML = pillsHtml;
 
   // Filtrar datos
   let filtered = allTratamientosData;
@@ -125,7 +133,7 @@ function actualizarVistaTratamientos() {
     return;
   }
 
-  // Colores por categoría (badges estilo dashboard)
+  // Colores por categoría
   const coloresCategoria = {
     'cirugia': 'badge-red',
     'consulta': 'badge-teal',
@@ -141,7 +149,7 @@ function actualizarVistaTratamientos() {
   };
   const getColorCategoria = (cat) => coloresCategoria[cat] || 'badge-gray';
 
-  // Generar filas (sin estilos inline, solo clases)
+  // Generar filas
   let htmlFilas = '';
   filtered.forEach((item) => {
     const activo = item.activo !== undefined ? item.activo : true;
@@ -185,8 +193,8 @@ function actualizarVistaTratamientos() {
           </form>
         </td>
         <td>
-          <div style="display:flex;gap:6px">
-            <a href="#" class="btn btn-secondary btn-sm" onclick="openModalEditarTratamiento('${item.id}')">Editar</a>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <a href="#" class="btn btn-secondary btn-sm" onclick="renderEditarTratamiento('${item.id}')">Editar</a>
             <a href="#" class="btn btn-secondary btn-sm" onclick="openModalOS('${item.id}')" title="Configurar cobertura por obra social">🏥 OS</a>
             <form onsubmit="event.preventDefault(); eliminarTratamiento('${item.id}')" style="display:inline">
               <button type="submit" class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca">Eliminar</button>
@@ -232,140 +240,188 @@ window.toggleAgendaVirtual = function() {
 };
 
 // ============================================================
-// CRUD TRATAMIENTOS
+// RENDER: NUEVO TRATAMIENTO (SPA)
 // ============================================================
-window.openModalNuevoTratamiento = function() {
+window.renderNuevoTratamiento = function() {
+  const el = document.getElementById('view-tratamientos');
+  if (!el) return;
+
   const categorias = ['cirugia','consulta','diagnostico','endodoncia','estetica','implante','limpieza','odontopediatria','ortodoncia','protesis','restauracion'];
   const opts = categorias.map(c => `<option value="${c}">${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('');
 
-  if (typeof openModal !== 'function') {
-    alert('La función openModal no está disponible.');
-    return;
-  }
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">➕ Nuevo tratamiento</div>
+        <div class="page-subtitle">Completa los datos del nuevo tratamiento</div>
+      </div>
+      <button class="btn btn-secondary" onclick="renderTratamientos()">← Volver</button>
+    </div>
 
-  openModal(`
-    <div class="modal-title">➕ Nuevo tratamiento</div>
-    <div class="form-group">
-      <label class="form-label">Nombre *</label>
-      <input class="form-control" id="f-trat-nombre" placeholder="Ej: Alargamiento Quirúrgico">
+    <div class="card">
+      <form id="form-nuevo-tratamiento" onsubmit="event.preventDefault(); guardarNuevoTratamiento()">
+        <div class="form-group">
+          <label class="form-label">Nombre *</label>
+          <input class="form-control" id="f-trat-nombre" placeholder="Ej: Alargamiento Quirúrgico" required>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Código</label>
+            <input class="form-control" id="f-trat-codigo" placeholder="Ej: 1008">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Categoría *</label>
+            <select class="form-control" id="f-trat-categoria">${opts}</select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Precio base ($) *</label>
+            <input class="form-control" id="f-trat-precio" type="number" step="0.01" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duración</label>
+            <input class="form-control" id="f-trat-duracion" placeholder="Ej: 45 min" value="30 min">
+          </div>
+        </div>
+        <div class="form-group" style="display:flex;gap:20px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="f-trat-activo" checked> Activo
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="f-trat-agenda-virtual"> Agenda virtual
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="f-trat-requiere-lab"> Requiere laboratorio
+          </label>
+        </div>
+        <div class="modal-actions" style="margin-top:16px;">
+          <button type="button" class="btn btn-secondary" onclick="renderTratamientos()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar tratamiento</button>
+        </div>
+      </form>
     </div>
-    <div class="form-grid">
-      <div class="form-group">
-        <label class="form-label">Código</label>
-        <input class="form-control" id="f-trat-codigo" placeholder="Ej: 1008">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Categoría *</label>
-        <select class="form-control" id="f-trat-categoria">${opts}</select>
-      </div>
-    </div>
-    <div class="form-grid">
-      <div class="form-group">
-        <label class="form-label">Precio base ($) *</label>
-        <input class="form-control" id="f-trat-precio" type="number" step="0.01" placeholder="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Duración</label>
-        <input class="form-control" id="f-trat-duracion" placeholder="Ej: 45 min">
-      </div>
-    </div>
-    <div class="form-group">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-        <input type="checkbox" id="f-trat-activo" checked> Activo
-      </label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarTratamiento()">Guardar</button>
-    </div>
-  `);
+  `;
 };
 
-window.guardarTratamiento = function() {
+// ============================================================
+// GUARDAR NUEVO TRATAMIENTO
+// ============================================================
+window.guardarNuevoTratamiento = function() {
   const nombre = document.getElementById('f-trat-nombre').value.trim();
   const codigo = document.getElementById('f-trat-codigo').value.trim();
   const categoria = document.getElementById('f-trat-categoria').value;
   const precio_base = parseFloat(document.getElementById('f-trat-precio').value) || 0;
   const duracion = document.getElementById('f-trat-duracion').value.trim() || '30 min';
   const activo = document.getElementById('f-trat-activo').checked;
+  const agendaVirtual = document.getElementById('f-trat-agenda-virtual').checked;
+  const requiereLab = document.getElementById('f-trat-requiere-lab').checked;
 
   if (!nombre) return alert('El nombre es obligatorio.');
   if (!categoria) return alert('Selecciona una categoría.');
+  if (precio_base <= 0) return alert('El precio base debe ser mayor que 0.');
 
   if (typeof db === 'undefined') {
-    const newItem = { id: Date.now().toString(), nombre, codigo, categoria, precio_base, duracion, activo };
+    const newItem = { id: Date.now().toString(), nombre, codigo, categoria, precio_base, duracion, activo, agenda_virtual: agendaVirtual, requiere_lab: requiereLab };
     allTratamientosData.push(newItem);
-    if (typeof closeModal === 'function') closeModal();
     if (typeof showToast === 'function') showToast('✅ Tratamiento creado exitosamente.');
-    actualizarVistaTratamientos();
+    renderTratamientos();
     return;
   }
 
   db.collection('tratamientos').add({
-    nombre, codigo, categoria, precio_base, duracion, activo,
+    nombre,
+    codigo: codigo || null,
+    categoria,
+    precio_base,
+    duracion,
+    activo,
+    agenda_virtual: agendaVirtual,
+    requiere_lab: requiereLab,
     precio_os: precio_base,
     creado: new Date().toISOString()
   }).then(() => {
-    if (typeof closeModal === 'function') closeModal();
     if (typeof showToast === 'function') showToast('✅ Tratamiento creado exitosamente.');
+    renderTratamientos();
   }).catch(err => alert('❌ Error: ' + err.message));
 };
 
-window.openModalEditarTratamiento = function(id) {
+// ============================================================
+// RENDER: EDITAR TRATAMIENTO (SPA)
+// ============================================================
+window.renderEditarTratamiento = function(id) {
   const item = allTratamientosData.find(t => t.id === id);
   if (!item) {
     alert('Tratamiento no encontrado');
     return;
   }
 
+  const el = document.getElementById('view-tratamientos');
+  if (!el) return;
+
   const categorias = ['cirugia','consulta','diagnostico','endodoncia','estetica','implante','limpieza','odontopediatria','ortodoncia','protesis','restauracion'];
   const opts = categorias.map(c =>
     `<option value="${c}" ${item.categoria === c ? 'selected' : ''}>${c.charAt(0).toUpperCase()+c.slice(1)}</option>`
   ).join('');
 
-  if (typeof openModal !== 'function') {
-    alert('La función openModal no está disponible.');
-    return;
-  }
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">✏️ Editar tratamiento</div>
+        <div class="page-subtitle">Actualiza los datos del tratamiento</div>
+      </div>
+      <button class="btn btn-secondary" onclick="renderTratamientos()">← Volver</button>
+    </div>
 
-  openModal(`
-    <div class="modal-title">✏️ Editar tratamiento</div>
-    <div class="form-group">
-      <label class="form-label">Nombre *</label>
-      <input class="form-control" id="f-trat-edit-nombre" value="${item.nombre || ''}">
+    <div class="card">
+      <form id="form-editar-tratamiento" onsubmit="event.preventDefault(); guardarEdicionTratamiento('${id}')">
+        <div class="form-group">
+          <label class="form-label">Nombre *</label>
+          <input class="form-control" id="f-trat-edit-nombre" value="${item.nombre || ''}" required>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Código</label>
+            <input class="form-control" id="f-trat-edit-codigo" value="${item.codigo || ''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Categoría *</label>
+            <select class="form-control" id="f-trat-edit-categoria">${opts}</select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Precio base ($) *</label>
+            <input class="form-control" id="f-trat-edit-precio" type="number" step="0.01" value="${item.precio_base || 0}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duración</label>
+            <input class="form-control" id="f-trat-edit-duracion" value="${item.duracion || '30 min'}">
+          </div>
+        </div>
+        <div class="form-group" style="display:flex;gap:20px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="f-trat-edit-activo" ${item.activo !== false ? 'checked' : ''}> Activo
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="f-trat-edit-agenda-virtual" ${item.agenda_virtual ? 'checked' : ''}> Agenda virtual
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="f-trat-edit-requiere-lab" ${item.requiere_lab ? 'checked' : ''}> Requiere laboratorio
+          </label>
+        </div>
+        <div class="modal-actions" style="margin-top:16px;">
+          <button type="button" class="btn btn-secondary" onclick="renderTratamientos()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Actualizar tratamiento</button>
+        </div>
+      </form>
     </div>
-    <div class="form-grid">
-      <div class="form-group">
-        <label class="form-label">Código</label>
-        <input class="form-control" id="f-trat-edit-codigo" value="${item.codigo || ''}">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Categoría *</label>
-        <select class="form-control" id="f-trat-edit-categoria">${opts}</select>
-      </div>
-    </div>
-    <div class="form-grid">
-      <div class="form-group">
-        <label class="form-label">Precio base ($) *</label>
-        <input class="form-control" id="f-trat-edit-precio" type="number" step="0.01" value="${item.precio_base || 0}">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Duración</label>
-        <input class="form-control" id="f-trat-edit-duracion" value="${item.duracion || '30 min'}">
-      </div>
-    </div>
-    <div class="form-group">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-        <input type="checkbox" id="f-trat-edit-activo" ${item.activo !== false ? 'checked' : ''}> Activo
-      </label>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarEdicionTratamiento('${id}')">Actualizar</button>
-    </div>
-  `);
+  `;
 };
 
+// ============================================================
+// GUARDAR EDICIÓN DE TRATAMIENTO
+// ============================================================
 window.guardarEdicionTratamiento = function(id) {
   const nombre = document.getElementById('f-trat-edit-nombre').value.trim();
   const codigo = document.getElementById('f-trat-edit-codigo').value.trim();
@@ -373,29 +429,41 @@ window.guardarEdicionTratamiento = function(id) {
   const precio_base = parseFloat(document.getElementById('f-trat-edit-precio').value) || 0;
   const duracion = document.getElementById('f-trat-edit-duracion').value.trim() || '30 min';
   const activo = document.getElementById('f-trat-edit-activo').checked;
+  const agendaVirtual = document.getElementById('f-trat-edit-agenda-virtual').checked;
+  const requiereLab = document.getElementById('f-trat-edit-requiere-lab').checked;
 
   if (!nombre) return alert('El nombre es obligatorio.');
   if (!categoria) return alert('Selecciona una categoría.');
+  if (precio_base <= 0) return alert('El precio base debe ser mayor que 0.');
 
   if (typeof db === 'undefined') {
     const index = allTratamientosData.findIndex(t => t.id === id);
     if (index !== -1) {
-      allTratamientosData[index] = { ...allTratamientosData[index], nombre, codigo, categoria, precio_base, duracion, activo };
+      allTratamientosData[index] = { ...allTratamientosData[index], nombre, codigo, categoria, precio_base, duracion, activo, agenda_virtual: agendaVirtual, requiere_lab: requiereLab };
     }
-    if (typeof closeModal === 'function') closeModal();
     if (typeof showToast === 'function') showToast('✅ Tratamiento actualizado.');
-    actualizarVistaTratamientos();
+    renderTratamientos();
     return;
   }
 
   db.collection('tratamientos').doc(id).update({
-    nombre, codigo, categoria, precio_base, duracion, activo
+    nombre,
+    codigo: codigo || null,
+    categoria,
+    precio_base,
+    duracion,
+    activo,
+    agenda_virtual: agendaVirtual,
+    requiere_lab: requiereLab
   }).then(() => {
-    if (typeof closeModal === 'function') closeModal();
     if (typeof showToast === 'function') showToast('✅ Tratamiento actualizado.');
+    renderTratamientos();
   }).catch(err => alert('❌ Error: ' + err.message));
 };
 
+// ============================================================
+// MODAL: CONFIGURAR PRECIO PARA OBRA SOCIAL (sigue siendo modal)
+// ============================================================
 window.openModalOS = function(id) {
   const item = allTratamientosData.find(t => t.id === id);
   if (!item) {
@@ -452,6 +520,9 @@ window.guardarOS = function(id) {
   }).catch(err => alert('❌ Error: ' + err.message));
 };
 
+// ============================================================
+// ELIMINAR TRATAMIENTO
+// ============================================================
 window.eliminarTratamiento = function(id) {
   const item = allTratamientosData.find(t => t.id === id);
   if (!confirm(`¿Eliminar el tratamiento '${item ? item.nombre : ''}'? Esta acción no se puede deshacer.`)) return;
@@ -470,6 +541,9 @@ window.eliminarTratamiento = function(id) {
     .catch(err => alert('❌ Error: ' + err.message));
 };
 
+// ============================================================
+// TOGGLE ESTADO (Activo/Inactivo)
+// ============================================================
 window.toggleEstado = function(id) {
   const item = allTratamientosData.find(t => t.id === id);
   if (!item) return;
@@ -493,7 +567,7 @@ window.toggleEstado = function(id) {
 };
 
 // ============================================================
-// MODAL: CAMBIAR ESPECIALIDAD
+// MODAL: CAMBIAR ESPECIALIDAD (sigue siendo modal)
 // ============================================================
 window.abrirEspecialidadModal = function(id, nombre, especialidadId) {
   let especialidadesHTML = '<option value="">Sin especialidad</option>';
@@ -509,6 +583,7 @@ window.abrirEspecialidadModal = function(id, nombre, especialidadId) {
         mostrarModalEspecialidad(id, nombre, especialidadesHTML);
       })
       .catch(() => {
+        // Fallback si no hay especialidades en Firestore
         const espEjemplo = ['Implantologia', 'Ortodoncia', 'Perodoncia', 'Endodoncia', 'Odontopediatría'];
         espEjemplo.forEach((e, i) => {
           const val = (i + 1).toString();
@@ -575,7 +650,7 @@ window.guardarEspecialidadTratamiento = function(id) {
 };
 
 // ============================================================
-// INICIALIZACIÓN
+// INICIALIZACIÓN (si el contenedor existe al cargar la página)
 // ============================================================
 if (document.getElementById('view-tratamientos')) {
   renderTratamientos();
