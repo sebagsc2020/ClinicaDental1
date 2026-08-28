@@ -118,32 +118,40 @@
     .sidebar .sidebar-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
     .sidebar .sidebar-item .sb-txt { flex: 1; }
 
-    /* ===== Submenús colapsables ===== */
-    .sidebar-subitems {
-      display: none;
-    }
-    .sidebar-subitems.open {
-      display: block;
-    }
-
-    .sidebar-chevron {
-      transition: transform 0.25s ease;
-      cursor: pointer;
-      background: none;
-      border: none;
-      padding: 0 8px;
-      color: var(--text-muted);
-    }
-    .sidebar-chevron.open {
-      transform: rotate(180deg);
-    }
-
+    /* ─── Submenús colapsables (MEJORADO) ─── */
     .sidebar-group-row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-right: 6px;
+      align-items: stretch;
     }
+    .sidebar-group-row > .sidebar-item {
+      flex: 1;
+      min-width: 0;
+    }
+    .sidebar-chevron {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0 8px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .sidebar-chevron svg {
+      transition: transform 0.2s ease;
+    }
+    .sidebar-chevron.open svg {
+      transform: rotate(180deg);
+    }
+    .sidebar-subitems {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.25s ease;
+    }
+    .sidebar-subitems.open {
+      max-height: 200px; /* suficiente para los subítems */
+    }
+    /* ────────────────────────────────────── */
 
     /* ===== Main ===== */
     .main { flex: 1; padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 60px); }
@@ -387,8 +395,8 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Clínica</div>
-      
-      <!-- Obras sociales con submenú -->
+
+      <!-- Obras sociales con submenú (colapsable) -->
       <div class="sidebar-group">
         <div class="sidebar-group-row">
           <button class="sidebar-item" onclick="toggleGroup('grp-os')" title="Obras sociales" style="flex:1;background:none;border:none;cursor:pointer;text-align:left">
@@ -404,14 +412,14 @@
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span class="sb-txt">Listado</span>
           </a>
-          <a class="sidebar-item sidebar-subitem-active" href="#" data-view="liquidaciones_os" onclick="event.preventDefault();navigateTo('liquidaciones_os')" style="padding-left:2.4rem;font-size:12px;background:none!important">
+          <a class="sidebar-item" href="#" data-view="liquidaciones_os" onclick="event.preventDefault();navigateTo('liquidaciones_os')" style="padding-left:2.4rem;font-size:12px;background:none!important">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
             <span class="sb-txt">Liquidaciones</span>
           </a>
         </div>
       </div>
 
-      <!-- Inventario con submenú -->
+      <!-- Inventario con submenú (colapsable) -->
       <div class="sidebar-group">
         <div class="sidebar-group-row">
           <button class="sidebar-item" onclick="toggleGroup('grp-inventario')" title="Inventario" style="flex:1;background:none;border:none;cursor:pointer;text-align:left">
@@ -499,8 +507,43 @@
 <script src="js/whatsapp.js"></script>
 <script src="js/configuracion.js"></script>
 
-<!-- ===== SCRIPT DE INICIALIZACIÓN (SOLO EVENTOS Y ARRANQUE) ===== -->
+<!-- ===== SCRIPT DE INICIALIZACIÓN Y TOGGLEGROUP ===== -->
 <script>
+  // ─── Función toggleGroup (mejorada) ───
+  function toggleGroup(id) {
+    // Si el sidebar está colapsado, expandirlo primero
+    if (document.documentElement.classList.contains('sidebar-collapsed')) {
+      setSidebarCollapsed(false);
+      return;
+    }
+    var el = document.getElementById(id);
+    if (!el) return;
+    var btn = el.previousElementSibling ? el.previousElementSibling.querySelector('.sidebar-chevron') : null;
+    var open = el.classList.contains('open');
+    el.classList.toggle('open', !open);
+    if (btn) btn.classList.toggle('open', !open);
+  }
+
+  // ─── Función para colapsar/expandir el sidebar completo ───
+  function setSidebarCollapsed(collapsed) {
+    document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
+    localStorage.setItem('ds_sidebar_collapsed', collapsed ? '1' : '0');
+    var btn = document.getElementById('sb-toggle');
+    if (btn) btn.title = collapsed ? 'Expandir menú' : 'Colapsar menú';
+  }
+
+  function toggleSidebarCollapse() {
+    setSidebarCollapsed(!document.documentElement.classList.contains('sidebar-collapsed'));
+  }
+
+  // ─── Restaurar estado del sidebar ───
+  (function() {
+    if (localStorage.getItem('ds_sidebar_collapsed') === '1') {
+      document.documentElement.classList.add('sidebar-collapsed');
+    }
+  })();
+
+  // ─── Inicialización ───
   document.addEventListener('DOMContentLoaded', function() {
     // Configurar navegación desde sidebar y topnav (usando data-view)
     document.querySelectorAll('.sidebar .sidebar-item[data-view], .topnav .nav-links a[data-view]').forEach(function(el) {
