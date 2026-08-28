@@ -627,7 +627,7 @@ window.cambiarVista = function(vista) {
 };
 
 // ============================================================
-// MODAL: NUEVO TURNO (como página en el contenedor view-agenda)
+// MODAL: NUEVO TURNO (VERSIÓN CORREGIDA CON CARGA DE DATOS)
 // ============================================================
 
 // Variables globales
@@ -688,13 +688,16 @@ function cargarDatosParaModal() {
 }
 
 // ============================================================
-// ABRIR NUEVO TURNO EN EL CONTENEDOR PRINCIPAL
+// ABRIR NUEVO TURNO EN EL CONTENEDOR PRINCIPAL (CORREGIDO)
 // ============================================================
 window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '09:00') {
   const el = $('view-agenda');
-  if (!el) return;
+  if (!el) {
+    console.error('view-agenda no encontrado');
+    return;
+  }
 
-  // HTML del formulario (igual que antes, pero sin el modal)
+  // HTML del formulario
   const html = `
     <div class="page-header">
       <div>
@@ -872,21 +875,31 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
   // Inyectar en el contenedor
   el.innerHTML = html;
 
-  // Función para cargar los datos cuando los elementos existan
-  function cargarDatosCuandoExistan() {
+  // Función mejorada para cargar datos con reintentos y logs
+  function cargarDatosCuandoExistan(intentos = 0) {
+    const maxIntentos = 20;
     const pacSelect = document.getElementById('f-turno-paciente');
     const profSelect = document.getElementById('f-turno-profesional');
     const sucSelect = document.getElementById('f-turno-sucursal');
     const listaTrat = document.getElementById('trt-lista');
 
     if (!pacSelect || !profSelect || !sucSelect || !listaTrat) {
-      console.log('Esperando a que los elementos del formulario estén listos...');
-      setTimeout(cargarDatosCuandoExistan, 200);
+      if (intentos >= maxIntentos) {
+        console.error('No se encontraron los elementos del formulario después de múltiples intentos.');
+        return;
+      }
+      console.log(`Esperando elementos del formulario (intento ${intentos+1})...`);
+      setTimeout(() => cargarDatosCuandoExistan(intentos + 1), 200);
       return;
     }
 
     console.log('Elementos encontrados, cargando datos...');
+
+    // Cargar datos auxiliares (horarios, coberturas, etc.)
     cargarDatosParaModal().then(() => {
+      console.log('Datos auxiliares cargados (PACIENTES_OS, COBERTURAS, etc.)');
+
+      // Cargar pacientes, profesionales, sucursales y tratamientos
       const promesas = [
         db.collection('pacientes').orderBy('nombre').get(),
         db.collection('profesionales').orderBy('nombre').get(),
@@ -895,7 +908,9 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
       ];
 
       Promise.all(promesas).then(([pacSnap, profSnap, sucSnap, tratSnap]) => {
-        // Pacientes
+        console.log(`Pacientes: ${pacSnap.size}, Profesionales: ${profSnap.size}, Sucursales: ${sucSnap.size}, Tratamientos: ${tratSnap.size}`);
+
+        // Llenar pacientes
         pacSelect.innerHTML = '<option value="">— Seleccionar paciente —</option>';
         pacSnap.forEach(doc => {
           const data = doc.data();
@@ -905,7 +920,7 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
         pacSelect.addEventListener('change', onPacienteChange);
         onPacienteChange();
 
-        // Profesionales
+        // Llenar profesionales
         profSelect.innerHTML = '<option value="">— Seleccionar profesional —</option>';
         profSnap.forEach(doc => {
           const data = doc.data();
@@ -914,14 +929,14 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
           profSelect.innerHTML += `<option value="${doc.id}">${nombre} ${especialidad ? '· ' + especialidad : ''}</option>`;
         });
 
-        // Sucursales
+        // Llenar sucursales
         sucSelect.innerHTML = '<option value="">— Seleccionar sucursal —</option>';
         sucSnap.forEach(doc => {
           const data = doc.data();
           sucSelect.innerHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`;
         });
 
-        // Tratamientos
+        // Llenar tratamientos
         let grupos = {};
         tratSnap.forEach(doc => {
           const data = doc.data();
@@ -996,13 +1011,19 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
         }
 
         recalcPrecio();
-        console.log('Datos cargados correctamente en el formulario.');
-      }).catch(err => console.error('Error cargando datos:', err));
-    }).catch(err => console.error('Error en cargarDatosParaModal:', err));
+        console.log('✅ Datos cargados correctamente en el formulario.');
+      }).catch(err => {
+        console.error('Error cargando datos principales:', err);
+        alert('Error al cargar datos: ' + err.message);
+      });
+    }).catch(err => {
+      console.error('Error en cargarDatosParaModal:', err);
+      alert('Error al cargar datos auxiliares: ' + err.message);
+    });
   }
 
-  // Iniciar la espera de elementos
-  setTimeout(cargarDatosCuandoExistan, 100);
+  // Iniciar la carga con reintentos
+  setTimeout(() => cargarDatosCuandoExistan(), 200);
 };
 
 // ============================================================
