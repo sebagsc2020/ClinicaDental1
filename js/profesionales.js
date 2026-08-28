@@ -7,7 +7,6 @@
 // ============================================================
 function renderProfesionales() {
   const el = $('view-profesionales');
-
   el.innerHTML = `
     <div class="page-header">
       <div>
@@ -113,7 +112,6 @@ function renderProfesionales() {
         background: var(--primary, #355063); color: #fff; overflow: hidden;
       }
       .avatar-prof img { width: 100%; height: 100%; object-fit: cover; }
-      /* Estilos para el modal de edición */
       .modal-box { max-width: 900px !important; }
       @media (max-width: 768px) {
         #prof-edit-grid { grid-template-columns: 1fr !important; }
@@ -252,8 +250,8 @@ function renderTablaProfesionales(profesionales) {
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <a href="#" class="btn btn-secondary btn-sm" onclick="editarProfesional('${p.id}')">Editar</a>
-            <a href="#" class="btn btn-secondary btn-sm" onclick="configurarHorarios('${p.id}')" title="Configurar horarios">🕐 Horarios</a>
-            <a href="#" class="btn btn-secondary btn-sm" onclick="configurarObrasSociales('${p.id}')" title="Obras sociales que atiende">🏥 Obras</a>
+            <a href="#" class="btn btn-secondary btn-sm" onclick="openModalHorarios('${p.id}')" title="Configurar horarios">🕐 Horarios</a>
+            <a href="#" class="btn btn-secondary btn-sm" onclick="openModalObrasSociales('${p.id}')" title="Obras sociales que atiende">🏥 Obras</a>
             ${toggleBtn}
             <button type="button" class="btn btn-sm" style="color:var(--danger,#e53e3e);border-color:var(--danger,#e53e3e);background:transparent;" onclick="confirmarEliminarProf('${p.id}', '${nombre.replace(/'/g, "\\'")}')">
               Eliminar
@@ -341,7 +339,7 @@ window.limpiarFiltrosProfesionales = function() {
 };
 
 // ============================================================
-// FUNCIONES CRUD
+// FUNCIONES CRUD BÁSICAS
 // ============================================================
 
 let _eliminarProfId = null;
@@ -378,88 +376,43 @@ window.toggleEstadoProfesional = function(id) {
     .catch(err => alert('❌ Error: ' + err.message));
 };
 
-window.configurarHorarios = function(id) {
-  alert('Configurar horarios para profesional ID: ' + id);
-};
-
-window.configurarObrasSociales = function(id) {
-  alert('Configurar obras sociales para profesional ID: ' + id);
-};
-
 // ============================================================
-// MODAL: NUEVO PROFESIONAL
+// MODAL: NUEVO PROFESIONAL (simplificado)
 // ============================================================
 window.openModalNuevoProfesional = function() {
-  // Versión simplificada del modal de nuevo, similar al de edición pero con campos vacíos
   openModal(`
     <div class="modal-title">➕ Nuevo profesional</div>
-    <div style="display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start;">
-      <div style="display:flex;flex-direction:column;gap:16px;">
-        <div class="card">
-          <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Datos personales</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div class="form-group"><label class="form-label">Nombre *</label><input class="form-control" id="f-prof-nombre" placeholder="Nombre"></div>
-            <div class="form-group"><label class="form-label">Apellido *</label><input class="form-control" id="f-prof-apellido" placeholder="Apellido"></div>
-            <div class="form-group"><label class="form-label">Email *</label><input class="form-control" id="f-prof-email" type="email" placeholder="Email"></div>
-            <div class="form-group"><label class="form-label">Teléfono</label><input class="form-control" id="f-prof-telefono" placeholder="Teléfono"></div>
-          </div>
-        </div>
-        <div class="card">
-          <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Datos profesionales</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div class="form-group" style="grid-column:1/-1;">
-              <label class="form-label">Cédula / Matrícula</label>
-              <input class="form-control" id="f-prof-cedula" placeholder="Ej: MN 12345">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Comisión (%)</label>
-              <input class="form-control" id="f-prof-comision" type="number" step="0.01" value="40">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Color en agenda</label>
-              <input class="form-control" id="f-prof-color" type="color" value="#355063" style="padding:2px;height:40px;">
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Contraseña</div>
-          <div style="max-width:320px;">
-            <div class="form-group" style="margin:0;">
-              <label class="form-label">Contraseña</label>
-              <input class="form-control" id="f-prof-password" type="password" placeholder="Nueva contraseña (opcional)">
-            </div>
-          </div>
-        </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label class="form-label">Nombre *</label><input class="form-control" id="f-prof-nombre" placeholder="Nombre"></div>
+      <div class="form-group"><label class="form-label">Apellido *</label><input class="form-control" id="f-prof-apellido" placeholder="Apellido"></div>
+      <div class="form-group"><label class="form-label">Email *</label><input class="form-control" id="f-prof-email" type="email" placeholder="Email"></div>
+      <div class="form-group"><label class="form-label">Teléfono</label><input class="form-control" id="f-prof-telefono" placeholder="Teléfono"></div>
+      <div class="form-group"><label class="form-label">Cédula</label><input class="form-control" id="f-prof-cedula" placeholder="Cédula profesional"></div>
+      <div class="form-group"><label class="form-label">Comisión (%)</label><input class="form-control" id="f-prof-comision" type="number" step="0.01" value="40"></div>
+      <div class="form-group"><label class="form-label">Color agenda</label><input class="form-control" id="f-prof-color" type="color" value="#355063"></div>
+      <div class="form-group">
+        <label class="form-label">Rol</label>
+        <select class="form-control" id="f-prof-rol">
+          <option value="odontologo">Odontólogo</option>
+          <option value="admin">Administrador</option>
+          <option value="secretaria">Secretaria/o</option>
+        </select>
       </div>
-      <div style="display:flex;flex-direction:column;gap:16px;">
-        <div class="card">
-          <div style="font-size:13px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">Configuración</div>
-          <div class="form-group">
-            <label class="form-label">Rol</label>
-            <select class="form-control" id="f-prof-rol">
-              <option value="odontologo">Odontólogo</option>
-              <option value="admin">Administrador</option>
-              <option value="secretaria">Secretaria/o</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin:0;">
-            <label class="form-label">Estado</label>
-            <select class="form-control" id="f-prof-estado">
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-            </select>
-          </div>
-        </div>
-        <button type="button" class="btn btn-primary" onclick="guardarProfesional()">Guardar</button>
-        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <div class="form-group">
+        <label class="form-label">Estado</label>
+        <select class="form-control" id="f-prof-estado">
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+        </select>
       </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarProfesional()">Guardar</button>
     </div>
   `);
 };
 
-// ============================================================
-// GUARDAR PROFESIONAL (desde modal de nuevo)
-// ============================================================
 window.guardarProfesional = function() {
   const nombre = $('f-prof-nombre').value.trim();
   const apellido = $('f-prof-apellido').value.trim();
@@ -467,55 +420,43 @@ window.guardarProfesional = function() {
   const telefono = $('f-prof-telefono').value.trim();
   const cedula = $('f-prof-cedula').value.trim();
   const comision = parseFloat($('f-prof-comision').value) || 0;
-  const color_agenda = $('f-prof-color').value || '#355063';
+  const color = $('f-prof-color').value || '#355063';
   const rol = $('f-prof-rol').value;
   const estado = $('f-prof-estado').value === 'activo';
-  const password = $('f-prof-password').value;
 
   if (!nombre || !apellido || !email) return alert('Nombre, apellido y email son obligatorios.');
 
-  const data = {
-    nombre,
-    apellido,
-    email,
-    telefono,
-    cedula,
+  db.collection('profesionales').add({
+    nombre, apellido, email, telefono, cedula,
     comision_porcentaje: comision,
-    color_agenda,
-    rol,
-    estado,
+    color_agenda: color,
+    rol, estado,
     especialidades_ids: [],
     tratamiento_ids: [],
     fecha_creacion: new Date().toISOString().slice(0, 10)
-  };
-
-  if (password) data.password = password; // Opcional: almacenar hash si se usa auth
-
-  db.collection('profesionales').add(data)
-    .then(() => {
-      closeModal();
-      showToast('✅ Profesional creado exitosamente.');
-    })
-    .catch(err => alert('❌ Error: ' + err.message));
+  }).then(() => {
+    closeModal();
+    showToast('✅ Profesional creado exitosamente.');
+  }).catch(err => alert('❌ Error: ' + err.message));
 };
 
 // ============================================================
-// EDITAR PROFESIONAL - MODAL COMPLETO ESTILO DENTALSOFT
+// EDITAR PROFESIONAL - SIN ÍNDICE (ordenación en cliente)
 // ============================================================
 window.editarProfesional = function(id) {
-  // Cargar datos del profesional
   db.collection('profesionales').doc(id).get().then(doc => {
     if (!doc.exists) return alert('Profesional no encontrado');
     const data = doc.data();
 
-    // Cargar especialidades y tratamientos desde Firestore
+    // Cargar especialidades y tratamientos SIN orderBy compuesto
     Promise.all([
       db.collection('especialidades').orderBy('nombre').get(),
-      db.collection('tratamientos').orderBy('categoria').orderBy('nombre').get()
+      db.collection('tratamientos').get() // ← sin orderBy compuesto
     ]).then(([especialidadesSnap, tratamientosSnap]) => {
       const especialidades = [];
       especialidadesSnap.forEach(d => especialidades.push({ id: d.id, ...d.data() }));
 
+      // Agrupar y ordenar tratamientos en cliente
       const tratamientos = [];
       const tratamientosPorCategoria = {};
       tratamientosSnap.forEach(d => {
@@ -525,8 +466,12 @@ window.editarProfesional = function(id) {
         if (!tratamientosPorCategoria[cat]) tratamientosPorCategoria[cat] = [];
         tratamientosPorCategoria[cat].push(t);
       });
+      // Ordenar cada categoría por nombre
+      for (const cat in tratamientosPorCategoria) {
+        tratamientosPorCategoria[cat].sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+      }
 
-      // Construir HTML de especialidades (checkboxes)
+      // Construir HTML de especialidades
       let especialidadesHTML = '';
       especialidades.forEach(esp => {
         const checked = (data.especialidades_ids && data.especialidades_ids.includes(esp.id)) ? 'checked' : '';
@@ -561,7 +506,6 @@ window.editarProfesional = function(id) {
       const tieneFoto = data.foto ? true : false;
       const fotoSrc = data.foto || '';
 
-      // Abrir modal con el diseño completo
       openModal(`
         <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
           <a href="#" class="btn btn-secondary btn-sm" onclick="closeModal();return false;">&larr; Volver</a>
@@ -697,15 +641,14 @@ window.editarProfesional = function(id) {
         </div>
       `);
 
-      // Guardar referencia al ID del profesional para la subida de foto
       window._profEditId = id;
 
     }).catch(err => alert('Error al cargar datos: ' + err.message));
-  });
+  }).catch(err => alert('Error al cargar profesional: ' + err.message));
 };
 
 // ============================================================
-// FUNCIONES DE PREVISUALIZACIÓN DE FOTO (modal de edición)
+// FUNCIONES DE PREVISUALIZACIÓN DE FOTO
 // ============================================================
 let _fotoFileEdit = null;
 
@@ -739,17 +682,16 @@ window.togglePwdEdit = function() {
 };
 
 // ============================================================
-// GUARDAR EDICIÓN DE PROFESIONAL (desde modal de edición)
+// GUARDAR EDICIÓN DE PROFESIONAL
 // ============================================================
 window.guardarEdicionProfesional = function(id) {
-  // Obtener valores de los campos
   const nombre = $('f-prof-edit-nombre').value.trim();
   const apellido = $('f-prof-edit-apellido').value.trim();
   const email = $('f-prof-edit-email').value.trim();
   const telefono = $('f-prof-edit-telefono').value.trim();
   const cedula = $('f-prof-edit-cedula').value.trim();
   const comision = parseFloat($('f-prof-edit-comision').value) || 0;
-  const color_agenda = $('f-prof-edit-color').value || '#355063';
+  const color = $('f-prof-edit-color').value || '#355063';
   const rol = $('f-prof-edit-rol').value;
   const estado = $('f-prof-edit-estado').value === 'activo';
   const password = $('f-prof-edit-password').value;
@@ -764,42 +706,36 @@ window.guardarEdicionProfesional = function(id) {
   const tratamientosCheckboxes = document.querySelectorAll('input[name="tratamiento_ids[]"]:checked');
   const tratamiento_ids = Array.from(tratamientosCheckboxes).map(cb => cb.value);
 
-  // Preparar datos para actualizar
   const updateData = {
-    nombre,
-    apellido,
-    email,
-    telefono,
-    cedula,
+    nombre, apellido, email, telefono, cedula,
     comision_porcentaje: comision,
-    color_agenda,
-    rol,
-    estado,
+    color_agenda: color,
+    rol, estado,
     especialidades_ids,
     tratamiento_ids
   };
 
   if (password) {
-    // Opcional: si usas autenticación de Firebase, aquí podrías actualizar la contraseña
-    updateData.password = password; // Nota: esto no es seguro, se recomienda usar Firebase Auth
+    // Opcional: si usas Firebase Auth, actualiza la contraseña de forma segura
+    updateData.password = password;
   }
 
-  // Si hay una foto nueva, subir a Firebase Storage
   if (_fotoFileEdit) {
+    // Subir foto a Firebase Storage
     const storageRef = firebase.storage().ref();
     const fotoRef = storageRef.child(`profesionales/${id}/${Date.now()}_${_fotoFileEdit.name}`);
-    fotoRef.put(_fotoFileEdit).then(snapshot => {
-      return snapshot.ref.getDownloadURL();
-    }).then(url => {
-      updateData.foto = url;
-      _fotoFileEdit = null;
-      return db.collection('profesionales').doc(id).update(updateData);
-    }).then(() => {
-      closeModal();
-      showToast('✅ Profesional actualizado correctamente.');
-    }).catch(err => alert('❌ Error al subir foto: ' + err.message));
+    fotoRef.put(_fotoFileEdit).then(snapshot => snapshot.ref.getDownloadURL())
+      .then(url => {
+        updateData.foto = url;
+        _fotoFileEdit = null;
+        return db.collection('profesionales').doc(id).update(updateData);
+      })
+      .then(() => {
+        closeModal();
+        showToast('✅ Profesional actualizado correctamente.');
+      })
+      .catch(err => alert('❌ Error al subir foto: ' + err.message));
   } else {
-    // Sin foto nueva, solo actualizar datos
     db.collection('profesionales').doc(id).update(updateData)
       .then(() => {
         closeModal();
@@ -810,21 +746,88 @@ window.guardarEdicionProfesional = function(id) {
 };
 
 // ============================================================
-// ELIMINAR PROFESIONAL (desde tabla)
+// MODALES: HORARIOS Y OBRAS SOCIALES (con modales)
 // ============================================================
-window.eliminarProfesional = function(id) {
-  if (!confirm('¿Eliminar este profesional?')) return;
-  db.collection('profesionales').doc(id).delete()
-    .then(() => showToast('🗑 Profesional eliminado.'))
-    .catch(err => alert('❌ Error: ' + err.message));
+
+window.openModalHorarios = function(id) {
+  // Obtener nombre del profesional para mostrar
+  db.collection('profesionales').doc(id).get().then(doc => {
+    if (!doc.exists) return alert('Profesional no encontrado');
+    const data = doc.data();
+    const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
+
+    openModal(`
+      <div class="modal-title">🕐 Configurar horarios</div>
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:600;font-size:15px;">${nombre}</div>
+        <div style="font-size:13px;color:var(--text-muted);">Aquí puedes configurar los horarios de atención del profesional.</div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:8px;padding:16px;background:var(--bg);margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Horarios por día</div>
+        <div style="display:grid;grid-template-columns:100px 1fr 1fr;gap:8px;font-size:13px;">
+          <div style="font-weight:600;color:var(--text-muted);">Día</div>
+          <div style="font-weight:600;color:var(--text-muted);">Desde</div>
+          <div style="font-weight:600;color:var(--text-muted);">Hasta</div>
+          ${['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'].map(dia => `
+            <div>${dia}</div>
+            <input type="time" class="form-control" style="width:100%;" value="09:00">
+            <input type="time" class="form-control" style="width:100%;" value="18:00">
+          `).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+        <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+        <button class="btn btn-primary" onclick="alert('Funcionalidad en desarrollo')">Guardar horarios</button>
+      </div>
+    `);
+  }).catch(err => alert('Error: ' + err.message));
 };
 
-// ============================================================
-// INICIALIZACIÓN
-// ============================================================
-document.addEventListener('click', function(e) {
-  const modal = document.getElementById('modal-eliminar-prof');
-  if (modal && e.target === modal) {
-    cerrarEliminarProf();
-  }
-});
+window.openModalObrasSociales = function(id) {
+  db.collection('profesionales').doc(id).get().then(doc => {
+    if (!doc.exists) return alert('Profesional no encontrado');
+    const data = doc.data();
+    const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
+
+    // Cargar obras sociales disponibles
+    db.collection('obras_sociales').orderBy('nombre').get().then(snap => {
+      let osHTML = '';
+      snap.forEach(d => {
+        const os = d.data();
+        const checked = (data.obras_sociales_ids && data.obras_sociales_ids.includes(d.id)) ? 'checked' : '';
+        osHTML += `
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;font-size:13px;">
+            <input type="checkbox" name="os_ids[]" value="${d.id}" ${checked} style="accent-color:var(--primary);">
+            ${os.nombre || 'Sin nombre'}
+          </label>
+        `;
+      });
+
+      openModal(`
+        <div class="modal-title">🏥 Obras sociales que atiende</div>
+        <div style="margin-bottom:16px;">
+          <div style="font-weight:600;font-size:15px;">${nombre}</div>
+          <div style="font-size:13px;color:var(--text-muted);">Selecciona las obras sociales que atiende este profesional.</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;background:var(--bg);display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+          ${osHTML || '<p class="text-muted">No hay obras sociales cargadas.</p>'}
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+          <button class="btn btn-primary" onclick="guardarObrasSocialesProfesional('${id}')">Guardar</button>
+        </div>
+      `);
+    });
+  }).catch(err => alert('Error: ' + err.message));
+};
+
+window.guardarObrasSocialesProfesional = function(id) {
+  const checkboxes = document.querySelectorAll('input[name="os_ids[]"]:checked');
+  const ids = Array.from(checkboxes).map(cb => cb.value);
+  db.collection('profesionales').doc(id).update({ obras_sociales_ids: ids })
+    .then(() => {
+      closeModal();
+      showToast('✅ Obras sociales actualizadas.');
+    })
+    .catch(err => alert('❌ Error: ' + err.message));
+};
