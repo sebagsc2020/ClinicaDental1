@@ -118,6 +118,33 @@
     .sidebar .sidebar-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
     .sidebar .sidebar-item .sb-txt { flex: 1; }
 
+    /* ===== Submenús colapsables ===== */
+    .sidebar-subitems {
+      display: none;
+    }
+    .sidebar-subitems.open {
+      display: block;
+    }
+
+    .sidebar-chevron {
+      transition: transform 0.25s ease;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0 8px;
+      color: var(--text-muted);
+    }
+    .sidebar-chevron.open {
+      transform: rotate(180deg);
+    }
+
+    .sidebar-group-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-right: 6px;
+    }
+
     /* ===== Main ===== */
     .main { flex: 1; padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 60px); }
 
@@ -384,7 +411,7 @@
         </div>
       </div>
 
-      <!-- Inventario con submenú (nuevo) -->
+      <!-- Inventario con submenú -->
       <div class="sidebar-group">
         <div class="sidebar-group-row">
           <button class="sidebar-item" onclick="toggleGroup('grp-inventario')" title="Inventario" style="flex:1;background:none;border:none;cursor:pointer;text-align:left">
@@ -407,7 +434,7 @@
         </div>
       </div>
 
-      <!-- Resto de botones (eliminados los independientes de Inventario y Proveedores) -->
+      <!-- Resto de botones -->
       <button class="sidebar-item" data-view="tratamientos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg><span class="sb-txt">Tratamientos</span></button>
       <button class="sidebar-item" data-view="especialidades"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5S7 9.76 7 7a5 5 0 0 1 5-5z"/><path d="M3 21c0-4.42 4.03-8 9-8s9 3.58 9 8"/><path d="M15 7h2m-1-1v2"/></svg><span class="sb-txt">Especialidades</span></button>
       <button class="sidebar-item" data-view="web"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span class="sb-txt">Web</span></button>
@@ -448,6 +475,7 @@
 <!-- ===== FIREBASE SDK ===== -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
 <!-- ===== TUS ARCHIVOS JS EXTERNOS ===== -->
 <script src="js/config.js"></script>
