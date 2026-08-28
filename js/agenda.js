@@ -637,7 +637,7 @@ window.cambiarVista = function(vista) {
 };
 
 // ============================================================
-// MODAL: NUEVO TURNO (CORREGIDO - sin scroll horizontal y con carga de datos)
+// MODAL: NUEVO TURNO (CORREGIDO - carga de datos asegurada)
 // ============================================================
 
 // Variables globales para el formulario del modal
@@ -648,7 +648,7 @@ const _DIAS_LARGO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes',
 const _MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const _DUR_PRESETS = [15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240];
 
-// Objetos para datos de cobertura y horarios (se cargan desde Firestore si no existen)
+// Objetos para datos de cobertura y horarios
 let HORARIOS_PROF = window.HORARIOS_PROF || {};
 let PACIENTES_OS = window.PACIENTES_OS || {};
 let COBERTURAS = window.COBERTURAS || {};
@@ -698,10 +698,10 @@ function cargarDatosParaModal() {
 }
 
 // ============================================================
-// ABRIR MODAL DE NUEVO TURNO (CORREGIDO)
+// ABRIR MODAL DE NUEVO TURNO (CORREGIDO - con espera activa de elementos)
 // ============================================================
 window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '09:00') {
-  // Construir el HTML con selects vacíos (se llenarán después)
+  // Construir el HTML del modal (con IDs únicos)
   const modalHTML = `
     <div style="max-height:80vh;overflow-y:auto;padding-right:4px;width:100%;box-sizing:border-box;">
       <div class="page-header" style="margin-top:0;padding-top:0;">
@@ -878,27 +878,25 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
     </div>
   `;
 
-  // Abrir el modal (asumimos que openModal crea un contenedor)
+  // Abrir el modal
   openModal(modalHTML);
 
-  // Ajustar el estilo del modal para evitar scroll horizontal
-  setTimeout(() => {
-    const modalContainer = document.querySelector('.modal-content');
-    if (modalContainer) {
-      modalContainer.style.maxWidth = '95vw';
-      modalContainer.style.width = '100%';
-      modalContainer.style.overflowX = 'hidden';
-      modalContainer.style.boxSizing = 'border-box';
-    }
-    const inner = document.querySelector('.modal-content > div:first-child');
-    if (inner) {
-      inner.style.maxWidth = '100%';
-      inner.style.overflowX = 'hidden';
-    }
-  }, 50);
+  // Función para cargar los datos cuando los elementos existan
+  function cargarDatosCuandoExistan() {
+    const pacSelect = document.getElementById('f-turno-paciente');
+    const profSelect = document.getElementById('f-turno-profesional');
+    const sucSelect = document.getElementById('f-turno-sucursal');
+    const listaTrat = document.getElementById('trt-lista');
 
-  // Cargar los datos después de un breve retardo para asegurar que el DOM esté listo
-  setTimeout(() => {
+    // Si alguno de los elementos principales no existe, esperar y reintentar
+    if (!pacSelect || !profSelect || !sucSelect || !listaTrat) {
+      console.log('Esperando a que los elementos del modal estén listos...');
+      setTimeout(cargarDatosCuandoExistan, 200);
+      return;
+    }
+
+    // Si ya existen, proceder a cargar los datos
+    console.log('Elementos encontrados, cargando datos...');
     cargarDatosParaModal().then(() => {
       const promesas = [
         db.collection('pacientes').orderBy('nombre').get(),
@@ -909,82 +907,70 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
 
       Promise.all(promesas).then(([pacSnap, profSnap, sucSnap, tratSnap]) => {
         // Llenar pacientes
-        const pacSelect = document.getElementById('f-turno-paciente');
-        if (pacSelect) {
-          pacSelect.innerHTML = '<option value="">— Seleccionar paciente —</option>';
-          pacSnap.forEach(doc => {
-            const data = doc.data();
-            const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
-            pacSelect.innerHTML += `<option value="${doc.id}">${nombre}</option>`;
-          });
-          pacSelect.addEventListener('change', onPacienteChange);
-          onPacienteChange();
-        }
+        pacSelect.innerHTML = '<option value="">— Seleccionar paciente —</option>';
+        pacSnap.forEach(doc => {
+          const data = doc.data();
+          const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
+          pacSelect.innerHTML += `<option value="${doc.id}">${nombre}</option>`;
+        });
+        pacSelect.addEventListener('change', onPacienteChange);
+        onPacienteChange();
 
         // Llenar profesionales
-        const profSelect = document.getElementById('f-turno-profesional');
-        if (profSelect) {
-          profSelect.innerHTML = '<option value="">— Seleccionar profesional —</option>';
-          profSnap.forEach(doc => {
-            const data = doc.data();
-            const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
-            const especialidad = data.especialidad || '';
-            profSelect.innerHTML += `<option value="${doc.id}">${nombre} ${especialidad ? '· ' + especialidad : ''}</option>`;
-          });
-        }
+        profSelect.innerHTML = '<option value="">— Seleccionar profesional —</option>';
+        profSnap.forEach(doc => {
+          const data = doc.data();
+          const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
+          const especialidad = data.especialidad || '';
+          profSelect.innerHTML += `<option value="${doc.id}">${nombre} ${especialidad ? '· ' + especialidad : ''}</option>`;
+        });
 
         // Llenar sucursales
-        const sucSelect = document.getElementById('f-turno-sucursal');
-        if (sucSelect) {
-          sucSelect.innerHTML = '<option value="">— Seleccionar sucursal —</option>';
-          sucSnap.forEach(doc => {
-            const data = doc.data();
-            sucSelect.innerHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`;
-          });
-        }
+        sucSelect.innerHTML = '<option value="">— Seleccionar sucursal —</option>';
+        sucSnap.forEach(doc => {
+          const data = doc.data();
+          sucSelect.innerHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`;
+        });
 
         // Llenar tratamientos
-        const lista = document.getElementById('trt-lista');
-        if (lista) {
-          let grupos = {};
-          tratSnap.forEach(doc => {
-            const data = doc.data();
-            const cat = data.categoria || 'sin-categoria';
-            if (!grupos[cat]) grupos[cat] = [];
-            grupos[cat].push({ id: doc.id, ...data });
-          });
+        let grupos = {};
+        tratSnap.forEach(doc => {
+          const data = doc.data();
+          const cat = data.categoria || 'sin-categoria';
+          if (!grupos[cat]) grupos[cat] = [];
+          grupos[cat].push({ id: doc.id, ...data });
+        });
 
-          let html = '';
-          Object.keys(grupos).sort().forEach(cat => {
-            const items = grupos[cat];
-            html += `<div class="trt-grupo" data-cat="${cat}">
-              <div style="padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);background:var(--bg);position:sticky;top:0;">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>`;
-            items.forEach(trat => {
-              const precio = trat.precio_base || 0;
-              html += `
-                <label class="trt-item" data-nombre="${(trat.nombre || '').toLowerCase()}"
-                       style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-top:1px solid var(--border);"
-                       onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
-                  <input type="checkbox" name="tratamientos_realizados_ids[]" value="${trat.id}"
-                         data-precio="${precio}"
-                         data-trat-id="${trat.id}"
-                         onchange="recalcPrecio()"
-                         style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0;">
-                  <div style="flex:1;min-width:0;">
-                    <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${trat.nombre || ''}</div>
-                    <div class="os-split-label" style="display:none;font-size:11px;color:var(--text-muted);margin-top:1px;"></div>
-                  </div>
-                  <div style="text-align:right;flex-shrink:0;">
-                    <div style="font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap;">$${precio.toLocaleString()}</div>
-                    <div class="os-pct-badge" style="display:none;font-size:10px;font-weight:700;color:#0891b2;white-space:nowrap;"></div>
-                  </div>
-                </label>`;
-            });
-            html += `</div>`;
+        let html = '';
+        Object.keys(grupos).sort().forEach(cat => {
+          const items = grupos[cat];
+          html += `<div class="trt-grupo" data-cat="${cat}">
+            <div style="padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);background:var(--bg);position:sticky;top:0;">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>`;
+          items.forEach(trat => {
+            const precio = trat.precio_base || 0;
+            html += `
+              <label class="trt-item" data-nombre="${(trat.nombre || '').toLowerCase()}"
+                     style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-top:1px solid var(--border);"
+                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+                <input type="checkbox" name="tratamientos_realizados_ids[]" value="${trat.id}"
+                       data-precio="${precio}"
+                       data-trat-id="${trat.id}"
+                       onchange="recalcPrecio()"
+                       style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0;">
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${trat.nombre || ''}</div>
+                  <div class="os-split-label" style="display:none;font-size:11px;color:var(--text-muted);margin-top:1px;"></div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                  <div style="font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap;">$${precio.toLocaleString()}</div>
+                  <div class="os-pct-badge" style="display:none;font-size:10px;font-weight:700;color:#0891b2;white-space:nowrap;"></div>
+                </div>
+              </label>`;
           });
-          lista.innerHTML = html;
-          recalcPrecio();
-        }
+          html += `</div>`;
+        });
+        listaTrat.innerHTML = html;
+        recalcPrecio();
 
         // Configurar validación de domingos
         const fechaInput = document.getElementById('f-turno-fecha');
@@ -1021,10 +1007,29 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
         }
 
         recalcPrecio();
-
+        console.log('Datos cargados correctamente en el modal.');
       }).catch(err => console.error('Error cargando datos del modal:', err));
     }).catch(err => console.error('Error en cargarDatosParaModal:', err));
-  }, 200);
+  }
+
+  // Iniciar la espera de elementos
+  setTimeout(cargarDatosCuandoExistan, 100);
+
+  // Ajustar estilos del contenedor del modal para evitar scroll horizontal
+  setTimeout(() => {
+    const modalContainer = document.querySelector('.modal-content');
+    if (modalContainer) {
+      modalContainer.style.maxWidth = '95vw';
+      modalContainer.style.width = '100%';
+      modalContainer.style.overflowX = 'hidden';
+      modalContainer.style.boxSizing = 'border-box';
+    }
+    const inner = document.querySelector('.modal-content > div:first-child');
+    if (inner) {
+      inner.style.maxWidth = '100%';
+      inner.style.overflowX = 'hidden';
+    }
+  }, 50);
 };
 
 // ============================================================
