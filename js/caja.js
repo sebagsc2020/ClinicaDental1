@@ -922,7 +922,7 @@ window.exportarPdfCierre = function(cierreId, numeroCierre) {
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Cierre de Caja #${numeroCierre} — Clínica Dental Demo</title>
+<title>Cierre de Caja #${numeroCierre} — Clínica Demo</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, Helvetica, sans-serif; font-size: 13px; color: #1e293b; background: #f1f5f9; }
@@ -1127,7 +1127,7 @@ body { font-family: 'Segoe UI', Arial, Helvetica, sans-serif; font-size: 13px; c
 
     <!-- Footer -->
     <div class="doc-footer">
-        <div class="left">Clínica Dental Demo · DentalSoft</div>
+        <div class="left">Clínica Demo · DemoNombre</div>
         <div class="right">Generado el ${fechaGeneracion}</div>
     </div>
 
