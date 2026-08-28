@@ -1,6 +1,10 @@
 // ============================================================
 // CAJA - SPA (Single Page Application)
 // ============================================================
+
+// ============================================================
+// RENDER CAJA PRINCIPAL (LISTA DE PAGOS Y RESUMEN)
+// ============================================================
 function renderCaja() {
   const el = $('view-caja');
 
@@ -590,7 +594,7 @@ window.renderCierresView = function() {
 };
 
 // ============================================================
-// VISTA: REALIZAR CIERRE DE CAJA
+// VISTA: REALIZAR CIERRE DE CAJA (CORREGIDO - SIN ÍNDICE COMPUESTO)
 // ============================================================
 window.renderRealizarCierreView = function() {
   const el = $('view-caja');
@@ -609,19 +613,21 @@ window.renderRealizarCierreView = function() {
     </form>
   `;
 
-  // Calcular totales de pagos no cerrados
+  // Calcular totales de pagos no cerrados (solo ingresos, excluyendo egresos)
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
+  // 🔥 MODIFICACIÓN: quitamos el where('tipo', '!=', 'egreso') para evitar índice compuesto.
+  // Filtramos en cliente.
   db.collection('pagos')
     .where('estado', '==', 'completado')
-    .where('tipo', '!=', 'egreso') // solo ingresos
     .get()
     .then(snapshot => {
       const pagos = [];
       snapshot.forEach(doc => {
         const data = doc.data();
-        if (!data.cierre_id) { // solo no cerrados
+        // Excluir egresos y pagos ya cerrados
+        if (data.tipo !== 'egreso' && !data.cierre_id) {
           pagos.push({ id: doc.id, ...data });
         }
       });
@@ -795,7 +801,6 @@ window.confirmarCierre = function() {
   const pagos = window._cierrePagos || [];
   const efectivoEsperado = window._cierreEfectivoEsperado || 0;
 
-  // Datos del cierre
   const cierreData = {
     fecha_cierre: new Date().toISOString(),
     periodo: new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }),
@@ -803,14 +808,12 @@ window.confirmarCierre = function() {
     efectivo_ingresado: efectivoIngresado,
     otros_metodos: window._cierreOtros || {},
     observaciones: observaciones,
-    cerrado_por: 'Admin', // Podrías obtener del usuario actual
+    cerrado_por: 'Admin',
     created_at: new Date().toISOString()
   };
 
-  // Guardar cierre
   db.collection('cierres').add(cierreData)
     .then(docRef => {
-      // Actualizar cada pago con el cierre_id
       const promises = pagos.map(p => {
         return db.collection('pagos').doc(p.id).update({
           cierre_id: docRef.id,
@@ -821,7 +824,7 @@ window.confirmarCierre = function() {
     })
     .then(() => {
       showToast('✅ Cierre de caja realizado correctamente.');
-      renderCierresView(); // volver a lista de cierres
+      renderCierresView();
     })
     .catch(err => {
       alert('❌ Error al guardar el cierre: ' + err.message);
@@ -922,21 +925,21 @@ window.guardarEgreso = function() {
   const data = {
     tipo: 'egreso',
     concepto: concepto,
-    monto: monto, // se guarda positivo, pero se mostrará con signo negativo
+    monto: monto,
     fecha: fecha,
     metodo: metodo,
     comprobante: comprobante,
     notas: notas,
     estado: 'completado',
-    registrado_por: 'Admin', // Podrías obtener del usuario actual
-    paciente: '—', // No aplica
+    registrado_por: 'Admin',
+    paciente: '—',
     created_at: new Date().toISOString()
   };
 
   db.collection('pagos').add(data)
     .then(() => {
       showToast('✅ Egreso registrado correctamente.');
-      renderCaja(); // volver a caja
+      renderCaja();
     })
     .catch(err => {
       alert('❌ Error al registrar egreso: ' + err.message);
@@ -1061,7 +1064,6 @@ window.guardarPago = function() {
   if (!fecha) { alert('Selecciona una fecha.'); return; }
   if (!metodo) { alert('Selecciona un método de pago.'); return; }
 
-  // Obtener nombre del paciente
   const select = document.getElementById('pago-paciente');
   const pacienteNombre = select.options[select.selectedIndex].text;
 
@@ -1077,7 +1079,7 @@ window.guardarPago = function() {
     turno_id: turnoId || null,
     presupuesto_id: presupuestoId || null,
     estado: 'completado',
-    registrado_por: 'Admin', // Podrías obtener del usuario actual
+    registrado_por: 'Admin',
     created_at: new Date().toISOString()
   };
 
