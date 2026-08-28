@@ -1,7 +1,4 @@
-// ============================================================
-// CONFIGURACIÓN DE FIREBASE (versión compat)
-// ============================================================
-
+// js/config.js
 const firebaseConfig = {
   apiKey: "AIzaSyCsTQoWZnMmcYwt2vjRQUPNUOKbHj3ZKqA",
   authDomain: "clinicadental1.firebaseapp.com",
@@ -12,12 +9,6 @@ const firebaseConfig = {
   measurementId: "G-74CV5LL9F7"
 };
 
-// Inicializar Firebase (usando la variable global 'firebase' que viene de los CDN)
 firebase.initializeApp(firebaseConfig);
-
-// Exportar las instancias para que estén disponibles globalmente
 const db = firebase.firestore();
 const auth = firebase.auth();
-
-// Si quieres usar analytics, puedes descomentar la siguiente línea
-// const analytics = firebase.analytics();
