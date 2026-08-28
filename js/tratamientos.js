@@ -40,22 +40,24 @@ function renderTratamientos() {
       </button>
     </div>
 
-    <!-- Tabla -->
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Tratamiento</th>
-            <th>Especialidad</th>
-            <th>Precio base</th>
-            <th>Duración</th>
-            <th>Estado</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="tbody-tratamientos">
-        </tbody>
-      </table>
+    <!-- Tabla dentro de un card (mismo estilo que formularios) -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tratamiento</th>
+              <th>Especialidad</th>
+              <th>Precio base</th>
+              <th>Duración</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-tratamientos">
+          </tbody>
+        </table>
+      </div>
     </div>
   `;
 
@@ -650,7 +652,7 @@ window.guardarEspecialidadTratamiento = function(id) {
 };
 
 // ============================================================
-// INICIALIZACIÓN (si el contenedor existe al cargar la página)
+// INICIALIZACIÓN
 // ============================================================
 if (document.getElementById('view-tratamientos')) {
   renderTratamientos();
