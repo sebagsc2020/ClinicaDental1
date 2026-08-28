@@ -158,6 +158,24 @@ function renderCaja() {
 }
 
 // ============================================================
+// FUNCIONES AUXILIARES PARA COMPARAR FECHAS (sin zona horaria)
+// ============================================================
+function esMismoDia(fecha1, fecha2) {
+  return fecha1.getFullYear() === fecha2.getFullYear() &&
+         fecha1.getMonth() === fecha2.getMonth() &&
+         fecha1.getDate() === fecha2.getDate();
+}
+
+function esMismoMes(fecha1, fecha2) {
+  return fecha1.getFullYear() === fecha2.getFullYear() &&
+         fecha1.getMonth() === fecha2.getMonth();
+}
+
+function obtenerFechaSinHora(fecha) {
+  return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+}
+
+// ============================================================
 // CARGAR PAGOS DESDE FIRESTORE
 // ============================================================
 let _todosLosPagos = [];
@@ -174,7 +192,7 @@ function cargarPagos() {
       });
       _todosLosPagos = pagos;
       calcularResumenes(pagos);
-      renderFlujoCaja(pagos);   // <-- NUEVO: dibujar el gráfico de flujo
+      renderFlujoCaja(pagos);
       aplicarFiltrosCaja();
     }, (error) => {
       console.error('Error cargando pagos:', error);
@@ -194,17 +212,14 @@ function renderFlujoCaja(pagos) {
   const titulo = document.getElementById('caja-flujo-titulo');
   if (!container) return;
 
-  // Obtener el mes actual
   const ahora = new Date();
-  const mesActual = ahora.getMonth();
-  const anioActual = ahora.getFullYear();
   const nombreMes = ahora.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
 
   // Filtrar pagos válidos (no anulados, no egresos) y del mes actual
   const pagosValidos = pagos.filter(p => {
     if (p.estado === 'anulado' || p.tipo === 'egreso') return false;
-    const fecha = new Date(p.fecha);
-    return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
+    const fechaPago = new Date(p.fecha);
+    return esMismoMes(fechaPago, ahora);
   });
 
   // Agrupar por día del mes
@@ -216,22 +231,18 @@ function renderFlujoCaja(pagos) {
     dias[dia] += p.monto || 0;
   });
 
-  // Obtener el máximo para escalar las barras
   const valores = Object.values(dias);
   const maxValor = valores.length > 0 ? Math.max(...valores) : 0;
 
-  // Generar HTML de las barras
   let barrasHTML = '';
   if (valores.length === 0) {
     barrasHTML = `<div style="text-align:center;width:100%;color:var(--text-muted);font-size:12px;">Sin movimientos este mes</div>`;
   } else {
-    // Ordenar días
     const diasOrdenados = Object.keys(dias).sort((a, b) => parseInt(a) - parseInt(b));
     diasOrdenados.forEach(dia => {
       const monto = dias[dia];
-      // Altura proporcional: mínimo 4px para que se vea, máximo 100% de los 60px del contenedor
       const altura = maxValor > 0 ? Math.max(4, (monto / maxValor) * 56) : 4;
-      const tituloDia = `${dia}/${mesActual+1}/${anioActual}: $${Number(monto).toLocaleString()}`;
+      const tituloDia = `${dia}/${ahora.getMonth()+1}/${ahora.getFullYear()}: $${Number(monto).toLocaleString()}`;
       barrasHTML += `
         <div title="${tituloDia}"
              style="flex:1;background:var(--primary);opacity:.75;border-radius:2px 2px 0 0;height:${altura}px;min-height:4px;"></div>
@@ -239,26 +250,28 @@ function renderFlujoCaja(pagos) {
     });
   }
 
-  // Actualizar título y barras
   titulo.textContent = `Flujo de caja — ${nombreMes}`;
   container.innerHTML = barrasHTML;
 }
 
 // ============================================================
-// CALCULAR RESÚMENES (Hoy, Semana, Mes)
+// CALCULAR RESÚMENES (Hoy, Semana, Mes) - CORREGIDO
 // ============================================================
 function calcularResumenes(pagos) {
   const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
 
+  // Calcular inicio de semana (domingo)
   const inicioSemana = new Date(hoy);
-  inicioSemana.setDate(hoy.getDate() - hoy.getDay()); // Domingo
+  inicioSemana.setDate(hoy.getDate() - hoy.getDay());
+  inicioSemana.setHours(0, 0, 0, 0);
 
+  // Inicio del mes
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
 
-  // Filtrar pagos completados (no anulados) y solo ingresos (no egresos)
+  // Filtrar pagos válidos (no anulados, no egresos)
   const pagosValidos = pagos.filter(p => p.estado !== 'anulado' && p.tipo !== 'egreso');
 
+  // Función para agrupar por método
   function agruparPorMetodo(pagosFiltrados) {
     const grupos = {};
     pagosFiltrados.forEach(p => {
@@ -269,29 +282,27 @@ function calcularResumenes(pagos) {
     return grupos;
   }
 
-  // Resumen Hoy
+  // --- Resumen Hoy (comparación por día) ---
   const pagosHoy = pagosValidos.filter(p => {
-    const fecha = new Date(p.fecha);
-    fecha.setHours(0, 0, 0, 0);
-    return fecha.getTime() === hoy.getTime();
+    const fechaPago = new Date(p.fecha);
+    return esMismoDia(fechaPago, hoy);
   });
   const totalHoy = pagosHoy.reduce((sum, p) => sum + (p.monto || 0), 0);
   const gruposHoy = agruparPorMetodo(pagosHoy);
 
-  // Resumen Semana
+  // --- Resumen Semana (comparación de fechas con inicio de semana) ---
   const pagosSemana = pagosValidos.filter(p => {
-    const fecha = new Date(p.fecha);
-    fecha.setHours(0, 0, 0, 0);
-    return fecha >= inicioSemana && fecha <= hoy;
+    const fechaPago = new Date(p.fecha);
+    // Fechas entre inicioSemana y hoy (inclusive)
+    return fechaPago >= inicioSemana && fechaPago <= hoy;
   });
   const totalSemana = pagosSemana.reduce((sum, p) => sum + (p.monto || 0), 0);
   const gruposSemana = agruparPorMetodo(pagosSemana);
 
-  // Resumen Mes
+  // --- Resumen Mes (fechas desde inicioMes hasta hoy) ---
   const pagosMes = pagosValidos.filter(p => {
-    const fecha = new Date(p.fecha);
-    fecha.setHours(0, 0, 0, 0);
-    return fecha >= inicioMes && fecha <= hoy;
+    const fechaPago = new Date(p.fecha);
+    return fechaPago >= inicioMes && fechaPago <= hoy;
   });
   const totalMes = pagosMes.reduce((sum, p) => sum + (p.monto || 0), 0);
   const gruposMes = agruparPorMetodo(pagosMes);
@@ -353,7 +364,7 @@ function calcularResumenes(pagos) {
 }
 
 // ============================================================
-// APLICAR FILTROS
+// APLICAR FILTROS (corregido para usar fechas sin zona horaria)
 // ============================================================
 window.aplicarFiltrosCaja = function() {
   const desde = document.getElementById('filtro-desde').value;
@@ -365,19 +376,18 @@ window.aplicarFiltrosCaja = function() {
 
   if (desde) {
     const desdeDate = new Date(desde);
-    desdeDate.setHours(0, 0, 0, 0);
     filtrados = filtrados.filter(p => {
-      const fecha = new Date(p.fecha);
-      fecha.setHours(0, 0, 0, 0);
-      return fecha >= desdeDate;
+      const fechaPago = new Date(p.fecha);
+      return fechaPago >= desdeDate;
     });
   }
   if (hasta) {
     const hastaDate = new Date(hasta);
+    // Ajustar hastaDate para incluir todo el día
     hastaDate.setHours(23, 59, 59, 999);
     filtrados = filtrados.filter(p => {
-      const fecha = new Date(p.fecha);
-      return fecha <= hastaDate;
+      const fechaPago = new Date(p.fecha);
+      return fechaPago <= hastaDate;
     });
   }
 
@@ -402,7 +412,7 @@ window.limpiarFiltrosCaja = function() {
 };
 
 // ============================================================
-// RENDER TABLA DE PAGOS
+// RENDER TABLA DE PAGOS (sin cambios, solo para referencia)
 // ============================================================
 function renderTablaPagos(pagos) {
   const tbody = document.getElementById('caja-pagos-body');
@@ -480,7 +490,6 @@ function renderTablaPagos(pagos) {
     const signo = esEgreso ? '−' : '';
     const colorMonto = esEgreso ? 'var(--danger)' : (esAnulado ? 'var(--text-muted)' : 'var(--text)');
 
-    // Badge de cierre (si tiene)
     let cierreBadge = '';
     if (cierreId) {
       cierreBadge = `
@@ -616,7 +625,6 @@ window.renderCierresView = function() {
     </div>
   `;
 
-  // Cargar cierres desde Firestore
   db.collection('cierres')
     .orderBy('fecha_cierre', 'desc')
     .get()
@@ -680,7 +688,7 @@ window.renderCierresView = function() {
 };
 
 // ============================================================
-// VISTA: VER DETALLE DE UN CIERRE (ESTILO EJEMPLO)
+// VISTA: VER DETALLE DE UN CIERRE
 // ============================================================
 window.renderVerCierreView = function(cierreId, numeroCierre) {
   const el = $('view-caja');
@@ -701,7 +709,6 @@ window.renderVerCierreView = function(cierreId, numeroCierre) {
     <div id="cierre-detalle-contenido" style="text-align:center;padding:20px;color:var(--text-muted);">Cargando datos del cierre...</div>
   `;
 
-  // Obtener datos del cierre y sus pagos asociados
   Promise.all([
     db.collection('cierres').doc(cierreId).get(),
     db.collection('pagos').where('cierre_id', '==', cierreId).get()
@@ -716,18 +723,14 @@ window.renderVerCierreView = function(cierreId, numeroCierre) {
     const pagos = [];
     pagosSnap.forEach(doc => pagos.push({ id: doc.id, ...doc.data() }));
 
-    // --- Calcular totales ---
     const totalEfectivo = pagos.filter(p => p.metodo === 'efectivo').reduce((sum, p) => sum + (p.monto || 0), 0);
     const totalOtros = pagos.filter(p => p.metodo !== 'efectivo').reduce((sum, p) => sum + (p.monto || 0), 0);
     const totalGeneral = pagos.reduce((sum, p) => sum + (p.monto || 0), 0);
 
-    // --- Fechas ---
     const fechaCierre = cierre.fecha_cierre ? formatDateCaja(cierre.fecha_cierre) + ' ' + new Date(cierre.fecha_cierre).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—';
     const fechaInicio = cierre.periodo_inicio ? formatDateCaja(cierre.periodo_inicio) : '—';
     const fechaFin = cierre.periodo_fin ? formatDateCaja(cierre.periodo_fin) : '—';
-    const periodoTexto = cierre.periodo || '—';
 
-    // --- Diferencia ---
     const efectivoEsperado = cierre.efectivo_esperado || 0;
     const efectivoIngresado = cierre.efectivo_ingresado || 0;
     const diff = efectivoIngresado - efectivoEsperado;
@@ -735,9 +738,6 @@ window.renderVerCierreView = function(cierreId, numeroCierre) {
     const diffColor = Math.abs(diff) < 0.01 ? '#166534' : (diff > 0 ? '#92400e' : '#b91c1c');
     const diffBg = Math.abs(diff) < 0.01 ? '#f0fdf4' : (diff > 0 ? '#fffbeb' : '#fef2f2');
     const diffBorder = Math.abs(diff) < 0.01 ? '#bbf7d0' : (diff > 0 ? '#fde68a' : '#fecaca');
-    const diffText = Math.abs(diff) < 0.01 ? 'Caja exacta' : (diff > 0 ? 'Sobrante en caja' : 'Faltante en caja');
-
-    // --- Banner ---
     const bannerBg = diff > 0 ? 'linear-gradient(135deg,#92400e,#d97706)' :
                      diff < 0 ? 'linear-gradient(135deg,#991b1b,#dc2626)' :
                                 'linear-gradient(135deg,#065f46,#059669)';
@@ -745,7 +745,6 @@ window.renderVerCierreView = function(cierreId, numeroCierre) {
                         diff < 0 ? 'Faltante en caja' :
                                    'Caja exacta';
 
-    // --- Otros métodos (agrupados) ---
     const otrosMetodos = {};
     pagos.forEach(p => {
       if (p.metodo !== 'efectivo') {
@@ -755,9 +754,7 @@ window.renderVerCierreView = function(cierreId, numeroCierre) {
       }
     });
 
-    // --- Construir HTML ---
     const contenido = `
-      <!-- Hero banner con resultado del cierre -->
       <div style="background:${bannerBg};border-radius:16px;padding:28px 32px;margin-bottom:20px;color:#fff;display:flex;justify-content:space-between;align-items:center;">
         <div>
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-bottom:4px;">Diferencia de caja</div>
@@ -773,10 +770,7 @@ window.renderVerCierreView = function(cierreId, numeroCierre) {
         </div>
       </div>
 
-      <!-- Grilla de detalles -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-
-        <!-- Efectivo -->
         <div class="card" style="padding:20px;">
           <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:14px;">Efectivo</div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
@@ -792,8 +786,6 @@ window.renderVerCierreView = function(cierreId, numeroCierre) {
             <span style="font-size:20px;font-weight:800;color:${diffColor};">${diffSign}$${Number(diff).toLocaleString()}</span>
           </div>
         </div>
-
-        <!-- Otros métodos -->
         <div class="card" style="padding:20px;">
           <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-muted);margin-bottom:14px;">Otros métodos de pago</div>
           ${Object.keys(otrosMetodos).length === 0 ? '<div style="color:var(--text-muted);font-size:13px;padding:10px 0;">Sin movimientos de otros métodos en este período.</div>' : ''}
@@ -813,7 +805,6 @@ window.renderVerCierreView = function(cierreId, numeroCierre) {
         </div>
       </div>
 
-      <!-- Tabla de pagos -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
           <div>
@@ -850,7 +841,6 @@ window.renderVerCierreView = function(cierreId, numeroCierre) {
       </div>
     `;
 
-    // Actualizar subtítulo
     const cerradoPor = cierre.cerrado_por || 'Admin';
     document.getElementById('cierre-detalle-subtitle').textContent = `${fechaCierre} · ${cerradoPor}`;
 
@@ -865,13 +855,11 @@ window.renderVerCierreView = function(cierreId, numeroCierre) {
 // EXPORTAR CIERRE A PDF (ventana de impresión)
 // ============================================================
 window.exportarPdfCierre = function(cierreId, numeroCierre) {
-  // Mostrar indicador de carga
   const loading = document.createElement('div');
   loading.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;color:#fff;font-size:18px;';
   loading.innerHTML = 'Generando PDF...';
   document.body.appendChild(loading);
 
-  // Obtener datos del cierre y sus pagos
   Promise.all([
     db.collection('cierres').doc(cierreId).get(),
     db.collection('pagos').where('cierre_id', '==', cierreId).get()
@@ -888,17 +876,14 @@ window.exportarPdfCierre = function(cierreId, numeroCierre) {
     const pagos = [];
     pagosSnap.forEach(doc => pagos.push({ id: doc.id, ...doc.data() }));
 
-    // --- Calcular totales ---
     const totalEfectivo = pagos.filter(p => p.metodo === 'efectivo').reduce((sum, p) => sum + (p.monto || 0), 0);
     const totalOtros = pagos.filter(p => p.metodo !== 'efectivo').reduce((sum, p) => sum + (p.monto || 0), 0);
     const totalGeneral = pagos.reduce((sum, p) => sum + (p.monto || 0), 0);
 
-    // --- Fechas ---
     const fechaCierre = cierre.fecha_cierre ? formatDateCaja(cierre.fecha_cierre) + ' ' + new Date(cierre.fecha_cierre).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—';
     const fechaInicio = cierre.periodo_inicio ? formatDateCaja(cierre.periodo_inicio) + ' ' + new Date(cierre.periodo_inicio).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—';
     const fechaFin = cierre.periodo_fin ? formatDateCaja(cierre.periodo_fin) + ' ' + new Date(cierre.periodo_fin).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—';
 
-    // --- Diferencia ---
     const efectivoEsperado = cierre.efectivo_esperado || 0;
     const efectivoIngresado = cierre.efectivo_ingresado || 0;
     const diff = efectivoIngresado - efectivoEsperado;
@@ -906,7 +891,6 @@ window.exportarPdfCierre = function(cierreId, numeroCierre) {
     const diffClass = Math.abs(diff) < 0.01 ? 'diff-zero' : (diff > 0 ? 'diff-positive' : 'diff-negative');
     const diffText = Math.abs(diff) < 0.01 ? 'Caja exacta' : (diff > 0 ? 'Sobrante' : 'Faltante');
 
-    // --- Otros métodos (agrupados) ---
     const otrosMetodos = {};
     pagos.forEach(p => {
       if (p.metodo !== 'efectivo') {
@@ -936,12 +920,10 @@ window.exportarPdfCierre = function(cierreId, numeroCierre) {
       'otro': '#94a3b8'
     };
 
-    // --- Construir HTML del PDF ---
     const now = new Date();
     const fechaGeneracion = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
                            now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
-    // Filas de la tabla de pagos
     let payRows = '';
     if (pagos.length === 0) {
       payRows = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">No hay registros asociados a este cierre.</td></tr>`;
@@ -963,7 +945,6 @@ window.exportarPdfCierre = function(cierreId, numeroCierre) {
       });
     }
 
-    // Filas de otros métodos
     let metodosRows = '';
     if (Object.keys(otrosMetodos).length === 0) {
       metodosRows = `<tr><td colspan="2" style="text-align:center;color:#94a3b8;padding:12px;">Sin movimientos de otros métodos en este período.</td></tr>`;
@@ -1204,7 +1185,6 @@ body { font-family: 'Segoe UI', Arial, Helvetica, sans-serif; font-size: 13px; c
 </html>
     `;
 
-    // Abrir nueva ventana con el HTML
     const win = window.open('', '_blank', 'width=900,height=800');
     if (!win) {
       alert('Por favor, permite ventanas emergentes para generar el PDF.');
@@ -1242,7 +1222,6 @@ window.renderRealizarCierreView = function() {
     </form>
   `;
 
-  // Calcular totales de pagos no cerrados (solo ingresos, excluyendo egresos)
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
@@ -1275,7 +1254,6 @@ window.renderRealizarCierreView = function() {
 
       const formHtml = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
-          <!-- Efectivo -->
           <div class="card">
             <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text);">Efectivo</div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
@@ -1294,7 +1272,6 @@ window.renderRealizarCierreView = function() {
             </div>
           </div>
 
-          <!-- Otros métodos -->
           <div class="card">
             <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text);">Otros métodos de pago</div>
             ${Object.entries(otros).length === 0 ? '<div style="color:var(--text-muted);font-size:13px;">No hay pagos con otros métodos.</div>' : ''}
@@ -1321,7 +1298,6 @@ window.renderRealizarCierreView = function() {
           </div>
         </div>
 
-        <!-- Observaciones -->
         <div class="card" style="margin-bottom:20px;">
           <div class="form-group" style="margin:0;">
             <label class="form-label">Observaciones (opcional)</label>
@@ -1329,13 +1305,11 @@ window.renderRealizarCierreView = function() {
           </div>
         </div>
 
-        <!-- Acciones -->
         <div style="display:flex;gap:10px;justify-content:flex-end;">
           <a href="#" class="btn btn-secondary" onclick="renderCierresView()">Cancelar</a>
           <button type="submit" class="btn btn-primary" style="background:#16a34a;border-color:#16a34a;">Confirmar cierre de caja</button>
         </div>
 
-        <!-- Registros incluidos -->
         <div class="card" style="margin-top:24px;">
           <div style="font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text);">
             Registros que serán contemplados en este cierre
@@ -1423,7 +1397,6 @@ window.confirmarCierre = function() {
   const pagos = window._cierrePagos || [];
   const efectivoEsperado = window._cierreEfectivoEsperado || 0;
 
-  // Calcular período (fecha del primer y último pago)
   let periodoInicio = null, periodoFin = null;
   if (pagos.length > 0) {
     const fechas = pagos.map(p => new Date(p.fecha));
@@ -1662,7 +1635,6 @@ window.renderRegistrarPagoView = function() {
     </form>
   `;
 
-  // Cargar pacientes en el select
   db.collection('pacientes').orderBy('nombre').get()
     .then(snapshot => {
       const select = document.getElementById('pago-paciente');
