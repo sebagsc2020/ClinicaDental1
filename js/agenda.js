@@ -650,59 +650,74 @@ let _pacientesTel = {};
 let _pacientesEmail = {};
 let _confirmCanales = ["whatsapp","email"];
 
-// Función para cargar datos comunes una sola vez
+// Función para cargar datos comunes una sola vez (con manejo de errores por colección)
 function cargarDatosBase() {
+  // Función auxiliar para manejar errores de permisos en cada consulta
+  const safeGet = (promise) => {
+    return promise.catch((err) => {
+      console.warn('Error al cargar una colección (se ignorará):', err.message);
+      // Devolvemos un objeto vacío con los métodos necesarios para no romper el flujo
+      return { empty: true, forEach: () => {}, size: 0, exists: false };
+    });
+  };
+
   const promesas = [
-    db.collection('pacientes').get(),
-    db.collection('profesionales').get(),
-    db.collection('sucursales').get(),
-    db.collection('tratamientos').get(),
-    db.collection('coberturas').get(),
-    db.collection('configuracion').doc('notificaciones').get()
+    safeGet(db.collection('pacientes').get()),
+    safeGet(db.collection('profesionales').get()),
+    safeGet(db.collection('sucursales').get()),
+    safeGet(db.collection('tratamientos').get()),
+    safeGet(db.collection('coberturas').get()),
+    safeGet(db.collection('configuracion').doc('notificaciones').get())
   ];
 
   return Promise.all(promesas).then(([pacSnap, profSnap, sucSnap, tratSnap, coberturaSnap, notifDoc]) => {
     // Pacientes
     _pacientesData = [];
-    pacSnap.forEach(doc => _pacientesData.push({ id: doc.id, ...doc.data() }));
-    _pacientesData.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+    if (!pacSnap.empty) {
+      pacSnap.forEach(doc => _pacientesData.push({ id: doc.id, ...doc.data() }));
+      _pacientesData.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+    }
 
     // Profesionales
     _profesionalesData = [];
-    profSnap.forEach(doc => _profesionalesData.push({ id: doc.id, ...doc.data() }));
-    _profesionalesData.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+    if (!profSnap.empty) {
+      profSnap.forEach(doc => _profesionalesData.push({ id: doc.id, ...doc.data() }));
+      _profesionalesData.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+    }
 
     // Sucursales
     _sucursalesData = [];
-    sucSnap.forEach(doc => _sucursalesData.push({ id: doc.id, ...doc.data() }));
-    _sucursalesData.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+    if (!sucSnap.empty) {
+      sucSnap.forEach(doc => _sucursalesData.push({ id: doc.id, ...doc.data() }));
+      _sucursalesData.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+    }
 
     // Tratamientos
     _tratamientosData = [];
-    tratSnap.forEach(doc => _tratamientosData.push({ id: doc.id, ...doc.data() }));
-    // Ordenar por categoría y nombre
-    _tratamientosData.sort((a,b) => {
-      const catA = (a.categoria||'').toLowerCase();
-      const catB = (b.categoria||'').toLowerCase();
-      if (catA < catB) return -1;
-      if (catA > catB) return 1;
-      return (a.nombre||'').localeCompare(b.nombre||'');
-    });
+    if (!tratSnap.empty) {
+      tratSnap.forEach(doc => _tratamientosData.push({ id: doc.id, ...doc.data() }));
+      _tratamientosData.sort((a,b) => {
+        const catA = (a.categoria||'').toLowerCase();
+        const catB = (b.categoria||'').toLowerCase();
+        if (catA < catB) return -1;
+        if (catA > catB) return 1;
+        return (a.nombre||'').localeCompare(b.nombre||'');
+      });
+    }
 
-    // Coberturas: mapear por tratamiento_id y plan_id
+    // Coberturas
     _coberturasData = {};
-    coberturaSnap.forEach(doc => {
-      const data = doc.data();
-      const tratId = doc.id; // asumimos que el ID del documento es el ID del tratamiento
-      _coberturasData[tratId] = data;
-    });
+    if (!coberturaSnap.empty) {
+      coberturaSnap.forEach(doc => {
+        _coberturasData[doc.id] = doc.data();
+      });
+    }
 
-    // Horarios de profesionales
+    // Horarios de profesionales (se extraen de los profesionales cargados)
     _horariosProf = {};
-    profSnap.forEach(doc => {
-      const data = doc.data();
-      if (data.horarios) {
-        _horariosProf[doc.id] = data.horarios;
+    _profesionalesData.forEach(prof => {
+      if (prof.horarios) {
+        _horariosProf[prof.id] = prof.horarios;
       }
     });
 
@@ -710,15 +725,14 @@ function cargarDatosBase() {
     _pacientesOS = {};
     _pacientesTel = {};
     _pacientesEmail = {};
-    pacSnap.forEach(doc => {
-      const data = doc.data();
-      _pacientesOS[doc.id] = { obra_social_id: data.obra_social_id || null, plan_id: data.plan_id || 0 };
-      _pacientesTel[doc.id] = data.telefono || '';
-      _pacientesEmail[doc.id] = data.email || '';
+    _pacientesData.forEach(p => {
+      _pacientesOS[p.id] = { obra_social_id: p.obra_social_id || null, plan_id: p.plan_id || 0 };
+      _pacientesTel[p.id] = p.telefono || '';
+      _pacientesEmail[p.id] = p.email || '';
     });
 
     // Canales de confirmación
-    if (notifDoc.exists) {
+    if (notifDoc && notifDoc.exists) {
       const data = notifDoc.data();
       _confirmCanales = data.canales || ["whatsapp","email"];
     } else {
@@ -727,8 +741,8 @@ function cargarDatosBase() {
 
     console.log('✅ Datos base cargados correctamente.');
   }).catch(err => {
-    console.error('❌ Error cargando datos base:', err);
-    throw err;
+    console.error('❌ Error general en cargarDatosBase:', err);
+    // No lanzamos el error para que la aplicación continúe
   });
 }
 
@@ -927,7 +941,8 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
     cargarDatosBase().then(() => {
       llenarFormularioTurno(fecha, esUrgencia, hora);
     }).catch(err => {
-      alert('Error cargando datos: ' + err.message);
+      console.warn('Error al cargar datos base, pero se intentará llenar con datos disponibles:', err);
+      llenarFormularioTurno(fecha, esUrgencia, hora);
     });
   } else {
     // Ya están cargados, llenar directamente
