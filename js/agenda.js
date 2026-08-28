@@ -6,7 +6,7 @@
 let semanaActual = new Date();
 let filterOdontologo = 'todos';
 let filterSucursal = 'todos';
-let vistaActual = 'semana';
+let vistaActual = 'semana';  // 'dia', 'semana', 'mes', 'lista'
 const HORA_INICIO = 8;
 const PX_POR_HORA = 128;
 const SLOT_MINUTOS = 15;
@@ -30,6 +30,9 @@ const ESTADOS_LABELS = {
   'cancelado': 'Cancelado',
   'ausente': 'Ausente'
 };
+
+// Helper para getElementById
+function $(id) { return document.getElementById(id); }
 
 // Obtener el lunes de una fecha
 function obtenerLunes(fecha) {
@@ -91,20 +94,136 @@ function snapToSlot(y) {
 }
 
 // ============================================================
-// RENDER AGENDA PRINCIPAL
+// RENDER AGENDA PRINCIPAL (con soporte para vistas)
 // ============================================================
 function renderAgenda() {
   const el = $('view-agenda');
+  if (!el) return;
 
   const lunes = obtenerLunes(semanaActual);
   const fechas = getSemanaFechas(lunes);
   const hoy = new Date().toISOString().slice(0, 10);
 
+  // Determinar qué fechas mostrar según la vista
+  let fechasMostrar = fechas;
+  if (vistaActual === 'dia') {
+    // Mostrar solo el día de hoy (o el día de semanaActual)
+    const diaActual = semanaActual.toISOString().slice(0, 10);
+    fechasMostrar = [diaActual];
+  } else if (vistaActual === 'mes') {
+    // Mostrar todos los días del mes de semanaActual
+    const year = semanaActual.getFullYear();
+    const month = semanaActual.getMonth();
+    const diasEnMes = new Date(year, month + 1, 0).getDate();
+    fechasMostrar = [];
+    for (let d = 1; d <= diasEnMes; d++) {
+      const fecha = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      fechasMostrar.push(fecha);
+    }
+  } else if (vistaActual === 'lista') {
+    // Usar la semana completa para la lista
+    fechasMostrar = fechas;
+  }
+
+  // Construir encabezados según la vista
+  let headersHTML = '';
+  if (vistaActual === 'semana' || vistaActual === 'dia' || vistaActual === 'lista') {
+    // Mostrar días de la semana o un día
+    const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    fechasMostrar.forEach((f, idx) => {
+      const diaNum = new Date(f + 'T00:00:00').getDate();
+      const esHoy = f === hoy;
+      const diaSemana = diasSemana[new Date(f + 'T00:00:00').getDay()] || '';
+      headersHTML += `
+        <div data-col-idx="${idx}" style="padding:10px 8px;text-align:center;border-left:1px solid var(--border);${esHoy ? 'background:var(--accent-light,#e8f4f8);' : ''}">
+          <div style="font-size:11px;color:var(--text-muted);font-weight:500;">${diaSemana}</div>
+          <div style="font-size:20px;font-weight:800;${esHoy ? 'color:var(--primary);' : 'color:var(--text);'}line-height:1.2;">${diaNum}</div>
+          <div class="turnos-count" style="font-size:10px;color:var(--text-muted);">0 turnos</div>
+        </div>
+      `;
+    });
+  } else if (vistaActual === 'mes') {
+    // Encabezados de mes: solo números de día
+    fechasMostrar.forEach((f, idx) => {
+      const diaNum = new Date(f + 'T00:00:00').getDate();
+      const esHoy = f === hoy;
+      headersHTML += `
+        <div data-col-idx="${idx}" style="padding:10px 8px;text-align:center;border-left:1px solid var(--border);${esHoy ? 'background:var(--accent-light,#e8f4f8);' : ''}">
+          <div style="font-size:20px;font-weight:800;${esHoy ? 'color:var(--primary);' : 'color:var(--text);'}line-height:1.2;">${diaNum}</div>
+          <div class="turnos-count" style="font-size:10px;color:var(--text-muted);">0 turnos</div>
+        </div>
+      `;
+    });
+  }
+
+  // Construir cuerpo según la vista
+  let bodyHTML = '';
+  if (vistaActual === 'dia' || vistaActual === 'semana' || vistaActual === 'lista') {
+    // Vista día/semana/lista: misma estructura que antes, con columnas para cada fecha
+    // Para lista, mostramos tabla en lugar de grid
+    if (vistaActual === 'lista') {
+      bodyHTML = `<div id="lista-turnos" style="padding:16px;overflow-y:auto;max-height:600px;">Cargando turnos...</div>`;
+    } else {
+      bodyHTML = `
+        <div style="position:relative;height:1536px;">
+          ${Array.from({length:12}, (_, i) => HORA_INICIO + i).map(h => `
+            <div style="position:absolute;top:${(h - HORA_INICIO) * PX_POR_HORA}px;right:6px;font-size:10px;color:var(--text-muted);line-height:1;">${String(h).padStart(2,'0')}:00</div>
+          `).join('')}
+        </div>
+        ${fechasMostrar.map((fecha, colIdx) => `
+          <div class="cal-col"
+               data-fecha="${fecha}"
+               data-col-idx="${colIdx}"
+               style="position:relative;height:1536px;border-left:1px solid var(--border);${fecha === hoy ? 'background:#fafeff;' : ''}">
+            ${Array.from({length:24}, (_, i) => {
+              const top = i * 64;
+              if (i % 2 === 0) {
+                return `<div style="position:absolute;top:${top}px;left:0;right:0;height:64px;background:#f0f7ff;pointer-events:none;z-index:0;"></div>`;
+              }
+              return '';
+            }).join('')}
+            ${Array.from({length:13}, (_, i) => {
+              const top = i * PX_POR_HORA;
+              return `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:${i % 1 === 0 ? '1px solid #dde8f0' : '1px dashed #e8edf2'};pointer-events:none;z-index:1;"></div>`;
+            }).join('')}
+            <div class="day-create-link"
+                 data-fecha="${fecha}"
+                 data-odontologo="0"
+                 style="position:absolute;inset:0;z-index:2;cursor:pointer;"
+                 title="Crear turno">
+            </div>
+            <div class="turnos-container" style="position:absolute;inset:0;z-index:3;pointer-events:none;"></div>
+          </div>
+        `).join('')}
+      `;
+    }
+  } else if (vistaActual === 'mes') {
+    // Vista mes: grid de días con turnos (sin horas)
+    bodyHTML = `
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:16px;">
+        ${fechasMostrar.map((fecha) => {
+          const diaNum = new Date(fecha + 'T00:00:00').getDate();
+          const esHoy = fecha === hoy;
+          return `<div class="dia-mes" data-fecha="${fecha}" style="padding:8px;border:1px solid var(--border);border-radius:6px;min-height:60px;${esHoy ? 'background:var(--accent-light);' : ''}">
+            <div style="font-weight:700;font-size:14px;${esHoy ? 'color:var(--primary);' : ''}">${diaNum}</div>
+            <div class="turnos-container-mes" style="font-size:11px;color:var(--text-muted);margin-top:4px;"></div>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // Construir HTML completo de la agenda
   el.innerHTML = `
     <div class="page-header" style="margin-bottom:0;">
       <div>
         <div class="page-title">Agenda</div>
-        <div class="page-subtitle">Semana del ${fechas[0].split('-').reverse().join('/')} al ${fechas[6].split('-').reverse().join('/')}</div>
+        <div class="page-subtitle">
+          ${vistaActual === 'dia' ? `Día ${new Date(semanaActual).toLocaleDateString()}` :
+            vistaActual === 'mes' ? `Mes de ${new Date(semanaActual).toLocaleString('es', {month:'long', year:'numeric'})}` :
+            vistaActual === 'lista' ? 'Lista de turnos' :
+            `Semana del ${fechas[0].split('-').reverse().join('/')} al ${fechas[6].split('-').reverse().join('/')}`}
+        </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <div style="display:flex;gap:6px;align-items:center;">
@@ -117,10 +236,10 @@ function renderAgenda() {
         </div>
         <button onclick="openModalBloqueo()" class="btn btn-secondary btn-sm">🔒 Bloquear</button>
         <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-          <button class="btn btn-sm btn-secondary" style="border-radius:0;border:none;" onclick="cambiarVista('dia')">Día</button>
-          <span class="btn btn-sm" style="border-radius:0;background:var(--primary);color:#fff;cursor:default;border:none;border-left:1px solid var(--border);">Semana</span>
-          <button class="btn btn-sm btn-secondary" style="border-radius:0;border:none;border-left:1px solid var(--border);" onclick="cambiarVista('mes')">Mes</button>
-          <button class="btn btn-sm btn-secondary" style="border-radius:0;border:none;border-left:1px solid var(--border);" onclick="cambiarVista('lista')">Lista</button>
+          <button class="btn btn-sm ${vistaActual === 'dia' ? 'btn-primary' : 'btn-secondary'}" style="border-radius:0;border:none;" onclick="cambiarVista('dia')">Día</button>
+          <button class="btn btn-sm ${vistaActual === 'semana' ? 'btn-primary' : 'btn-secondary'}" style="border-radius:0;border:none;border-left:1px solid var(--border);" onclick="cambiarVista('semana')">Semana</button>
+          <button class="btn btn-sm ${vistaActual === 'mes' ? 'btn-primary' : 'btn-secondary'}" style="border-radius:0;border:none;border-left:1px solid var(--border);" onclick="cambiarVista('mes')">Mes</button>
+          <button class="btn btn-sm ${vistaActual === 'lista' ? 'btn-primary' : 'btn-secondary'}" style="border-radius:0;border:none;border-left:1px solid var(--border);" onclick="cambiarVista('lista')">Lista</button>
         </div>
         <a href="#" class="btn btn-primary btn-sm" onclick="openModalNuevoTurnoAgenda('${hoy}')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -146,52 +265,20 @@ function renderAgenda() {
     </div>
 
     <div id="cal-wrap" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-      <div id="cal-headers" style="display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:2px solid var(--border);">
-        <div></div>
-        ${fechas.map((f, idx) => {
-          const diaNum = new Date(f + 'T00:00:00').getDate();
-          const esHoy = f === hoy;
-          const diaSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][idx];
-          return `
-            <div data-col-idx="${idx}" style="padding:10px 8px;text-align:center;border-left:1px solid var(--border);${esHoy ? 'background:var(--accent-light,#e8f4f8);' : ''}">
-              <div style="font-size:11px;color:var(--text-muted);font-weight:500;">${diaSemana}</div>
-              <div style="font-size:20px;font-weight:800;${esHoy ? 'color:var(--primary);' : 'color:var(--text);'}line-height:1.2;">${diaNum}</div>
-              <div class="turnos-count" style="font-size:10px;color:var(--text-muted);">0 turnos</div>
-            </div>
-          `;
-        }).join('')}
+      <div id="cal-headers" style="display:grid;grid-template-columns:${vistaActual === 'lista' ? '1fr' : '52px repeat('+fechasMostrar.length+',1fr)'};border-bottom:2px solid var(--border);">
+        ${vistaActual === 'lista' ? '<div style="padding:10px;font-weight:700;">Turnos</div>' : `<div></div>${headersHTML}`}
       </div>
-      <div id="cal-body" style="display:grid;grid-template-columns:52px repeat(7,1fr);overflow-y:auto;max-height:1556px;">
-        <div style="position:relative;height:1536px;">
-          ${Array.from({length:12}, (_, i) => HORA_INICIO + i).map(h => `
-            <div style="position:absolute;top:${(h - HORA_INICIO) * PX_POR_HORA}px;right:6px;font-size:10px;color:var(--text-muted);line-height:1;">${String(h).padStart(2,'0')}:00</div>
-          `).join('')}
-        </div>
-        ${fechas.map((fecha, colIdx) => `
-          <div class="cal-col"
-               data-fecha="${fecha}"
-               data-col-idx="${colIdx}"
-               style="position:relative;height:1536px;border-left:1px solid var(--border);${fecha === hoy ? 'background:#fafeff;' : ''}">
-            ${Array.from({length:24}, (_, i) => {
-              const top = i * 64;
-              if (i % 2 === 0) {
-                return `<div style="position:absolute;top:${top}px;left:0;right:0;height:64px;background:#f0f7ff;pointer-events:none;z-index:0;"></div>`;
-              }
-              return '';
-            }).join('')}
-            ${Array.from({length:13}, (_, i) => {
-              const top = i * PX_POR_HORA;
-              return `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:${i % 1 === 0 ? '1px solid #dde8f0' : '1px dashed #e8edf2'};pointer-events:none;z-index:1;"></div>`;
-            }).join('')}
-            <div class="day-create-link"
-                 data-fecha="${fecha}"
-                 data-odontologo="0"
-                 style="position:absolute;inset:0;z-index:2;cursor:pointer;"
-                 title="Crear turno">
+      <div id="cal-body" style="display:grid;grid-template-columns:${vistaActual === 'lista' ? '1fr' : '52px repeat('+fechasMostrar.length+',1fr)'};overflow-y:auto;max-height:1556px;">
+        ${vistaActual === 'lista' ? `
+          <div id="lista-turnos-container" style="padding:16px;">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Fecha</th><th>Hora</th><th>Paciente</th><th>Profesional</th><th>Estado</th><th></th></tr></thead>
+                <tbody id="lista-turnos-tbody"></tbody>
+              </table>
             </div>
-            <div class="turnos-container" style="position:absolute;inset:0;z-index:3;pointer-events:none;"></div>
           </div>
-        `).join('')}
+        ` : bodyHTML}
       </div>
     </div>
 
@@ -213,9 +300,10 @@ function renderAgenda() {
     </div>
   `;
 
-  // Cargar profesionales en el filtro
+  // Cargar profesionales y sucursales en filtros
   db.collection('profesionales').orderBy('nombre').get().then(snap => {
     const select = $('filtro-odontologo-agenda');
+    if (!select) return;
     snap.forEach(doc => {
       const data = doc.data();
       const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
@@ -225,26 +313,36 @@ function renderAgenda() {
 
   db.collection('sucursales').orderBy('nombre').get().then(snap => {
     const select = $('filtro-sucursal-agenda');
+    if (!select) return;
     snap.forEach(doc => {
       const data = doc.data();
       select.innerHTML += `<option value="${doc.id}">${data.nombre || 'Sin nombre'}</option>`;
     });
   });
 
-  cargarTurnosSemana(fechas);
+  // Cargar turnos según la vista
+  if (vistaActual === 'lista') {
+    cargarTurnosLista(fechas);
+  } else if (vistaActual === 'mes') {
+    cargarTurnosMes(fechasMostrar);
+  } else {
+    cargarTurnosSemana(fechasMostrar);
+  }
 }
 
 // ============================================================
-// CARGAR TURNOS DESDE FIRESTORE
+// CARGAR TURNOS (semana, día, mes, lista)
 // ============================================================
 function cargarTurnosSemana(fechas) {
+  if (!fechas || fechas.length === 0) return;
   const fechaInicio = fechas[0];
-  const fechaFin = fechas[6];
+  const fechaFin = fechas[fechas.length - 1];
 
   db.collection('turnos')
     .where('fecha', '>=', fechaInicio)
     .where('fecha', '<=', fechaFin)
     .onSnapshot((snapshot) => {
+      // Limpiar contenedores
       document.querySelectorAll('.turnos-container').forEach(container => {
         container.innerHTML = '';
       });
@@ -268,7 +366,8 @@ function cargarTurnosSemana(fechas) {
         const container = document.querySelector(`.cal-col[data-fecha="${fecha}"] .turnos-container`);
         if (!container) return;
 
-        const header = document.querySelector(`[data-col-idx="${fechas.indexOf(fecha)}"] .turnos-count`);
+        const idx = fechas.indexOf(fecha);
+        const header = document.querySelector(`[data-col-idx="${idx}"] .turnos-count`);
         if (header) header.textContent = `${turnos.length} ${turnos.length === 1 ? 'turno' : 'turnos'}`;
 
         turnos.sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
@@ -388,6 +487,64 @@ function cargarTurnosSemana(fechas) {
     });
 }
 
+// Cargar turnos para vista de lista
+function cargarTurnosLista(fechas) {
+  if (!fechas || fechas.length === 0) return;
+  const fechaInicio = fechas[0];
+  const fechaFin = fechas[fechas.length - 1];
+
+  db.collection('turnos')
+    .where('fecha', '>=', fechaInicio)
+    .where('fecha', '<=', fechaFin)
+    .onSnapshot((snapshot) => {
+      const tbody = $('lista-turnos-tbody');
+      if (!tbody) return;
+      let html = '';
+      snapshot.forEach(doc => {
+        const t = doc.data();
+        const estado = t.estado || 'pendiente';
+        const color = ESTADOS_COLORS[estado] || '#6cd9f4';
+        html += `
+          <tr>
+            <td>${formatearFecha(t.fecha)}</td>
+            <td>${t.hora || ''}</td>
+            <td>${t.paciente || ''}</td>
+            <td>${t.odontologo || ''}</td>
+            <td><span style="background:${color};color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;">${ESTADOS_LABELS[estado] || estado}</span></td>
+            <td><button class="btn btn-secondary btn-sm" onclick="alert('Editar turno ${doc.id}')">Editar</button></td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">No hay turnos en este período.</td></tr>';
+    });
+}
+
+// Cargar turnos para vista de mes
+function cargarTurnosMes(fechas) {
+  if (!fechas || fechas.length === 0) return;
+  const fechaInicio = fechas[0];
+  const fechaFin = fechas[fechas.length - 1];
+
+  db.collection('turnos')
+    .where('fecha', '>=', fechaInicio)
+    .where('fecha', '<=', fechaFin)
+    .onSnapshot((snapshot) => {
+      document.querySelectorAll('.turnos-container-mes').forEach(el => el.innerHTML = '');
+      const turnosPorFecha = {};
+      fechas.forEach(f => turnosPorFecha[f] = []);
+      snapshot.forEach(doc => {
+        const t = doc.data();
+        if (turnosPorFecha[t.fecha]) turnosPorFecha[t.fecha].push(t);
+      });
+      fechas.forEach(fecha => {
+        const container = document.querySelector(`.dia-mes[data-fecha="${fecha}"] .turnos-container-mes`);
+        if (!container) return;
+        const turnos = turnosPorFecha[fecha] || [];
+        container.innerHTML = turnos.map(t => `<div>${t.hora || ''} ${t.paciente || ''}</div>`).join('');
+      });
+    });
+}
+
 // ============================================================
 // POPUP DE TURNO (básico)
 // ============================================================
@@ -463,11 +620,15 @@ function moverTurno(turnoId, fecha, hora) {
 }
 
 // ============================================================
-// NAVEGACIÓN DE SEMANA
+// NAVEGACIÓN DE SEMANA / DÍA / MES
 // ============================================================
 window.cambiarSemana = function(direccion) {
   if (direccion === 0) {
-    semanaActual = obtenerLunes(new Date());
+    semanaActual = new Date();
+  } else if (vistaActual === 'dia') {
+    semanaActual.setDate(semanaActual.getDate() + direccion);
+  } else if (vistaActual === 'mes') {
+    semanaActual.setMonth(semanaActual.getMonth() + direccion);
   } else {
     semanaActual.setDate(semanaActual.getDate() + direccion * 7);
   }
@@ -487,7 +648,7 @@ window.cambiarVista = function(vista) {
 };
 
 // ============================================================
-// MODAL: NUEVO TURNO (con diseño completo del HTML)
+// MODAL: NUEVO TURNO (con diseño completo del HTML y validación de domingos)
 // ============================================================
 // Variables globales para el formulario del modal
 let _currentPlanId = 0;
@@ -497,7 +658,7 @@ const _DIAS_LARGO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes',
 const _MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const _DUR_PRESETS = [15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240];
 
-// Datos de ejemplo (simulados, se cargarán desde Firestore realmente)
+// Datos de coberturas, horarios, etc.
 let HORARIOS_PROF = {};
 let PACIENTES_OS = {};
 let COBERTURAS = {};
@@ -505,7 +666,7 @@ let PACIENTES_TEL = {};
 let PACIENTES_EMAIL = {};
 let CONFIRM_CANALES = ["whatsapp","email"];
 
-// Cargar datos de coberturas, horarios, etc. desde Firestore al abrir el modal
+// Cargar datos para el modal
 function cargarDatosParaModal() {
   return Promise.all([
     db.collection('profesionales').get().then(snap => {
@@ -532,7 +693,7 @@ function cargarDatosParaModal() {
       COBERTURAS = {};
       snap.forEach(doc => {
         const data = doc.data();
-        COBERTURAS[doc.id] = data; // { tratamiento_id: { plan_id: porcentaje } }
+        COBERTURAS[doc.id] = data;
       });
     }),
     db.collection('configuracion').doc('notificaciones').get().then(doc => {
@@ -544,297 +705,336 @@ function cargarDatosParaModal() {
 }
 
 window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '09:00') {
-  // Cargar datos antes de mostrar el modal
+  // Cargar datos
   cargarDatosParaModal().then(() => {
-    // Obtener listas para selects
+    // Construir selects
     let pacientesHTML = '<option value="">— Seleccionar paciente —</option>';
     let profesionalesHTML = '<option value="">— Seleccionar profesional —</option>';
     let sucursalesHTML = '<option value="">— Seleccionar sucursal —</option>';
 
-    // Cargar pacientes, profesionales y sucursales desde Firestore (ya están en caché)
-    db.collection('pacientes').orderBy('nombre').get().then(snap => {
-      snap.forEach(doc => {
-        const data = doc.data();
-        const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
-        pacientesHTML += `<option value="${doc.id}">${nombre}</option>`;
-      });
-      document.getElementById('f-turno-paciente').innerHTML = pacientesHTML;
-    });
-
-    db.collection('profesionales').orderBy('nombre').get().then(snap => {
-      snap.forEach(doc => {
-        const data = doc.data();
-        const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
-        const especialidad = data.especialidad || '';
-        profesionalesHTML += `<option value="${doc.id}">${nombre} ${especialidad ? '· ' + especialidad : ''}</option>`;
-      });
-      document.getElementById('f-turno-profesional').innerHTML = profesionalesHTML;
-    });
-
-    db.collection('sucursales').orderBy('nombre').get().then(snap => {
-      snap.forEach(doc => {
-        const data = doc.data();
-        sucursalesHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`;
-      });
-      document.getElementById('f-turno-sucursal').innerHTML = sucursalesHTML;
-    });
-
-    // Obtener lista de tratamientos para mostrar en el modal
-    let tratamientosHTML = '';
-    db.collection('tratamientos').orderBy('categoria').orderBy('nombre').get().then(snap => {
-      let grupos = {};
-      snap.forEach(doc => {
-        const data = doc.data();
-        const cat = data.categoria || 'sin-categoria';
-        if (!grupos[cat]) grupos[cat] = [];
-        grupos[cat].push({ id: doc.id, ...data });
-      });
-
-      // Construir HTML de tratamientos agrupados
-      let gruposHTML = '';
-      Object.keys(grupos).sort().forEach(cat => {
-        const items = grupos[cat];
-        gruposHTML += `<div class="trt-grupo" data-cat="${cat}">
-          <div style="padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);background:var(--bg);position:sticky;top:0">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>`;
-        items.forEach(trat => {
-          const precio = trat.precio_base || 0;
-          gruposHTML += `
-            <label class="trt-item" data-nombre="${(trat.nombre || '').toLowerCase()}"
-                   style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-top:1px solid var(--border)"
-                   onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
-              <input type="checkbox" name="tratamientos_realizados_ids[]" value="${trat.id}"
-                     data-precio="${precio}"
-                     data-trat-id="${trat.id}"
-                     onchange="recalcPrecio()"
-                     style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0">
-              <div style="flex:1;min-width:0">
-                <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${trat.nombre || ''}</div>
-                <div class="os-split-label" style="display:none;font-size:11px;color:var(--text-muted);margin-top:1px"></div>
-              </div>
-              <div style="text-align:right;flex-shrink:0">
-                <div style="font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap">$${precio.toLocaleString()}</div>
-                <div class="os-pct-badge" style="display:none;font-size:10px;font-weight:700;color:#0891b2;white-space:nowrap"></div>
-              </div>
-            </label>`;
+    // Obtener pacientes, profesionales y sucursales (Firestore)
+    const promesas = [
+      db.collection('pacientes').orderBy('nombre').get().then(snap => {
+        snap.forEach(doc => {
+          const data = doc.data();
+          const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
+          pacientesHTML += `<option value="${doc.id}">${nombre}</option>`;
         });
-        gruposHTML += `</div>`;
-      });
-      tratamientosHTML = gruposHTML;
-      document.getElementById('trt-lista').innerHTML = tratamientosHTML;
-      // Inicializar recálculo
-      recalcPrecio();
-    });
+        const sel = $('f-turno-paciente');
+        if (sel) sel.innerHTML = pacientesHTML;
+      }),
+      db.collection('profesionales').orderBy('nombre').get().then(snap => {
+        snap.forEach(doc => {
+          const data = doc.data();
+          const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
+          const especialidad = data.especialidad || '';
+          profesionalesHTML += `<option value="${doc.id}">${nombre} ${especialidad ? '· ' + especialidad : ''}</option>`;
+        });
+        const sel = $('f-turno-profesional');
+        if (sel) sel.innerHTML = profesionalesHTML;
+      }),
+      db.collection('sucursales').orderBy('nombre').get().then(snap => {
+        snap.forEach(doc => {
+          const data = doc.data();
+          sucursalesHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`;
+        });
+        const sel = $('f-turno-sucursal');
+        if (sel) sel.innerHTML = sucursalesHTML;
+      })
+    ];
 
-    // Construir el HTML del modal
-    const modalHTML = `
-      <div style="max-height:80vh;overflow-y:auto;padding-right:4px;">
-        <div class="modal-title">${esUrgencia ? '⚡ Nuevo turno de urgencia' : '📋 Nuevo turno'}</div>
+    Promise.all(promesas).then(() => {
+      // Construir HTML del modal
+      const modalHTML = `
+        <div style="max-height:80vh;overflow-y:auto;padding-right:4px;">
+          <div class="modal-title">${esUrgencia ? '⚡ Nuevo turno de urgencia' : '📋 Nuevo turno'}</div>
 
-        <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;margin-top:8px;">
+          <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;margin-top:8px;">
 
-          <!-- Columna principal -->
-          <div style="display:flex;flex-direction:column;gap:16px;">
+            <!-- Columna principal -->
+            <div style="display:flex;flex-direction:column;gap:16px;">
 
-            <!-- Paciente y profesional -->
-            <div class="card">
-              <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Paciente y profesional</div>
-              <div class="form-grid">
-                <div class="form-group" style="grid-column:1/-1">
-                  <label class="form-label">Paciente *</label>
-                  <select id="f-turno-paciente" class="form-control" required onchange="onPacienteChange()">
-                    <option value="">— Seleccionar paciente —</option>
-                  </select>
-                </div>
-                <div class="form-group" style="grid-column:1/-1">
-                  <label class="form-label">Profesional *</label>
-                  <select id="f-turno-profesional" class="form-control" required>
-                    <option value="">— Seleccionar profesional —</option>
-                  </select>
-                </div>
-                <div class="form-group" style="grid-column:1/-1">
-                  <label class="form-label">Sucursal *</label>
-                  <select id="f-turno-sucursal" class="form-control" required>
-                    <option value="">— Seleccionar sucursal —</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Fecha, hora y urgencia -->
-            <div class="card">
-              <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Fecha y horario</div>
-              <div class="form-grid">
-                <div class="form-group">
-                  <label class="form-label">Fecha *</label>
-                  <input type="date" id="f-turno-fecha" class="form-control" value="${fecha}" required>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Hora de inicio *</label>
-                  <input type="time" id="f-turno-hora" class="form-control" step="900" value="${hora}" required>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Duración *</label>
-                  <div style="display:flex;align-items:center;gap:6px">
-                    <select id="dur-select" class="form-control" style="width:130px" onchange="durSelectChange(this.value)">
-                      ${[15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240].map(m => `<option value="${m}" ${m===30?'selected':''}>${m} min</option>`).join('')}
-                      <option value="custom">Personalizado…</option>
+              <!-- Paciente y profesional -->
+              <div class="card">
+                <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Paciente y profesional</div>
+                <div class="form-grid">
+                  <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">Paciente *</label>
+                    <select id="f-turno-paciente" class="form-control" required onchange="onPacienteChange()">
+                      <option value="">— Seleccionar paciente —</option>
                     </select>
-                    <input type="number" id="dur-input" min="15" step="1" value="30" class="form-control" style="width:72px" oninput="durInputChange(this.value)">
-                    <span style="font-size:13px;color:var(--text-muted);white-space:nowrap">min</span>
                   </div>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Estado</label>
-                  <select id="f-turno-estado" class="form-control">
-                    <option value="pendiente" ${esUrgencia ? '' : 'selected'}>Pendiente</option>
-                    <option value="confirmado" ${esUrgencia ? 'selected' : ''}>Confirmado</option>
-                    <option value="en_recepcion">En recepción</option>
-                    <option value="en_atencion">En atención</option>
-                    <option value="finalizado">Finalizado</option>
-                    <option value="cancelado">Cancelado</option>
-                    <option value="ausente">Ausente</option>
-                  </select>
+                  <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">Profesional *</label>
+                    <select id="f-turno-profesional" class="form-control" required>
+                      <option value="">— Seleccionar profesional —</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">Sucursal *</label>
+                    <select id="f-turno-sucursal" class="form-control" required>
+                      <option value="">— Seleccionar sucursal —</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <!-- Urgencia/Sobreturno -->
-              <div style="margin-top:14px;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border)">
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
-                  <input type="checkbox" id="f-turno-urgencia" value="1" ${esUrgencia ? 'checked' : ''} onchange="toggleUrgencia(this)" style="width:16px;height:16px;cursor:pointer">
+              <!-- Fecha, hora y urgencia -->
+              <div class="card">
+                <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Fecha y horario</div>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label">Fecha *</label>
+                    <input type="date" id="f-turno-fecha" class="form-control" value="${fecha}" required>
+                    <div id="fecha-warning" style="color:#b91c1c;font-size:11px;margin-top:4px;display:none;">Los domingos no están disponibles para turnos.</div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Hora de inicio *</label>
+                    <input type="time" id="f-turno-hora" class="form-control" step="900" value="${hora}" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Duración *</label>
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <select id="dur-select" class="form-control" style="width:130px" onchange="durSelectChange(this.value)">
+                        ${[15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240].map(m => `<option value="${m}" ${m===30?'selected':''}>${m} min</option>`).join('')}
+                        <option value="custom">Personalizado…</option>
+                      </select>
+                      <input type="number" id="dur-input" min="15" step="1" value="30" class="form-control" style="width:72px" oninput="durInputChange(this.value)">
+                      <span style="font-size:13px;color:var(--text-muted);white-space:nowrap">min</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Estado</label>
+                    <select id="f-turno-estado" class="form-control">
+                      <option value="pendiente" ${esUrgencia ? '' : 'selected'}>Pendiente</option>
+                      <option value="confirmado" ${esUrgencia ? 'selected' : ''}>Confirmado</option>
+                      <option value="en_recepcion">En recepción</option>
+                      <option value="en_atencion">En atención</option>
+                      <option value="finalizado">Finalizado</option>
+                      <option value="cancelado">Cancelado</option>
+                      <option value="ausente">Ausente</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Urgencia/Sobreturno -->
+                <div style="margin-top:14px;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border)">
+                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                    <input type="checkbox" id="f-turno-urgencia" value="1" ${esUrgencia ? 'checked' : ''} onchange="toggleUrgencia(this)" style="width:16px;height:16px;cursor:pointer">
+                    <div>
+                      <div style="font-weight:700;font-size:13px;color:var(--text)">⚡ Urgencia / Sobreturno</div>
+                      <div style="font-size:12px;color:var(--text-muted)">Permite asignar el turno aunque el profesional esté ocupado. Se muestra en rojo en la agenda.</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Clínico -->
+              <div class="card">
+                <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Clínico</div>
+                <div style="display:flex;flex-direction:column;gap:14px">
+                  <div class="form-group">
+                    <label class="form-label">Motivo de consulta</label>
+                    <textarea id="f-turno-motivo" class="form-control" rows="2"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Columna lateral -->
+            <div style="display:flex;flex-direction:column;gap:16px;">
+
+              <!-- Botones -->
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button type="button" class="btn btn-primary btn-block" id="btn-crear-turno" onclick="mostrarConfirmCrear()">Crear turno</button>
+                <button type="button" class="btn btn-secondary btn-block" onclick="closeModal()">Cancelar</button>
+              </div>
+
+              <!-- Tratamientos realizados -->
+              <div class="card">
+                <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Tratamientos realizados</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Marcá los realizados durante este turno — se usarán al registrar el pago en Caja</div>
+
+                <div id="os-banner" style="display:none;margin-bottom:10px;padding:8px 12px;background:#e0f2fe;border-radius:8px;font-size:12px;color:#0369a1">
+                  <strong id="os-banner-nombre"></strong> — se muestra la cobertura por tratamiento
+                </div>
+
+                <input type="text" id="trt-buscar" class="form-control" placeholder="Buscar tratamiento…" style="margin-bottom:8px;font-size:13px" oninput="filtrarTrts(this.value)">
+
+                <div id="trt-lista" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+                  <!-- Se llena dinámicamente -->
+                </div>
+
+                <input type="hidden" id="inp-total-paciente" value="">
+                <input type="hidden" id="inp-total-obra-social" value="">
+
+                <div id="trt-subtotal" style="display:none;margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:12px;color:var(--text-muted)"><span id="trt-count">0</span> tratamiento(s)</span>
+                    <span style="font-size:14px;font-weight:700;color:var(--primary)">$<span id="trt-total-val">0</span></span>
+                  </div>
+                  <div id="os-totales" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">
+                    <div style="display:flex;justify-content:space-between;font-size:12px">
+                      <span style="color:var(--text-muted)">Tratamientos paciente:</span>
+                      <span style="font-weight:700;color:#15803d">$<span id="trt-paciente-val">0</span></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px">
+                      <span style="color:var(--text-muted)">Cubre obra social:</span>
+                      <span style="font-weight:700;color:#0891b2">$<span id="trt-os-val">0</span></span>
+                    </div>
+                  </div>
+                  <div id="coseguro-row" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">
+                    <div style="display:flex;justify-content:space-between;font-size:12px">
+                      <span style="color:var(--text-muted)">Coseguro:</span>
+                      <span style="font-weight:700;color:#f59e0b">$<span id="trt-coseguro-val">0</span></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px;padding-top:4px;border-top:1px solid var(--border)">
+                      <span style="font-weight:600;color:var(--text)">Paciente paga total:</span>
+                      <span style="font-weight:700;color:#15803d">$<span id="trt-paciente-total-val">0</span></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Coseguro -->
+                <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg)">
                   <div>
-                    <div style="font-weight:700;font-size:13px;color:var(--text)">⚡ Urgencia / Sobreturno</div>
-                    <div style="font-size:12px;color:var(--text-muted)">Permite asignar el turno aunque el profesional esté ocupado. Se muestra en rojo en la agenda.</div>
+                    <div style="font-size:12px;font-weight:600;color:var(--text)">Coseguro</div>
+                    <div style="font-size:11px;color:var(--text-muted)">Pago adicional del paciente (opcional)</div>
                   </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Clínico -->
-            <div class="card">
-              <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Clínico</div>
-              <div style="display:flex;flex-direction:column;gap:14px">
-                <div class="form-group">
-                  <label class="form-label">Motivo de consulta</label>
-                  <textarea id="f-turno-motivo" class="form-control" rows="2"></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Columna lateral -->
-          <div style="display:flex;flex-direction:column;gap:16px;">
-
-            <!-- Botones -->
-            <div style="display:flex;flex-direction:column;gap:8px">
-              <button type="button" class="btn btn-primary btn-block" onclick="mostrarConfirmCrear()">Crear turno</button>
-              <button type="button" class="btn btn-secondary btn-block" onclick="closeModal()">Cancelar</button>
-            </div>
-
-            <!-- Tratamientos realizados -->
-            <div class="card">
-              <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Tratamientos realizados</div>
-              <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Marcá los realizados durante este turno — se usarán al registrar el pago en Caja</div>
-
-              <div id="os-banner" style="display:none;margin-bottom:10px;padding:8px 12px;background:#e0f2fe;border-radius:8px;font-size:12px;color:#0369a1">
-                <strong id="os-banner-nombre"></strong> — se muestra la cobertura por tratamiento
-              </div>
-
-              <input type="text" id="trt-buscar" class="form-control" placeholder="Buscar tratamiento…" style="margin-bottom:8px;font-size:13px" oninput="filtrarTrts(this.value)">
-
-              <div id="trt-lista" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
-                <!-- Se llena dinámicamente -->
-              </div>
-
-              <input type="hidden" id="inp-total-paciente" value="">
-              <input type="hidden" id="inp-total-obra-social" value="">
-
-              <div id="trt-subtotal" style="display:none;margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                  <span style="font-size:12px;color:var(--text-muted)"><span id="trt-count">0</span> tratamiento(s)</span>
-                  <span style="font-size:14px;font-weight:700;color:var(--primary)">$<span id="trt-total-val">0</span></span>
-                </div>
-                <div id="os-totales" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">
-                  <div style="display:flex;justify-content:space-between;font-size:12px">
-                    <span style="color:var(--text-muted)">Tratamientos paciente:</span>
-                    <span style="font-weight:700;color:#15803d">$<span id="trt-paciente-val">0</span></span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px">
-                    <span style="color:var(--text-muted)">Cubre obra social:</span>
-                    <span style="font-weight:700;color:#0891b2">$<span id="trt-os-val">0</span></span>
+                  <div style="display:flex;align-items:center;gap:4px">
+                    <span style="font-size:13px;color:var(--text-muted);font-weight:600">$</span>
+                    <input type="number" id="coseguro-input" min="0" step="0.01" value="" oninput="recalcPrecio()" style="width:90px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px;text-align:right" placeholder="0.00">
                   </div>
                 </div>
-                <div id="coseguro-row" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">
-                  <div style="display:flex;justify-content:space-between;font-size:12px">
-                    <span style="color:var(--text-muted)">Coseguro:</span>
-                    <span style="font-weight:700;color:#f59e0b">$<span id="trt-coseguro-val">0</span></span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:2px;padding-top:4px;border-top:1px solid var(--border)">
-                    <span style="font-weight:600;color:var(--text)">Paciente paga total:</span>
-                    <span style="font-weight:700;color:#15803d">$<span id="trt-paciente-total-val">0</span></span>
-                  </div>
-                </div>
-              </div>
 
-              <!-- Coseguro -->
-              <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg)">
-                <div>
-                  <div style="font-size:12px;font-weight:600;color:var(--text)">Coseguro</div>
-                  <div style="font-size:11px;color:var(--text-muted)">Pago adicional del paciente (opcional)</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:4px">
-                  <span style="font-size:13px;color:var(--text-muted);font-weight:600">$</span>
-                  <input type="number" id="coseguro-input" min="0" step="0.01" value="" oninput="recalcPrecio()" style="width:90px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px;text-align:right" placeholder="0.00">
-                </div>
+                <button type="button" id="btn-pago-caja" onclick="guardarYPagar()" class="btn btn-block" disabled style="margin-top:12px;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;opacity:.45;cursor:not-allowed">
+                  💰 Guardar y Registrar pago en Caja
+                </button>
               </div>
-
-              <button type="button" id="btn-pago-caja" onclick="guardarYPagar()" class="btn btn-block" disabled style="margin-top:12px;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;opacity:.45;cursor:not-allowed">
-                💰 Guardar y Registrar pago en Caja
-              </button>
             </div>
           </div>
         </div>
-      </div>
-    `;
+      `;
 
-    // Abrir el modal con el HTML
-    openModal(modalHTML);
+      // Abrir el modal
+      openModal(modalHTML);
 
-    // Inicializar eventos y recálculo después de que el modal esté en el DOM
-    setTimeout(() => {
-      // Forzar la carga de los selects (ya se hizo arriba con get().then)
-      // Vincular evento change del paciente
-      const selPac = document.getElementById('f-turno-paciente');
-      if (selPac) selPac.addEventListener('change', onPacienteChange);
-      onPacienteChange(); // inicializar
+      // Después de abrir, cargar tratamientos y configurar validaciones
+      setTimeout(() => {
+        // Cargar tratamientos
+        cargarTratamientosEnModal();
 
-      // Si es urgencia, marcar el checkbox y ajustar estilo
-      if (esUrgencia) {
-        const cb = document.getElementById('f-turno-urgencia');
-        if (cb) toggleUrgencia(cb);
-      }
+        // Validación de domingos en el input fecha
+        const fechaInput = $('f-turno-fecha');
+        const fechaWarning = $('fecha-warning');
+        const btnCrear = $('btn-crear-turno');
 
-      // Trigger recálculo inicial
-      recalcPrecio();
-    }, 100);
+        function validarDomingo() {
+          if (!fechaInput) return;
+          const val = fechaInput.value;
+          if (val) {
+            const d = new Date(val + 'T00:00:00');
+            const esDomingo = d.getDay() === 0;
+            if (esDomingo) {
+              fechaWarning.style.display = 'block';
+              btnCrear.disabled = true;
+              btnCrear.style.opacity = '0.5';
+              btnCrear.style.cursor = 'not-allowed';
+            } else {
+              fechaWarning.style.display = 'none';
+              btnCrear.disabled = false;
+              btnCrear.style.opacity = '1';
+              btnCrear.style.cursor = '';
+            }
+          }
+        }
+
+        fechaInput.addEventListener('change', validarDomingo);
+        fechaInput.addEventListener('input', validarDomingo);
+        validarDomingo();
+
+        // Vincular evento change del paciente
+        const selPac = $('f-turno-paciente');
+        if (selPac) selPac.addEventListener('change', onPacienteChange);
+        onPacienteChange();
+
+        // Si es urgencia, marcar el checkbox y ajustar estilo
+        if (esUrgencia) {
+          const cb = $('f-turno-urgencia');
+          if (cb) toggleUrgencia(cb);
+        }
+
+        // Inicializar recálculo
+        recalcPrecio();
+      }, 200);
+    });
   });
 };
+
+// Cargar tratamientos en el modal
+function cargarTratamientosEnModal() {
+  const lista = $('trt-lista');
+  if (!lista) return;
+  db.collection('tratamientos').orderBy('categoria').orderBy('nombre').get().then(snap => {
+    let grupos = {};
+    snap.forEach(doc => {
+      const data = doc.data();
+      const cat = data.categoria || 'sin-categoria';
+      if (!grupos[cat]) grupos[cat] = [];
+      grupos[cat].push({ id: doc.id, ...data });
+    });
+
+    let html = '';
+    Object.keys(grupos).sort().forEach(cat => {
+      const items = grupos[cat];
+      html += `<div class="trt-grupo" data-cat="${cat}">
+        <div style="padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);background:var(--bg);position:sticky;top:0">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>`;
+      items.forEach(trat => {
+        const precio = trat.precio_base || 0;
+        html += `
+          <label class="trt-item" data-nombre="${(trat.nombre || '').toLowerCase()}"
+                 style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-top:1px solid var(--border)"
+                 onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+            <input type="checkbox" name="tratamientos_realizados_ids[]" value="${trat.id}"
+                   data-precio="${precio}"
+                   data-trat-id="${trat.id}"
+                   onchange="recalcPrecio()"
+                   style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${trat.nombre || ''}</div>
+              <div class="os-split-label" style="display:none;font-size:11px;color:var(--text-muted);margin-top:1px"></div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap">$${precio.toLocaleString()}</div>
+              <div class="os-pct-badge" style="display:none;font-size:10px;font-weight:700;color:#0891b2;white-space:nowrap"></div>
+            </div>
+          </label>`;
+      });
+      html += `</div>`;
+    });
+    lista.innerHTML = html;
+    recalcPrecio();
+  });
+}
 
 // ============================================================
 // FUNCIONES DEL FORMULARIO (copiadas del HTML)
 // ============================================================
 
 window.onPacienteChange = function() {
-  const sel = document.getElementById('f-turno-paciente');
-  const pid = sel ? parseInt(sel.value) : 0;
+  const sel = $('f-turno-paciente');
+  if (!sel) return;
+  const pid = parseInt(sel.value);
   const osData = pid ? PACIENTES_OS[pid] : null;
   _currentPlanId = osData ? (osData.plan_id || 0) : 0;
 
-  const banner = document.getElementById('os-banner');
+  const banner = $('os-banner');
   if (banner) {
     if (osData && _currentPlanId) {
       const opt = sel.options[sel.selectedIndex];
       banner.style.display = 'block';
-      document.getElementById('os-banner-nombre').textContent = opt.textContent.trim().split('—')[0].trim();
+      const nombreEl = $('os-banner-nombre');
+      if (nombreEl) nombreEl.textContent = opt.textContent.trim().split('—')[0].trim();
     } else {
       banner.style.display = 'none';
     }
@@ -897,21 +1097,21 @@ window.recalcPrecio = function() {
     count++;
   });
 
-  const coseguroInp = document.getElementById('coseguro-input');
+  const coseguroInp = $('coseguro-input');
   const coseguro = coseguroInp ? (parseFloat(coseguroInp.value) || 0) : 0;
 
-  const subtDiv = document.getElementById('trt-subtotal');
-  const countEl = document.getElementById('trt-count');
-  const totalEl = document.getElementById('trt-total-val');
-  const pacEl = document.getElementById('trt-paciente-val');
-  const osEl = document.getElementById('trt-os-val');
-  const osTotDiv = document.getElementById('os-totales');
-  const coseguroRow = document.getElementById('coseguro-row');
-  const coseguroEl = document.getElementById('trt-coseguro-val');
-  const pacTotalEl = document.getElementById('trt-paciente-total-val');
-  const btnCaja = document.getElementById('btn-pago-caja');
-  const inpPac = document.getElementById('inp-total-paciente');
-  const inpOS = document.getElementById('inp-total-obra-social');
+  const subtDiv = $('trt-subtotal');
+  const countEl = $('trt-count');
+  const totalEl = $('trt-total-val');
+  const pacEl = $('trt-paciente-val');
+  const osEl = $('trt-os-val');
+  const osTotDiv = $('os-totales');
+  const coseguroRow = $('coseguro-row');
+  const coseguroEl = $('trt-coseguro-val');
+  const pacTotalEl = $('trt-paciente-total-val');
+  const btnCaja = $('btn-pago-caja');
+  const inpPac = $('inp-total-paciente');
+  const inpOS = $('inp-total-obra-social');
 
   const hasContent = count > 0 || coseguro > 0;
 
@@ -962,11 +1162,13 @@ window.filtrarTrts = function(q) {
 
 window.durSelectChange = function(val) {
   if (val === 'custom') return;
-  document.getElementById('dur-input').value = val;
+  const input = $('dur-input');
+  if (input) input.value = val;
 };
 
 window.durInputChange = function(val) {
-  const sel = document.getElementById('dur-select');
+  const sel = $('dur-select');
+  if (!sel) return;
   sel.value = _DUR_PRESETS.indexOf(parseInt(val)) !== -1 ? val : 'custom';
 };
 
@@ -989,18 +1191,29 @@ window.toggleUrgencia = function(cb) {
 
 window.mostrarConfirmCrear = function() {
   // Validar campos obligatorios
-  const pac = document.getElementById('f-turno-paciente');
-  const prof = document.getElementById('f-turno-profesional');
-  const suc = document.getElementById('f-turno-sucursal');
-  const fecha = document.getElementById('f-turno-fecha');
-  const hora = document.getElementById('f-turno-hora');
+  const pac = $('f-turno-paciente');
+  const prof = $('f-turno-profesional');
+  const suc = $('f-turno-sucursal');
+  const fecha = $('f-turno-fecha');
+  const hora = $('f-turno-hora');
+  if (!pac || !prof || !suc || !fecha || !hora) {
+    alert('Completá todos los campos obligatorios (*).');
+    return;
+  }
   if (!pac.value || !prof.value || !suc.value || !fecha.value || !hora.value) {
     alert('Completá todos los campos obligatorios (*).');
     return;
   }
 
-  const dur = parseInt(document.getElementById('dur-input').value) || 30;
-  const motivo = document.getElementById('f-turno-motivo').value.trim();
+  // Validar domingo
+  const d = new Date(fecha.value + 'T00:00:00');
+  if (d.getDay() === 0) {
+    alert('No se pueden crear turnos los domingos.');
+    return;
+  }
+
+  const dur = parseInt($('dur-input').value) || 30;
+  const motivo = $('f-turno-motivo').value.trim();
   const pacId = parseInt(pac.value);
   const profId = parseInt(prof.value);
   const pacText = pac.options[pac.selectedIndex].textContent.trim();
@@ -1016,8 +1229,8 @@ window.mostrarConfirmCrear = function() {
 
   // Formatear fecha
   const dp = fechaVal.split('-');
-  const d = new Date(parseInt(dp[0]), parseInt(dp[1]) - 1, parseInt(dp[2]));
-  const fechaFmt = _DIAS_LARGO[d.getDay()] + ' ' + d.getDate() + ' de ' + _MESES_LARGO[d.getMonth()] + ' ' + dp[0];
+  const dObj = new Date(parseInt(dp[0]), parseInt(dp[1]) - 1, parseInt(dp[2]));
+  const fechaFmt = _DIAS_LARGO[dObj.getDay()] + ' ' + dObj.getDate() + ' de ' + _MESES_LARGO[dObj.getMonth()] + ' ' + dp[0];
 
   // Tratamientos seleccionados
   const checked = Array.from(document.querySelectorAll('input[name="tratamientos_realizados_ids[]"]:checked'));
@@ -1044,12 +1257,12 @@ window.mostrarConfirmCrear = function() {
   `;
 
   // Advertencia de horario
-  const urgCb = document.getElementById('f-turno-urgencia');
+  const urgCb = $('f-turno-urgencia');
   let warnMsg = '';
   if (!(urgCb && urgCb.checked)) {
     const horarios = HORARIOS_PROF[profId];
     if (horarios) {
-      const dia = _DIAS_SEMANA[d.getDay()];
+      const dia = _DIAS_SEMANA[dObj.getDay()];
       const hcfg = horarios[dia];
       const profNombre = profText.split('·')[0].trim();
       if (!hcfg || !hcfg.activo) {
@@ -1094,11 +1307,8 @@ window.mostrarConfirmCrear = function() {
     </div>
   `;
 
-  // Guardar referencia al modal actual para poder cerrarlo después
-  // Abrimos un nuevo modal con la confirmación
   openModal(confirmHTML);
-  // Guardamos el estado para saber si debe ir a caja
-  _pendingIrACaja = false; // se setea con guardarYPagar
+  _pendingIrACaja = false;
 };
 
 window.guardarYPagar = function() {
@@ -1107,27 +1317,32 @@ window.guardarYPagar = function() {
 };
 
 window.confirmarCrearTurno = function() {
-  // Recoger todos los datos del formulario
-  const pacienteId = document.getElementById('f-turno-paciente').value;
-  const profesionalId = document.getElementById('f-turno-profesional').value;
-  const sucursalId = document.getElementById('f-turno-sucursal').value;
-  const fecha = document.getElementById('f-turno-fecha').value;
-  const hora = document.getElementById('f-turno-hora').value;
-  const duracion = parseInt(document.getElementById('dur-input').value) || 30;
-  const estado = document.getElementById('f-turno-estado').value;
-  const esUrgencia = document.getElementById('f-turno-urgencia').checked;
-  const motivo = document.getElementById('f-turno-motivo').value.trim();
+  // Recoger datos
+  const pacienteId = $('f-turno-paciente').value;
+  const profesionalId = $('f-turno-profesional').value;
+  const sucursalId = $('f-turno-sucursal').value;
+  const fecha = $('f-turno-fecha').value;
+  const hora = $('f-turno-hora').value;
+  const duracion = parseInt($('dur-input').value) || 30;
+  const estado = $('f-turno-estado').value;
+  const esUrgencia = $('f-turno-urgencia').checked;
+  const motivo = $('f-turno-motivo').value.trim();
+
+  // Validar domingo nuevamente
+  const d = new Date(fecha + 'T00:00:00');
+  if (d.getDay() === 0) {
+    alert('No se pueden crear turnos los domingos.');
+    return;
+  }
 
   // Tratamientos seleccionados
   const tratamientosIds = Array.from(document.querySelectorAll('input[name="tratamientos_realizados_ids[]"]:checked')).map(cb => cb.value);
-  // Totales (ya calculados en recalcPrecio)
-  const totalPaciente = parseFloat(document.getElementById('inp-total-paciente').value) || 0;
-  const totalOS = parseFloat(document.getElementById('inp-total-obra-social').value) || 0;
-  const coseguro = parseFloat(document.getElementById('coseguro-input').value) || 0;
+  const totalPaciente = parseFloat($('inp-total-paciente').value) || 0;
+  const totalOS = parseFloat($('inp-total-obra-social').value) || 0;
+  const coseguro = parseFloat($('coseguro-input').value) || 0;
 
-  // Obtener nombres para mostrar
-  const pacSel = document.getElementById('f-turno-paciente');
-  const profSel = document.getElementById('f-turno-profesional');
+  const pacSel = $('f-turno-paciente');
+  const profSel = $('f-turno-profesional');
   const pacienteNombre = pacSel.options[pacSel.selectedIndex].textContent.trim();
   const profesionalNombre = profSel.options[profSel.selectedIndex].textContent.trim();
 
@@ -1156,8 +1371,6 @@ window.confirmarCrearTurno = function() {
       showToast('✅ Turno creado exitosamente.');
       renderAgenda();
       if (_pendingIrACaja) {
-        // Redirigir a caja con el turno recién creado? (opcional)
-        // Por ahora solo mostramos mensaje
         showToast('💰 Redirigiendo a Caja... (simulado)');
         _pendingIrACaja = false;
       }
@@ -1168,7 +1381,7 @@ window.confirmarCrearTurno = function() {
 };
 
 // ============================================================
-// MODAL: BLOQUEAR HORARIO (sin cambios)
+// MODAL: BLOQUEAR HORARIO
 // ============================================================
 window.openModalBloqueo = function() {
   let profesionalesHTML = '<option value="">Toda la clínica</option>';
@@ -1178,7 +1391,8 @@ window.openModalBloqueo = function() {
       const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
       profesionalesHTML += `<option value="${doc.id}">${nombre}</option>`;
     });
-    document.getElementById('f-bloqueo-profesional').innerHTML = profesionalesHTML;
+    const sel = $('f-bloqueo-profesional');
+    if (sel) sel.innerHTML = profesionalesHTML;
   });
 
   const modalHTML = `
@@ -1223,12 +1437,12 @@ window.openModalBloqueo = function() {
 };
 
 window.guardarBloqueo = function() {
-  const profesionalId = document.getElementById('f-bloqueo-profesional').value;
-  const fechaInicio = document.getElementById('f-bloqueo-fecha-inicio').value;
-  const fechaFin = document.getElementById('f-bloqueo-fecha-fin').value;
-  const horaInicio = document.getElementById('f-bloqueo-hora-inicio').value;
-  const horaFin = document.getElementById('f-bloqueo-hora-fin').value;
-  const motivo = document.getElementById('f-bloqueo-motivo').value.trim();
+  const profesionalId = $('f-bloqueo-profesional').value;
+  const fechaInicio = $('f-bloqueo-fecha-inicio').value;
+  const fechaFin = $('f-bloqueo-fecha-fin').value;
+  const horaInicio = $('f-bloqueo-hora-inicio').value;
+  const horaFin = $('f-bloqueo-hora-fin').value;
+  const motivo = $('f-bloqueo-motivo').value.trim();
 
   if (!fechaInicio || !fechaFin) return alert('Las fechas son obligatorias.');
 
@@ -1248,12 +1462,13 @@ window.guardarBloqueo = function() {
 };
 
 // ============================================================
-// REPROGRAMAR MODO (sin cambios)
+// REPROGRAMAR MODO
 // ============================================================
 let _reprogData = null;
 
 window.exitReprogramarMode = function() {
   _reprogData = null;
-  document.getElementById('reprog-panel').style.display = 'none';
+  const panel = $('reprog-panel');
+  if (panel) panel.style.display = 'none';
   document.body.classList.remove('ds-reprog-mode');
 };
