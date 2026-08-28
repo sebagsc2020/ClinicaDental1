@@ -54,6 +54,14 @@ function renderCaja() {
       <div class="card"><div style="text-align:center;padding:8px 0;color:var(--text-muted);">Cargando resumen...</div></div>
     </div>
 
+    <!-- Gráfico de flujo de caja -->
+    <div class="card" style="margin-bottom:20px;">
+      <div id="caja-flujo-titulo" style="font-size:13px;font-weight:700;margin-bottom:16px;">Flujo de caja — Cargando...</div>
+      <div id="caja-flujo" style="display:flex;align-items:flex-end;gap:3px;height:60px;">
+        <div style="text-align:center;width:100%;color:var(--text-muted);font-size:12px;">Cargando datos...</div>
+      </div>
+    </div>
+
     <!-- Filtros -->
     <div class="card" style="margin-bottom:16px;">
       <div id="caja-filtros" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
@@ -166,6 +174,7 @@ function cargarPagos() {
       });
       _todosLosPagos = pagos;
       calcularResumenes(pagos);
+      renderFlujoCaja(pagos);   // <-- NUEVO: dibujar el gráfico de flujo
       aplicarFiltrosCaja();
     }, (error) => {
       console.error('Error cargando pagos:', error);
@@ -175,6 +184,64 @@ function cargarPagos() {
         </td></tr>
       `;
     });
+}
+
+// ============================================================
+// RENDER FLUJO DE CAJA (GRÁFICO DE BARRAS)
+// ============================================================
+function renderFlujoCaja(pagos) {
+  const container = document.getElementById('caja-flujo');
+  const titulo = document.getElementById('caja-flujo-titulo');
+  if (!container) return;
+
+  // Obtener el mes actual
+  const ahora = new Date();
+  const mesActual = ahora.getMonth();
+  const anioActual = ahora.getFullYear();
+  const nombreMes = ahora.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+
+  // Filtrar pagos válidos (no anulados, no egresos) y del mes actual
+  const pagosValidos = pagos.filter(p => {
+    if (p.estado === 'anulado' || p.tipo === 'egreso') return false;
+    const fecha = new Date(p.fecha);
+    return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
+  });
+
+  // Agrupar por día del mes
+  const dias = {};
+  pagosValidos.forEach(p => {
+    const fecha = new Date(p.fecha);
+    const dia = fecha.getDate();
+    if (!dias[dia]) dias[dia] = 0;
+    dias[dia] += p.monto || 0;
+  });
+
+  // Obtener el máximo para escalar las barras
+  const valores = Object.values(dias);
+  const maxValor = valores.length > 0 ? Math.max(...valores) : 0;
+
+  // Generar HTML de las barras
+  let barrasHTML = '';
+  if (valores.length === 0) {
+    barrasHTML = `<div style="text-align:center;width:100%;color:var(--text-muted);font-size:12px;">Sin movimientos este mes</div>`;
+  } else {
+    // Ordenar días
+    const diasOrdenados = Object.keys(dias).sort((a, b) => parseInt(a) - parseInt(b));
+    diasOrdenados.forEach(dia => {
+      const monto = dias[dia];
+      // Altura proporcional: mínimo 4px para que se vea, máximo 100% de los 60px del contenedor
+      const altura = maxValor > 0 ? Math.max(4, (monto / maxValor) * 56) : 4;
+      const tituloDia = `${dia}/${mesActual+1}/${anioActual}: $${Number(monto).toLocaleString()}`;
+      barrasHTML += `
+        <div title="${tituloDia}"
+             style="flex:1;background:var(--primary);opacity:.75;border-radius:2px 2px 0 0;height:${altura}px;min-height:4px;"></div>
+      `;
+    });
+  }
+
+  // Actualizar título y barras
+  titulo.textContent = `Flujo de caja — ${nombreMes}`;
+  container.innerHTML = barrasHTML;
 }
 
 // ============================================================
@@ -922,7 +989,7 @@ window.exportarPdfCierre = function(cierreId, numeroCierre) {
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Cierre de Caja #${numeroCierre} — Clínica Demo</title>
+<title>Cierre de Caja #${numeroCierre} — Clínica Dental Demo</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, Helvetica, sans-serif; font-size: 13px; color: #1e293b; background: #f1f5f9; }
@@ -1127,7 +1194,7 @@ body { font-family: 'Segoe UI', Arial, Helvetica, sans-serif; font-size: 13px; c
 
     <!-- Footer -->
     <div class="doc-footer">
-        <div class="left">Clínica Demo · DemoNombre</div>
+        <div class="left">Clínica Dental Demo · DentalSoft</div>
         <div class="right">Generado el ${fechaGeneracion}</div>
     </div>
 
