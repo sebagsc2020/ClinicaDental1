@@ -627,10 +627,10 @@ window.cambiarVista = function(vista) {
 };
 
 // ============================================================
-// MODAL: NUEVO TURNO (VERSIÓN CORREGIDA - SIN orderBy en tratamientos)
+// MODAL: NUEVO TURNO (CORREGIDO Y ROBUSTO)
 // ============================================================
 
-// Variables globales
+// Variables globales (se cargan dinámicamente)
 let _currentPlanId = 0;
 let _pendingIrACaja = false;
 const _DIAS_SEMANA = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
@@ -638,57 +638,102 @@ const _DIAS_LARGO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes',
 const _MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const _DUR_PRESETS = [15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240];
 
-// Datos de cobertura y horarios (se cargan desde Firestore o se toman del ámbito global)
-let HORARIOS_PROF = window.HORARIOS_PROF || {};
-let PACIENTES_OS = window.PACIENTES_OS || {};
-let COBERTURAS = window.COBERTURAS || {};
-let PACIENTES_TEL = window.PACIENTES_TEL || {};
-let PACIENTES_EMAIL = window.PACIENTES_EMAIL || {};
-let CONFIRM_CANALES = window.CONFIRM_CANALES || ["whatsapp","email"];
+// Datos globales que se cargan una sola vez
+let _pacientesData = [];
+let _profesionalesData = [];
+let _sucursalesData = [];
+let _tratamientosData = [];
+let _coberturasData = {};
+let _horariosProf = {};
+let _pacientesOS = {};
+let _pacientesTel = {};
+let _pacientesEmail = {};
+let _confirmCanales = ["whatsapp","email"];
 
-// Función para cargar datos desde Firestore si no existen
-function cargarDatosParaModal() {
-  const promesas = [];
-  if (Object.keys(HORARIOS_PROF).length === 0) {
-    promesas.push(db.collection('profesionales').get().then(snap => {
-      snap.forEach(doc => {
-        const data = doc.data();
-        if (data.horarios) {
-          HORARIOS_PROF[doc.id] = data.horarios;
-        }
-      });
-    }).catch(() => {}));
-  }
-  if (Object.keys(PACIENTES_OS).length === 0) {
-    promesas.push(db.collection('pacientes').get().then(snap => {
-      snap.forEach(doc => {
-        const data = doc.data();
-        PACIENTES_OS[doc.id] = { obra_social_id: data.obra_social_id || null, plan_id: data.plan_id || 0 };
-        PACIENTES_TEL[doc.id] = data.telefono || '';
-        PACIENTES_EMAIL[doc.id] = data.email || '';
-      });
-    }).catch(() => {}));
-  }
-  if (Object.keys(COBERTURAS).length === 0) {
-    promesas.push(db.collection('coberturas').get().then(snap => {
-      snap.forEach(doc => {
-        const data = doc.data();
-        COBERTURAS[doc.id] = data;
-      });
-    }).catch(() => {}));
-  }
-  if (CONFIRM_CANALES.length === 0) {
-    promesas.push(db.collection('configuracion').doc('notificaciones').get().then(doc => {
-      if (doc.exists) {
-        CONFIRM_CANALES = doc.data().canales || ["whatsapp","email"];
+// Función para cargar datos comunes una sola vez
+function cargarDatosBase() {
+  const promesas = [
+    db.collection('pacientes').get(),
+    db.collection('profesionales').get(),
+    db.collection('sucursales').get(),
+    db.collection('tratamientos').get(),
+    db.collection('coberturas').get(),
+    db.collection('configuracion').doc('notificaciones').get()
+  ];
+
+  return Promise.all(promesas).then(([pacSnap, profSnap, sucSnap, tratSnap, coberturaSnap, notifDoc]) => {
+    // Pacientes
+    _pacientesData = [];
+    pacSnap.forEach(doc => _pacientesData.push({ id: doc.id, ...doc.data() }));
+    _pacientesData.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+
+    // Profesionales
+    _profesionalesData = [];
+    profSnap.forEach(doc => _profesionalesData.push({ id: doc.id, ...doc.data() }));
+    _profesionalesData.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+
+    // Sucursales
+    _sucursalesData = [];
+    sucSnap.forEach(doc => _sucursalesData.push({ id: doc.id, ...doc.data() }));
+    _sucursalesData.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+
+    // Tratamientos
+    _tratamientosData = [];
+    tratSnap.forEach(doc => _tratamientosData.push({ id: doc.id, ...doc.data() }));
+    // Ordenar por categoría y nombre
+    _tratamientosData.sort((a,b) => {
+      const catA = (a.categoria||'').toLowerCase();
+      const catB = (b.categoria||'').toLowerCase();
+      if (catA < catB) return -1;
+      if (catA > catB) return 1;
+      return (a.nombre||'').localeCompare(b.nombre||'');
+    });
+
+    // Coberturas: mapear por tratamiento_id y plan_id
+    _coberturasData = {};
+    coberturaSnap.forEach(doc => {
+      const data = doc.data();
+      const tratId = doc.id; // asumimos que el ID del documento es el ID del tratamiento
+      _coberturasData[tratId] = data;
+    });
+
+    // Horarios de profesionales
+    _horariosProf = {};
+    profSnap.forEach(doc => {
+      const data = doc.data();
+      if (data.horarios) {
+        _horariosProf[doc.id] = data.horarios;
       }
-    }).catch(() => {}));
-  }
-  return Promise.all(promesas);
+    });
+
+    // OS y teléfonos de pacientes
+    _pacientesOS = {};
+    _pacientesTel = {};
+    _pacientesEmail = {};
+    pacSnap.forEach(doc => {
+      const data = doc.data();
+      _pacientesOS[doc.id] = { obra_social_id: data.obra_social_id || null, plan_id: data.plan_id || 0 };
+      _pacientesTel[doc.id] = data.telefono || '';
+      _pacientesEmail[doc.id] = data.email || '';
+    });
+
+    // Canales de confirmación
+    if (notifDoc.exists) {
+      const data = notifDoc.data();
+      _confirmCanales = data.canales || ["whatsapp","email"];
+    } else {
+      _confirmCanales = ["whatsapp","email"];
+    }
+
+    console.log('✅ Datos base cargados correctamente.');
+  }).catch(err => {
+    console.error('❌ Error cargando datos base:', err);
+    throw err;
+  });
 }
 
 // ============================================================
-// ABRIR NUEVO TURNO EN EL CONTENEDOR PRINCIPAL (CORREGIDO - SIN orderBy)
+// ABRIR NUEVO TURNO EN EL CONTENEDOR PRINCIPAL
 // ============================================================
 window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '09:00') {
   const el = $('view-agenda');
@@ -697,7 +742,7 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
     return;
   }
 
-  // HTML del formulario
+  // HTML del formulario (se renderiza inmediatamente)
   const html = `
     <div class="page-header">
       <div>
@@ -872,177 +917,157 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
     </div>
   `;
 
-  // Inyectar en el contenedor
+  // Inyectar HTML
   el.innerHTML = html;
 
-  // Función mejorada para cargar datos con reintentos y logs (SIN orderBy en tratamientos)
-  function cargarDatosCuandoExistan(intentos = 0) {
-    const maxIntentos = 20;
-    const pacSelect = document.getElementById('f-turno-paciente');
-    const profSelect = document.getElementById('f-turno-profesional');
-    const sucSelect = document.getElementById('f-turno-sucursal');
-    const listaTrat = document.getElementById('trt-lista');
-
-    if (!pacSelect || !profSelect || !sucSelect || !listaTrat) {
-      if (intentos >= maxIntentos) {
-        console.error('No se encontraron los elementos del formulario después de múltiples intentos.');
-        return;
-      }
-      console.log(`Esperando elementos del formulario (intento ${intentos+1})...`);
-      setTimeout(() => cargarDatosCuandoExistan(intentos + 1), 200);
-      return;
-    }
-
-    console.log('Elementos encontrados, cargando datos...');
-
-    // Cargar datos auxiliares (horarios, coberturas, etc.)
-    cargarDatosParaModal().then(() => {
-      console.log('Datos auxiliares cargados (PACIENTES_OS, COBERTURAS, etc.)');
-
-      // Cargar pacientes, profesionales, sucursales y tratamientos (SIN orderBy para evitar índices)
-      const promesas = [
-        db.collection('pacientes').get(),
-        db.collection('profesionales').orderBy('nombre').get(),
-        db.collection('sucursales').orderBy('nombre').get(),
-        db.collection('tratamientos').get() // SIN orderBy, se ordena en cliente
-      ];
-
-      Promise.all(promesas).then(([pacSnap, profSnap, sucSnap, tratSnap]) => {
-        console.log(`Pacientes: ${pacSnap.size}, Profesionales: ${profSnap.size}, Sucursales: ${sucSnap.size}, Tratamientos: ${tratSnap.size}`);
-
-        // --- Llenar pacientes (ordenar en cliente) ---
-        let pacientes = [];
-        pacSnap.forEach(doc => pacientes.push({ id: doc.id, ...doc.data() }));
-        pacientes.sort((a, b) => {
-          const nomA = (a.nombre || '').toLowerCase();
-          const nomB = (b.nombre || '').toLowerCase();
-          return nomA.localeCompare(nomB);
-        });
-        pacSelect.innerHTML = '<option value="">— Seleccionar paciente —</option>';
-        pacientes.forEach(p => {
-          const nombre = `${p.nombre || ''} ${p.apellido || ''}`.trim() || 'Sin nombre';
-          pacSelect.innerHTML += `<option value="${p.id}">${nombre}</option>`;
-        });
-        pacSelect.addEventListener('change', onPacienteChange);
-        onPacienteChange();
-
-        // --- Llenar profesionales ---
-        profSelect.innerHTML = '<option value="">— Seleccionar profesional —</option>';
-        profSnap.forEach(doc => {
-          const data = doc.data();
-          const nombre = `${data.nombre || ''} ${data.apellido || ''}`.trim() || 'Sin nombre';
-          const especialidad = data.especialidad || '';
-          profSelect.innerHTML += `<option value="${doc.id}">${nombre} ${especialidad ? '· ' + especialidad : ''}</option>`;
-        });
-
-        // --- Llenar sucursales ---
-        sucSelect.innerHTML = '<option value="">— Seleccionar sucursal —</option>';
-        sucSnap.forEach(doc => {
-          const data = doc.data();
-          sucSelect.innerHTML += `<option value="${doc.id}">${data.nombre || ''}</option>`;
-        });
-
-        // --- Llenar tratamientos (ordenar en cliente) ---
-        let tratamientos = [];
-        tratSnap.forEach(doc => tratamientos.push({ id: doc.id, ...doc.data() }));
-        // Ordenar por categoría y luego por nombre
-        tratamientos.sort((a, b) => {
-          const catA = (a.categoria || '').toLowerCase();
-          const catB = (b.categoria || '').toLowerCase();
-          if (catA < catB) return -1;
-          if (catA > catB) return 1;
-          const nomA = (a.nombre || '').toLowerCase();
-          const nomB = (b.nombre || '').toLowerCase();
-          return nomA.localeCompare(nomB);
-        });
-
-        let grupos = {};
-        tratamientos.forEach(trat => {
-          const cat = trat.categoria || 'sin-categoria';
-          if (!grupos[cat]) grupos[cat] = [];
-          grupos[cat].push(trat);
-        });
-
-        let htmlTrat = '';
-        Object.keys(grupos).sort().forEach(cat => {
-          const items = grupos[cat];
-          htmlTrat += `<div class="trt-grupo" data-cat="${cat}">
-            <div style="padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);background:var(--bg);position:sticky;top:0;">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>`;
-          items.forEach(trat => {
-            const precio = trat.precio_base || 0;
-            htmlTrat += `
-              <label class="trt-item" data-nombre="${(trat.nombre || '').toLowerCase()}"
-                     style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-top:1px solid var(--border);"
-                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
-                <input type="checkbox" name="tratamientos_realizados_ids[]" value="${trat.id}"
-                       data-precio="${precio}"
-                       data-trat-id="${trat.id}"
-                       onchange="recalcPrecio()"
-                       style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0;">
-                <div style="flex:1;min-width:0;">
-                  <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${trat.nombre || ''}</div>
-                  <div class="os-split-label" style="display:none;font-size:11px;color:var(--text-muted);margin-top:1px;"></div>
-                </div>
-                <div style="text-align:right;flex-shrink:0;">
-                  <div style="font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap;">$${precio.toLocaleString()}</div>
-                  <div class="os-pct-badge" style="display:none;font-size:10px;font-weight:700;color:#0891b2;white-space:nowrap;"></div>
-                </div>
-              </label>`;
-          });
-          htmlTrat += `</div>`;
-        });
-        listaTrat.innerHTML = htmlTrat;
-        recalcPrecio();
-
-        // Validación de domingos
-        const fechaInput = document.getElementById('f-turno-fecha');
-        const fechaWarning = document.getElementById('fecha-warning');
-        const btnCrear = document.getElementById('btn-crear-turno');
-
-        function validarDomingo() {
-          if (!fechaInput) return;
-          const val = fechaInput.value;
-          if (val) {
-            const d = new Date(val + 'T00:00:00');
-            const esDomingo = d.getDay() === 0;
-            if (esDomingo) {
-              fechaWarning.style.display = 'block';
-              btnCrear.disabled = true;
-              btnCrear.style.opacity = '0.5';
-              btnCrear.style.cursor = 'not-allowed';
-            } else {
-              fechaWarning.style.display = 'none';
-              btnCrear.disabled = false;
-              btnCrear.style.opacity = '1';
-              btnCrear.style.cursor = '';
-            }
-          }
-        }
-
-        fechaInput.addEventListener('change', validarDomingo);
-        fechaInput.addEventListener('input', validarDomingo);
-        validarDomingo();
-
-        if (esUrgencia) {
-          const cb = document.getElementById('f-turno-urgencia');
-          if (cb) toggleUrgencia(cb);
-        }
-
-        recalcPrecio();
-        console.log('✅ Datos cargados correctamente en el formulario.');
-      }).catch(err => {
-        console.error('Error cargando datos principales:', err);
-        alert('Error al cargar datos: ' + err.message);
-      });
+  // Ahora cargar los datos en los selects y la lista de tratamientos
+  // Primero, asegurarse de que los datos base estén cargados
+  if (_pacientesData.length === 0) {
+    // Si no están cargados, cargarlos y luego llenar el formulario
+    cargarDatosBase().then(() => {
+      llenarFormularioTurno(fecha, esUrgencia, hora);
     }).catch(err => {
-      console.error('Error en cargarDatosParaModal:', err);
-      alert('Error al cargar datos auxiliares: ' + err.message);
+      alert('Error cargando datos: ' + err.message);
     });
+  } else {
+    // Ya están cargados, llenar directamente
+    llenarFormularioTurno(fecha, esUrgencia, hora);
+  }
+};
+
+// ============================================================
+// LLENAR FORMULARIO DE NUEVO TURNO (después de cargar datos)
+// ============================================================
+function llenarFormularioTurno(fecha, esUrgencia, hora) {
+  const pacSelect = document.getElementById('f-turno-paciente');
+  const profSelect = document.getElementById('f-turno-profesional');
+  const sucSelect = document.getElementById('f-turno-sucursal');
+  const listaTrat = document.getElementById('trt-lista');
+
+  if (!pacSelect || !profSelect || !sucSelect || !listaTrat) {
+    console.error('No se encontraron los elementos del formulario.');
+    return;
   }
 
-  // Iniciar la carga con reintentos
-  setTimeout(() => cargarDatosCuandoExistan(), 200);
-};
+  // Llenar pacientes
+  pacSelect.innerHTML = '<option value="">— Seleccionar paciente —</option>';
+  _pacientesData.forEach(p => {
+    const nombre = `${p.nombre || ''} ${p.apellido || ''}`.trim() || 'Sin nombre';
+    const option = document.createElement('option');
+    option.value = p.id;
+    option.textContent = nombre;
+    pacSelect.appendChild(option);
+  });
+  pacSelect.addEventListener('change', onPacienteChange);
+  onPacienteChange();
+
+  // Llenar profesionales
+  profSelect.innerHTML = '<option value="">— Seleccionar profesional —</option>';
+  _profesionalesData.forEach(p => {
+    const nombre = `${p.nombre || ''} ${p.apellido || ''}`.trim() || 'Sin nombre';
+    const especialidad = p.especialidad || '';
+    const option = document.createElement('option');
+    option.value = p.id;
+    option.textContent = `${nombre} ${especialidad ? '· ' + especialidad : ''}`;
+    profSelect.appendChild(option);
+  });
+
+  // Llenar sucursales
+  sucSelect.innerHTML = '<option value="">— Seleccionar sucursal —</option>';
+  _sucursalesData.forEach(s => {
+    const option = document.createElement('option');
+    option.value = s.id;
+    option.textContent = s.nombre || '';
+    sucSelect.appendChild(option);
+  });
+
+  // Llenar tratamientos
+  let htmlTrat = '';
+  let grupos = {};
+  _tratamientosData.forEach(trat => {
+    const cat = trat.categoria || 'sin-categoria';
+    if (!grupos[cat]) grupos[cat] = [];
+    grupos[cat].push(trat);
+  });
+
+  Object.keys(grupos).sort().forEach(cat => {
+    const items = grupos[cat];
+    htmlTrat += `<div class="trt-grupo" data-cat="${cat}">
+      <div style="padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);background:var(--bg);position:sticky;top:0;">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>`;
+    items.forEach(trat => {
+      const precio = trat.precio_base || 0;
+      htmlTrat += `
+        <label class="trt-item" data-nombre="${(trat.nombre || '').toLowerCase()}"
+               style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-top:1px solid var(--border);"
+               onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+          <input type="checkbox" name="tratamientos_realizados_ids[]" value="${trat.id}"
+                 data-precio="${precio}"
+                 data-trat-id="${trat.id}"
+                 onchange="recalcPrecio()"
+                 style="width:15px;height:15px;accent-color:var(--primary);flex-shrink:0;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${trat.nombre || ''}</div>
+            <div class="os-split-label" style="display:none;font-size:11px;color:var(--text-muted);margin-top:1px;"></div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap;">$${precio.toLocaleString()}</div>
+            <div class="os-pct-badge" style="display:none;font-size:10px;font-weight:700;color:#0891b2;white-space:nowrap;"></div>
+          </div>
+        </label>`;
+    });
+    htmlTrat += `</div>`;
+  });
+  listaTrat.innerHTML = htmlTrat;
+
+  // Evento de búsqueda de tratamientos (ya existe el input con oninput="filtrarTrts")
+  // Establecer fecha/hora
+  const fechaInput = document.getElementById('f-turno-fecha');
+  const horaInput = document.getElementById('f-turno-hora');
+  if (fechaInput) fechaInput.value = fecha;
+  if (horaInput) horaInput.value = hora;
+
+  // Si es urgencia, marcar checkbox
+  const urgCb = document.getElementById('f-turno-urgencia');
+  if (urgCb) urgCb.checked = esUrgencia;
+  if (esUrgencia) {
+    const wrap = urgCb.closest('div[style]');
+    if (wrap) {
+      wrap.style.background = '#fef2f2';
+      wrap.style.border = '1px solid #fca5a5';
+      const strong = wrap.querySelector('div div:first-child');
+      if (strong) strong.style.color = '#b91c1c';
+    }
+  }
+
+  // Validación de domingo
+  const fechaWarning = document.getElementById('fecha-warning');
+  const btnCrear = document.getElementById('btn-crear-turno');
+  function validarDomingo() {
+    const val = fechaInput ? fechaInput.value : '';
+    if (val) {
+      const d = new Date(val + 'T00:00:00');
+      const esDomingo = d.getDay() === 0;
+      if (esDomingo) {
+        fechaWarning.style.display = 'block';
+        btnCrear.disabled = true;
+        btnCrear.style.opacity = '0.5';
+        btnCrear.style.cursor = 'not-allowed';
+      } else {
+        fechaWarning.style.display = 'none';
+        btnCrear.disabled = false;
+        btnCrear.style.opacity = '1';
+        btnCrear.style.cursor = '';
+      }
+    }
+  }
+  fechaInput.addEventListener('change', validarDomingo);
+  fechaInput.addEventListener('input', validarDomingo);
+  validarDomingo();
+
+  // Recalcular precios
+  recalcPrecio();
+  console.log('✅ Formulario llenado correctamente.');
+}
 
 // ============================================================
 // FUNCIONES DEL FORMULARIO (globales)
@@ -1051,8 +1076,8 @@ window.openModalNuevoTurnoAgenda = function(fecha, esUrgencia = false, hora = '0
 window.onPacienteChange = function() {
   const sel = document.getElementById('f-turno-paciente');
   if (!sel) return;
-  const pid = parseInt(sel.value);
-  const osData = pid ? PACIENTES_OS[pid] : null;
+  const pid = sel.value; // es string
+  const osData = pid ? _pacientesOS[pid] : null;
   _currentPlanId = osData ? (osData.plan_id || 0) : 0;
 
   const banner = document.getElementById('os-banner');
@@ -1061,22 +1086,23 @@ window.onPacienteChange = function() {
       const opt = sel.options[sel.selectedIndex];
       banner.style.display = 'block';
       const nombreEl = document.getElementById('os-banner-nombre');
-      if (nombreEl) nombreEl.textContent = opt.textContent.trim().split('—')[0].trim();
+      if (nombreEl) nombreEl.textContent = opt.textContent.trim();
     } else {
       banner.style.display = 'none';
     }
   }
 
+  // Actualizar etiquetas de cobertura en los tratamientos
   document.querySelectorAll('input[name="tratamientos_realizados_ids[]"]').forEach(function(cb) {
-    const tid = parseInt(cb.dataset.tratId);
+    const tid = cb.dataset.tratId;
     const precio = parseFloat(cb.dataset.precio) || 0;
     const label = cb.closest('label');
     const splitEl = label ? label.querySelector('.os-split-label') : null;
     const badgeEl = label ? label.querySelector('.os-pct-badge') : null;
 
     let pct = 0;
-    if (_currentPlanId && COBERTURAS[tid] && COBERTURAS[tid][_currentPlanId]) {
-      pct = parseFloat(COBERTURAS[tid][_currentPlanId]);
+    if (_currentPlanId && _coberturasData[tid] && _coberturasData[tid][_currentPlanId]) {
+      pct = parseFloat(_coberturasData[tid][_currentPlanId]);
     }
 
     if (splitEl) {
@@ -1111,10 +1137,10 @@ window.recalcPrecio = function() {
   let total = 0, totalPac = 0, totalOS = 0, count = 0;
   checks.forEach(function(cb) {
     const precio = parseFloat(cb.dataset.precio) || 0;
-    const tid = parseInt(cb.dataset.tratId);
+    const tid = cb.dataset.tratId;
     let pct = 0;
-    if (_currentPlanId && COBERTURAS[tid] && COBERTURAS[tid][_currentPlanId]) {
-      pct = parseFloat(COBERTURAS[tid][_currentPlanId]);
+    if (_currentPlanId && _coberturasData[tid] && _coberturasData[tid][_currentPlanId]) {
+      pct = parseFloat(_coberturasData[tid][_currentPlanId]);
     }
     const montoOS = precio * pct / 100;
     total += precio;
@@ -1238,8 +1264,8 @@ window.mostrarConfirmCrear = function() {
 
   const dur = parseInt(document.getElementById('dur-input').value) || 30;
   const motivo = document.getElementById('f-turno-motivo').value.trim();
-  const pacId = parseInt(pac.value);
-  const profId = parseInt(prof.value);
+  const pacId = pac.value;
+  const profId = prof.value;
   const pacText = pac.options[pac.selectedIndex].textContent.trim();
   const profText = prof.options[prof.selectedIndex].textContent.trim();
   const fechaVal = fecha.value;
@@ -1256,7 +1282,8 @@ window.mostrarConfirmCrear = function() {
 
   const checked = Array.from(document.querySelectorAll('input[name="tratamientos_realizados_ids[]"]:checked'));
   const trtNames = checked.map(function(cb) {
-    const nameDiv = cb.closest('label').querySelector('div > div:first-child');
+    const label = cb.closest('label');
+    const nameDiv = label ? label.querySelector('div > div:first-child') : null;
     return nameDiv ? nameDiv.textContent.trim() : '';
   }).filter(Boolean);
 
@@ -1279,7 +1306,7 @@ window.mostrarConfirmCrear = function() {
   const urgCb = document.getElementById('f-turno-urgencia');
   let warnMsg = '';
   if (!(urgCb && urgCb.checked)) {
-    const horarios = HORARIOS_PROF[profId];
+    const horarios = _horariosProf[profId];
     if (horarios) {
       const dia = _DIAS_SEMANA[dObj.getDay()];
       const hcfg = horarios[dia];
@@ -1300,10 +1327,10 @@ window.mostrarConfirmCrear = function() {
     confirmHTML += `<div style="margin-bottom:12px;padding:10px 14px;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;font-size:12px;color:#92400e"><strong>⚠️ Atención:</strong> ${warnMsg}</div>`;
   }
 
-  const tel = PACIENTES_TEL[pacId] || '';
-  const email = PACIENTES_EMAIL[pacId] || '';
-  const hasWa = CONFIRM_CANALES.indexOf('whatsapp') !== -1;
-  const hasEmail = CONFIRM_CANALES.indexOf('email') !== -1;
+  const tel = _pacientesTel[pacId] || '';
+  const email = _pacientesEmail[pacId] || '';
+  const hasWa = _confirmCanales.indexOf('whatsapp') !== -1;
+  const hasEmail = _confirmCanales.indexOf('email') !== -1;
 
   let notifRows = [];
   if (hasWa) {
