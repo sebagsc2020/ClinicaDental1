@@ -2,13 +2,15 @@
 // CONFIGURACIÓN - SPA (Single Page Application)
 // ============================================================
 
-// Estado global
-let configTabActual = 'horarios';
-let _sucursalesData = [];
-let _horariosData = {};
-let _permisosData = {};
-let _estadosData = {};
-let _aparienciaData = {};
+// Usamos un objeto de estado para evitar redeclaraciones
+var _configState = {
+  tabActual: 'horarios',
+  sucursalesData: [],
+  horariosData: {},
+  permisosData: {},
+  estadosData: {},
+  aparienciaData: {}
+};
 
 // ============================================================
 // RENDER CONFIGURACIÓN PRINCIPAL (TABS)
@@ -27,10 +29,10 @@ function renderConfiguracion() {
 
     <!-- Tabs -->
     <div class="tabs" style="margin-bottom:0;border-bottom:none;">
-      <button class="tab ${configTabActual === 'horarios' ? 'active' : ''}" onclick="cambiarTabConfig('horarios')">Sucursales y horarios</button>
-      <button class="tab ${configTabActual === 'permisos' ? 'active' : ''}" onclick="cambiarTabConfig('permisos')">Permisos</button>
-      <button class="tab ${configTabActual === 'estados' ? 'active' : ''}" onclick="cambiarTabConfig('estados')">Estados</button>
-      <button class="tab ${configTabActual === 'apariencia' ? 'active' : ''}" onclick="cambiarTabConfig('apariencia')">Apariencia</button>
+      <button class="tab ${_configState.tabActual === 'horarios' ? 'active' : ''}" onclick="cambiarTabConfig('horarios')">Sucursales y horarios</button>
+      <button class="tab ${_configState.tabActual === 'permisos' ? 'active' : ''}" onclick="cambiarTabConfig('permisos')">Permisos</button>
+      <button class="tab ${_configState.tabActual === 'estados' ? 'active' : ''}" onclick="cambiarTabConfig('estados')">Estados</button>
+      <button class="tab ${_configState.tabActual === 'apariencia' ? 'active' : ''}" onclick="cambiarTabConfig('apariencia')">Apariencia</button>
     </div>
 
     <div id="config-tab-content" style="margin-top:20px;">
@@ -45,7 +47,7 @@ function renderConfiguracion() {
 // CAMBIAR TAB
 // ============================================================
 function cambiarTabConfig(tab) {
-  configTabActual = tab;
+  _configState.tabActual = tab;
   renderConfiguracion();
 }
 
@@ -63,17 +65,17 @@ function cargarDatosConfiguracion() {
 
   Promise.all(promesas)
     .then(([sucSnap, horDoc, perDoc, estDoc, apDoc]) => {
-      _sucursalesData = [];
+      _configState.sucursalesData = [];
       sucSnap.forEach(doc => {
-        _sucursalesData.push({ id: doc.id, ...doc.data() });
+        _configState.sucursalesData.push({ id: doc.id, ...doc.data() });
       });
 
-      _horariosData = horDoc.exists ? horDoc.data() : { slot_minutos: 15, timezone: 'America/Argentina/Buenos_Aires' };
-      _permisosData = perDoc.exists ? perDoc.data() : {};
-      _estadosData = estDoc.exists ? estDoc.data() : {};
-      _aparienciaData = apDoc.exists ? apDoc.data() : { estilo: 'claro' };
+      _configState.horariosData = horDoc.exists ? horDoc.data() : { slot_minutos: 15, timezone: 'America/Argentina/Buenos_Aires' };
+      _configState.permisosData = perDoc.exists ? perDoc.data() : {};
+      _configState.estadosData = estDoc.exists ? estDoc.data() : {};
+      _configState.aparienciaData = apDoc.exists ? apDoc.data() : { estilo: 'claro' };
 
-      mostrarTabConfiguracion(configTabActual);
+      mostrarTabConfiguracion(_configState.tabActual);
     })
     .catch(err => {
       console.error('Error cargando datos de configuración:', err);
@@ -113,10 +115,10 @@ function mostrarTabConfiguracion(tab) {
 // ============================================================
 function renderHorariosTab(container) {
   let sucursalesHTML = '';
-  if (_sucursalesData.length === 0) {
+  if (_configState.sucursalesData.length === 0) {
     sucursalesHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted);">No hay sucursales registradas.</td></tr>';
   } else {
-    _sucursalesData.forEach(s => {
+    _configState.sucursalesData.forEach(s => {
       sucursalesHTML += `
         <tr>
           <td style="font-weight:600;">${escapeHtml(s.nombre || '')}</td>
@@ -164,8 +166,8 @@ function renderHorariosTab(container) {
         <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Granularidad de la agenda</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.5;">Define el tamaño de las celdas en la vista semanal de la agenda.</div>
         <select name="slot_minutos" id="cfg-slot-minutos" class="form-control" style="max-width:400px;">
-          <option value="30" ${_horariosData.slot_minutos === 30 ? 'selected' : ''}>Cada 30 minutos</option>
-          <option value="15" ${_horariosData.slot_minutos === 15 ? 'selected' : ''}>Cada 15 minutos</option>
+          <option value="30" ${_configState.horariosData.slot_minutos === 30 ? 'selected' : ''}>Cada 30 minutos</option>
+          <option value="15" ${_configState.horariosData.slot_minutos === 15 ? 'selected' : ''}>Cada 15 minutos</option>
         </select>
       </div>
 
@@ -173,7 +175,7 @@ function renderHorariosTab(container) {
         <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Zona horaria</div>
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.5;">Afecta a toda la plataforma: el día actual en la agenda, las fechas del chatbot, y cualquier otro cálculo de hora local.</div>
         <select name="timezone" id="cfg-timezone" class="form-control" style="max-width:400px;">
-          ${generarOpcionesZonaHoraria(_horariosData.timezone || 'America/Argentina/Buenos_Aires')}
+          ${generarOpcionesZonaHoraria(_configState.horariosData.timezone || 'America/Argentina/Buenos_Aires')}
         </select>
       </div>
 
@@ -438,14 +440,12 @@ function renderHorariosSucursal(id) {
     <div class="card"><p class="text-muted">Cargando horarios...</p></div>
   `;
 
-  // Obtener nombre de la sucursal
   db.collection('sucursales').doc(id).get()
     .then(doc => {
       if (!doc.exists) throw new Error('Sucursal no encontrada');
       const nombre = doc.data().nombre || 'Sin nombre';
       document.getElementById('horarios-sucursal-nombre').textContent = nombre;
 
-      // Cargar horarios de la sucursal
       return db.collection('horarios').doc(id).get();
     })
     .then(doc => {
@@ -544,7 +544,6 @@ function guardarHorariosSucursal(id) {
 // TAB: PERMISOS
 // ============================================================
 function renderPermisosTab(container) {
-  // Módulos y roles (hardcodeados según la demo)
   const modulos = [
     'dashboard', 'agenda', 'pacientes', 'profesionales', 'automatizaciones', 'chat',
     'caja', 'presupuestos', 'productividad', 'liquidaciones', 'marketing',
@@ -557,7 +556,6 @@ function renderPermisosTab(container) {
     odontologo: 'Profesional (Odontólogo)'
   };
 
-  // Nombres amigables de módulos
   const moduloLabels = {
     dashboard: 'Dashboard',
     agenda: 'Agenda',
@@ -579,14 +577,12 @@ function renderPermisosTab(container) {
     configuracion: 'Configuración'
   };
 
-  // Permisos por defecto (según la demo)
   const defaults = {
     secretaria: ['dashboard', 'agenda', 'pacientes', 'profesionales', 'caja', 'presupuestos', 'tratamientos'],
     odontologo: ['dashboard', 'agenda', 'pacientes']
   };
 
-  // Cargar permisos guardados o usar defaults
-  const permisosGuardados = _permisosData.permisos || {};
+  const permisosGuardados = _configState.permisosData.permisos || {};
 
   let html = `
     <div class="card" style="margin-bottom:16px;">
@@ -667,7 +663,6 @@ function guardarPermisos() {
     if (cb.checked) permisos[rol].push(modulo);
   });
 
-  // Agregar dashboard siempre para todos los roles
   ['secretaria', 'odontologo'].forEach(rol => {
     if (!permisos[rol]) permisos[rol] = [];
     if (!permisos[rol].includes('dashboard')) permisos[rol].push('dashboard');
@@ -711,7 +706,7 @@ function renderEstadosTab(container) {
     { key: 'ausente', label: 'Ausente', defaultColor: '#dc2626' }
   ];
 
-  const coloresGuardados = _estadosData.colores || {};
+  const coloresGuardados = _configState.estadosData.colores || {};
 
   let html = `
     <div class="card" style="margin-bottom:16px;">
@@ -814,8 +809,8 @@ function restaurarEstadosDefaults() {
 // TAB: APARIENCIA
 // ============================================================
 function renderAparienciaTab(container) {
-  const estiloActual = _aparienciaData.estilo || 'claro';
-  const colores = _aparienciaData.colores || {
+  const estiloActual = _configState.aparienciaData.estilo || 'claro';
+  const colores = _configState.aparienciaData.colores || {
     primario: '#355063',
     accent: '#4285F4',
     menu: '#080303',
