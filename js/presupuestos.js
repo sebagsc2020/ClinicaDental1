@@ -1,5 +1,9 @@
 // ============================================================
-// PRESUPUESTOS 
+// PRESUPUESTOS
+// ============================================================
+
+// ============================================================
+// RENDER PRESUPUESTOS PRINCIPAL (LISTA)
 // ============================================================
 function renderPresupuestos() {
   const el = $('view-presupuestos');
@@ -221,31 +225,27 @@ function renderTablaPresupuestos(presupuestos) {
 }
 
 // ============================================================
-// FUNCIONES CRUD
+// FUNCIONES CRUD (dentro del contenedor)
 // ============================================================
 
-// --- Ver presupuesto (DETALLE EN MODAL) ---
+// --- Ver presupuesto (carga en el contenedor) ---
 window.verPresupuesto = function(id) {
-  // Mostrar indicador de carga
-  const loadingHTML = `
-    <div class="modal-title">📄 Cargando presupuesto…</div>
+  const el = $('view-presupuestos');
+  el.innerHTML = `
     <div style="text-align:center;padding:30px;color:var(--text-muted);">
-      <div style="font-size:14px;">Obteniendo datos...</div>
+      <div style="font-size:14px;">Cargando datos...</div>
     </div>
   `;
-  openModal(loadingHTML);
 
-  // Obtener el presupuesto
   db.collection('presupuestos').doc(id).get()
     .then(doc => {
       if (!doc.exists) {
-        closeModal();
-        alert('Presupuesto no encontrado');
+        el.innerHTML = `<p style="color:red;">Presupuesto no encontrado.</p>`;
         return;
       }
       const presupuesto = { id: doc.id, ...doc.data() };
 
-      // Obtener datos del paciente y profesional en paralelo
+      // Obtener datos del paciente y profesional
       const promises = [];
       let pacienteData = null;
       let profesionalData = null;
@@ -264,30 +264,169 @@ window.verPresupuesto = function(id) {
       }
 
       return Promise.all(promises).then(() => {
-        // Construir HTML del modal
         const html = renderDetallePresupuesto(presupuesto, pacienteData, profesionalData);
-        // Reemplazar contenido del modal (ya abierto)
-        const modalContent = document.querySelector('#modal-container .modal-content');
-        if (modalContent) {
-          modalContent.innerHTML = html;
-        } else {
-          // Si por alguna razón no existe, abrir de nuevo
-          closeModal();
-          openModal(html);
-        }
+        el.innerHTML = html;
       });
     })
     .catch(err => {
-      closeModal();
-      alert('❌ Error al cargar el presupuesto: ' + err.message);
+      el.innerHTML = `<p style="color:red;">Error al cargar: ${err.message}</p>`;
     });
 };
 
+// --- Editar presupuesto (carga en el contenedor) ---
+window.editarPresupuesto = function(id) {
+  const el = $('view-presupuestos');
+  el.innerHTML = `
+    <div style="text-align:center;padding:30px;color:var(--text-muted);">
+      <div style="font-size:14px;">Cargando datos para edición...</div>
+    </div>
+  `;
+
+  db.collection('presupuestos').doc(id).get()
+    .then(doc => {
+      if (!doc.exists) {
+        el.innerHTML = `<p style="color:red;">Presupuesto no encontrado.</p>`;
+        return;
+      }
+      const data = doc.data();
+
+      // Cargar pacientes y profesionales para los selects
+      let pacientesHTML = '<option value="">Seleccionar paciente</option>';
+      let profesionalesHTML = '<option value="">Seleccionar profesional</option>';
+
+      const promPacientes = db.collection('pacientes').orderBy('nombre').get()
+        .then(snap => {
+          snap.forEach(d => {
+            const p = d.data();
+            const nombre = `${p.nombre || ''} ${p.apellido || ''}`.trim() || 'Sin nombre';
+            const selected = d.id === data.paciente_id ? 'selected' : '';
+            pacientesHTML += `<option value="${d.id}" ${selected}>${nombre}</option>`;
+          });
+        });
+
+      const promProfesionales = db.collection('profesionales').orderBy('nombre').get()
+        .then(snap => {
+          snap.forEach(d => {
+            const p = d.data();
+            const nombre = `${p.nombre || ''} ${p.apellido || ''}`.trim() || 'Sin nombre';
+            const selected = d.id === data.profesional_id ? 'selected' : '';
+            profesionalesHTML += `<option value="${d.id}" ${selected}>${nombre}</option>`;
+          });
+        });
+
+      return Promise.all([promPacientes, promProfesionales]).then(() => {
+        const html = `
+          <div class="page-header">
+            <div>
+              <div class="page-title">✏️ Editar presupuesto</div>
+            </div>
+            <div>
+              <button class="btn btn-secondary" onclick="renderPresupuestos()">← Volver</button>
+            </div>
+          </div>
+          <div class="card">
+            <form id="form-editar-presupuesto">
+              <div class="form-group">
+                <label class="form-label">Número</label>
+                <input class="form-control" id="f-pres-edit-numero" value="${data.numero || ''}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Paciente *</label>
+                <select class="form-control" id="f-pres-edit-paciente">${pacientesHTML}</select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Profesional</label>
+                <select class="form-control" id="f-pres-edit-profesional">${profesionalesHTML}</select>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Fecha emisión</label>
+                  <input class="form-control" id="f-pres-edit-fecha-emision" type="date" value="${data.fecha_emision || ''}">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Fecha vencimiento</label>
+                  <input class="form-control" id="f-pres-edit-fecha-vencimiento" type="date" value="${data.fecha_vencimiento || ''}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Total</label>
+                <input class="form-control" id="f-pres-edit-total" type="number" step="0.01" value="${data.total || 0}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Estado</label>
+                <select class="form-control" id="f-pres-edit-estado">
+                  <option value="pendiente" ${data.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                  <option value="aprobado" ${data.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option>
+                  <option value="rechazado" ${data.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option>
+                  <option value="vencido" ${data.estado === 'vencido' ? 'selected' : ''}>Vencido</option>
+                </select>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="renderPresupuestos()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarEdicionPresupuesto('${id}')">Actualizar</button>
+              </div>
+            </form>
+          </div>
+        `;
+        el.innerHTML = html;
+      });
+    })
+    .catch(err => {
+      el.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+    });
+};
+
+// --- Guardar edición (desde el contenedor) ---
+window.guardarEdicionPresupuesto = function(id) {
+  const numero = $('f-pres-edit-numero').value.trim();
+  const pacienteId = $('f-pres-edit-paciente').value;
+  const profesionalId = $('f-pres-edit-profesional').value;
+  const fechaEmision = $('f-pres-edit-fecha-emision').value;
+  const fechaVencimiento = $('f-pres-edit-fecha-vencimiento').value;
+  const total = parseFloat($('f-pres-edit-total').value) || 0;
+  const estado = $('f-pres-edit-estado').value;
+
+  if (!pacienteId) return alert('Selecciona un paciente.');
+
+  const pacienteNombre = $('f-pres-edit-paciente').options[$('f-pres-edit-paciente').selectedIndex].text;
+  const profesionalNombre = $('f-pres-edit-profesional').options[$('f-pres-edit-profesional').selectedIndex].text;
+
+  const updateData = {
+    numero,
+    paciente_id: pacienteId,
+    paciente: pacienteNombre,
+    profesional_id: profesionalId || null,
+    profesional: profesionalNombre || null,
+    fecha_emision: fechaEmision || new Date().toISOString().slice(0, 10),
+    fecha_vencimiento: fechaVencimiento || null,
+    total,
+    estado,
+    updated_at: new Date().toISOString()
+  };
+
+  db.collection('presupuestos').doc(id).update(updateData)
+    .then(() => {
+      showToast('✅ Presupuesto actualizado.');
+      renderPresupuestos(); // Volver a la lista
+    })
+    .catch(err => alert('❌ Error: ' + err.message));
+};
+
+// --- Eliminar presupuesto (con confirmación y vuelta a la lista) ---
+window.eliminarPresupuesto = function(id) {
+  if (!confirm('¿Eliminar este presupuesto?')) return;
+  db.collection('presupuestos').doc(id).delete()
+    .then(() => {
+      showToast('🗑 Presupuesto eliminado.');
+      renderPresupuestos(); // Recargar lista
+    })
+    .catch(err => alert('❌ Error: ' + err.message));
+};
+
 // ============================================================
-// RENDER DETALLE PRESUPUESTO
+// RENDER DETALLE PRESUPUESTO (para el contenedor)
 // ============================================================
 function renderDetallePresupuesto(presupuesto, pacienteData, profesionalData) {
-  // Mapeo de estados a badges
   const estadoBadges = {
     'pendiente': 'badge-amber',
     'aprobado': 'badge-green',
@@ -305,23 +444,19 @@ function renderDetallePresupuesto(presupuesto, pacienteData, profesionalData) {
   const estadoClase = estadoBadges[estado] || 'badge-gray';
   const estadoTexto = estadoTextos[estado] || estado;
 
-  // Fechas formateadas
   const fechaEmision = presupuesto.fecha_emision ? formatDate(presupuesto.fecha_emision) : '—';
   const fechaVencimiento = presupuesto.fecha_vencimiento ? formatDate(presupuesto.fecha_vencimiento) : '—';
 
-  // Datos del paciente
   const pacienteNombre = pacienteData
     ? `${pacienteData.nombre || ''} ${pacienteData.apellido || ''}`.trim() || 'Sin nombre'
     : (presupuesto.paciente || '—');
   const pacienteDNI = pacienteData?.dni || '';
 
-  // Datos del profesional
   const profesionalNombre = profesionalData
     ? `${profesionalData.nombre || ''} ${profesionalData.apellido || ''}`.trim() || 'Sin nombre'
     : (presupuesto.profesional || '—');
   const profesionalMatricula = profesionalData?.matricula || '';
 
-  // Ítems
   const items = presupuesto.items || [];
   let itemsHTML = '';
   if (items.length === 0) {
@@ -345,10 +480,9 @@ function renderDetallePresupuesto(presupuesto, pacienteData, profesionalData) {
     });
   }
 
-  // Total
   const total = presupuesto.total || 0;
 
-  // Botones de cambio de estado (excepto el actual, que se muestra como badge)
+  // Botones de cambio de estado (excepto el actual)
   const estadosPosibles = ['pendiente', 'aprobado', 'rechazado', 'vencido'];
   let botonesEstadoHTML = '';
   estadosPosibles.forEach(est => {
@@ -371,78 +505,74 @@ function renderDetallePresupuesto(presupuesto, pacienteData, profesionalData) {
   });
 
   return `
-    <div style="padding:4px 0;">
-      <!-- Encabezado -->
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-        <div>
-          <div style="font-size:20px;font-weight:800;color:var(--text);">${presupuesto.numero || 'PRES-' + presupuesto.id.slice(0,6).toUpperCase()}</div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap;">
-            <span class="badge ${estadoClase}">${estadoTexto}</span>
-            <span style="font-size:13px;color:var(--text-muted);">· Emitido el ${fechaEmision}</span>
-            <span style="font-size:13px;color:var(--text-muted);">· Vence ${fechaVencimiento}</span>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button onclick="closeModal()" class="btn btn-secondary">Cerrar</button>
-          <button onclick="window.print()" class="btn btn-secondary">Imprimir</button>
+    <div class="page-header">
+      <div>
+        <div class="page-title">${presupuesto.numero || 'PRES-' + presupuesto.id.slice(0,6).toUpperCase()}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap;">
+          <span class="badge ${estadoClase}">${estadoTexto}</span>
+          <span style="font-size:13px;color:var(--text-muted);">· Emitido el ${fechaEmision}</span>
+          <span style="font-size:13px;color:var(--text-muted);">· Vence ${fechaVencimiento}</span>
         </div>
       </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="renderPresupuestos()" class="btn btn-secondary">← Volver</button>
+        <button onclick="window.print()" class="btn btn-secondary">Imprimir</button>
+      </div>
+    </div>
 
-      <!-- Grid: Paciente / Profesional -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
-        <div class="card" style="padding:14px 16px;">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;">Paciente</div>
-          <div style="font-size:16px;font-weight:700;margin-top:2px;">${pacienteNombre}</div>
-          ${pacienteDNI ? `<div style="font-size:12px;color:var(--text-muted);">DNI: ${pacienteDNI}</div>` : ''}
-        </div>
-        <div class="card" style="padding:14px 16px;">
-          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;">Profesional</div>
-          <div style="font-size:16px;font-weight:700;margin-top:2px;">${profesionalNombre}</div>
-          ${profesionalMatricula ? `<div style="font-size:12px;color:var(--text-muted);">Matrícula: ${profesionalMatricula}</div>` : ''}
-        </div>
+    <!-- Grid: Paciente / Profesional -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+      <div class="card" style="padding:14px 16px;">
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;">Paciente</div>
+        <div style="font-size:16px;font-weight:700;margin-top:2px;">${pacienteNombre}</div>
+        ${pacienteDNI ? `<div style="font-size:12px;color:var(--text-muted);">DNI: ${pacienteDNI}</div>` : ''}
       </div>
+      <div class="card" style="padding:14px 16px;">
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;">Profesional</div>
+        <div style="font-size:16px;font-weight:700;margin-top:2px;">${profesionalNombre}</div>
+        ${profesionalMatricula ? `<div style="font-size:12px;color:var(--text-muted);">Matrícula: ${profesionalMatricula}</div>` : ''}
+      </div>
+    </div>
 
-      <!-- Tabla de ítems -->
-      <div class="card" style="margin-bottom:20px;overflow-x:auto;">
-        <table class="table" style="width:100%;border-collapse:collapse;font-size:13px;">
-          <thead>
-            <tr>
-              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Descripción</th>
-              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:center;">Diente</th>
-              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:center;">Cant.</th>
-              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Precio</th>
-              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsHTML}
-          </tbody>
-          <tfoot>
-            <tr style="border-top:2px solid var(--border);">
-              <td colspan="4" style="text-align:right;font-size:14px;font-weight:700;">TOTAL</td>
-              <td style="text-align:right;font-size:18px;font-weight:700;color:var(--primary);">
-                $${Number(total).toLocaleString()}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+    <!-- Tabla de ítems -->
+    <div class="card" style="margin-bottom:20px;overflow-x:auto;">
+      <table class="table" style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr>
+            <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Descripción</th>
+            <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:center;">Diente</th>
+            <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:center;">Cant.</th>
+            <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Precio</th>
+            <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHTML}
+        </tbody>
+        <tfoot>
+          <tr style="border-top:2px solid var(--border);">
+            <td colspan="4" style="text-align:right;font-size:14px;font-weight:700;">TOTAL</td>
+            <td style="text-align:right;font-size:18px;font-weight:700;color:var(--primary);">
+              $${Number(total).toLocaleString()}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
 
-      <!-- Lateral: Cambio de estado (dentro del modal) -->
-      <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;">
-        <div></div> <!-- espacio vacío -->
-        <div class="card" style="padding:16px;">
-          <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">Cambiar estado</div>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            ${botonesEstadoHTML}
-          </div>
+    <!-- Lateral: Cambio de estado (dentro del contenedor) -->
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;">
+      <div></div>
+      <div class="card" style="padding:16px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">Cambiar estado</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${botonesEstadoHTML}
         </div>
       </div>
+    </div>
 
-      <!-- Información de creación -->
-      <div style="margin-top:12px;font-size:11px;color:var(--text-muted);text-align:right;">
-        Creado el ${presupuesto.created_at ? formatDate(presupuesto.created_at) : '—'}
-      </div>
+    <div style="margin-top:12px;font-size:11px;color:var(--text-muted);text-align:right;">
+      Creado el ${presupuesto.created_at ? formatDate(presupuesto.created_at) : '—'}
     </div>
   `;
 }
@@ -459,12 +589,8 @@ window.cambiarEstadoPresupuesto = function(id, nuevoEstado) {
   })
   .then(() => {
     showToast(`✅ Estado actualizado a ${nuevoEstado}.`);
-    // Cerrar el modal y refrescar la lista
-    closeModal();
-    // Recargar la lista para reflejar el cambio
-    if (typeof aplicarFiltrosPresupuestos === 'function') {
-      aplicarFiltrosPresupuestos();
-    }
+    // Recargar el detalle (volver a ver el presupuesto actualizado)
+    verPresupuesto(id);
   })
   .catch(err => {
     alert('❌ Error al actualizar estado: ' + err.message);
@@ -485,128 +611,9 @@ function formatDate(dateStr) {
 }
 
 // ============================================================
-// EDICIÓN Y ELIMINACIÓN (ya existentes, se mantienen)
-// ============================================================
-window.editarPresupuesto = function(id) {
-  db.collection('presupuestos').doc(id).get().then(doc => {
-    if (!doc.exists) return alert('Presupuesto no encontrado');
-    const data = doc.data();
-
-    // Cargar pacientes para el select
-    let pacientesHTML = '<option value="">Seleccionar paciente</option>';
-    db.collection('pacientes').orderBy('nombre').get().then(snap => {
-      snap.forEach(d => {
-        const p = d.data();
-        const nombre = `${p.nombre || ''} ${p.apellido || ''}`.trim() || 'Sin nombre';
-        const selected = d.id === data.paciente_id ? 'selected' : '';
-        pacientesHTML += `<option value="${d.id}" ${selected}>${nombre}</option>`;
-      });
-
-      // Cargar profesionales para el select
-      let profesionalesHTML = '<option value="">Seleccionar profesional</option>';
-      db.collection('profesionales').orderBy('nombre').get().then(snap2 => {
-        snap2.forEach(d => {
-          const p = d.data();
-          const nombre = `${p.nombre || ''} ${p.apellido || ''}`.trim() || 'Sin nombre';
-          const selected = d.id === data.profesional_id ? 'selected' : '';
-          profesionalesHTML += `<option value="${d.id}" ${selected}>${nombre}</option>`;
-        });
-
-        openModal(`
-          <div class="modal-title">✏️ Editar presupuesto</div>
-          <div class="form-group">
-            <label class="form-label">Número</label>
-            <input class="form-control" id="f-pres-edit-numero" value="${data.numero || ''}">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Paciente *</label>
-            <select class="form-control" id="f-pres-edit-paciente">${pacientesHTML}</select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Profesional</label>
-            <select class="form-control" id="f-pres-edit-profesional">${profesionalesHTML}</select>
-          </div>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Fecha emisión</label>
-              <input class="form-control" id="f-pres-edit-fecha-emision" type="date" value="${data.fecha_emision || ''}">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Fecha vencimiento</label>
-              <input class="form-control" id="f-pres-edit-fecha-vencimiento" type="date" value="${data.fecha_vencimiento || ''}">
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Total</label>
-            <input class="form-control" id="f-pres-edit-total" type="number" step="0.01" value="${data.total || 0}">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Estado</label>
-            <select class="form-control" id="f-pres-edit-estado">
-              <option value="pendiente" ${data.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
-              <option value="aprobado" ${data.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option>
-              <option value="rechazado" ${data.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option>
-              <option value="vencido" ${data.estado === 'vencido' ? 'selected' : ''}>Vencido</option>
-            </select>
-          </div>
-          <div class="modal-actions">
-            <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-            <button class="btn btn-primary" onclick="guardarEdicionPresupuesto('${id}')">Actualizar</button>
-          </div>
-        `);
-      });
-    });
-  }).catch(err => alert('Error: ' + err.message));
-};
-
-window.guardarEdicionPresupuesto = function(id) {
-  const numero = $('f-pres-edit-numero').value.trim();
-  const pacienteId = $('f-pres-edit-paciente').value;
-  const profesionalId = $('f-pres-edit-profesional').value;
-  const fechaEmision = $('f-pres-edit-fecha-emision').value;
-  const fechaVencimiento = $('f-pres-edit-fecha-vencimiento').value;
-  const total = parseFloat($('f-pres-edit-total').value) || 0;
-  const estado = $('f-pres-edit-estado').value;
-
-  if (!pacienteId) return alert('Selecciona un paciente.');
-
-  // Obtener nombres para mostrar
-  const pacienteNombre = $('f-pres-edit-paciente').options[$('f-pres-edit-paciente').selectedIndex].text;
-  const profesionalNombre = $('f-pres-edit-profesional').options[$('f-pres-edit-profesional').selectedIndex].text;
-
-  const updateData = {
-    numero,
-    paciente_id: pacienteId,
-    paciente: pacienteNombre,
-    profesional_id: profesionalId || null,
-    profesional: profesionalNombre || null,
-    fecha_emision: fechaEmision || new Date().toISOString().slice(0, 10),
-    fecha_vencimiento: fechaVencimiento || null,
-    total,
-    estado,
-    updated_at: new Date().toISOString()
-  };
-
-  db.collection('presupuestos').doc(id).update(updateData)
-    .then(() => {
-      closeModal();
-      showToast('✅ Presupuesto actualizado.');
-    })
-    .catch(err => alert('❌ Error: ' + err.message));
-};
-
-window.eliminarPresupuesto = function(id) {
-  if (!confirm('¿Eliminar este presupuesto?')) return;
-  db.collection('presupuestos').doc(id).delete()
-    .then(() => showToast('🗑 Presupuesto eliminado.'))
-    .catch(err => alert('❌ Error: ' + err.message));
-};
-
-// ============================================================
-// MODAL: NUEVO PRESUPUESTO
+// MODAL: NUEVO PRESUPUESTO (se mantiene igual, pero ahora al guardar vuelve a la lista)
 // ============================================================
 window.openModalNuevoPresupuesto = function() {
-  // Cargar pacientes para el select
   let pacientesHTML = '<option value="">Seleccionar paciente</option>';
   db.collection('pacientes').orderBy('nombre').get().then(snap => {
     snap.forEach(d => {
@@ -615,7 +622,6 @@ window.openModalNuevoPresupuesto = function() {
       pacientesHTML += `<option value="${d.id}">${nombre}</option>`;
     });
 
-    // Cargar profesionales para el select
     let profesionalesHTML = '<option value="">Seleccionar profesional</option>';
     db.collection('profesionales').orderBy('nombre').get().then(snap2 => {
       snap2.forEach(d => {
@@ -701,6 +707,7 @@ window.guardarPresupuesto = function() {
     .then(() => {
       closeModal();
       showToast('✅ Presupuesto creado exitosamente.');
+      renderPresupuestos(); // Recargar lista
     })
     .catch(err => alert('❌ Error: ' + err.message));
 };
