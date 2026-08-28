@@ -1,9 +1,5 @@
 // ============================================================
-// PRESUPUESTOS
-// ============================================================
-
-// ============================================================
-// RENDER PRESUPUESTOS PRINCIPAL
+// PRESUPUESTOS 
 // ============================================================
 function renderPresupuestos() {
   const el = $('view-presupuestos');
@@ -228,14 +224,269 @@ function renderTablaPresupuestos(presupuestos) {
 // FUNCIONES CRUD
 // ============================================================
 
-// --- Ver presupuesto ---
+// --- Ver presupuesto (DETALLE EN MODAL) ---
 window.verPresupuesto = function(id) {
-  alert('Ver detalle del presupuesto ID: ' + id);
-  // Aquí puedes redirigir a una página de detalle o abrir un modal
-  // window.location.href = '#presupuesto/' + id;
+  // Mostrar indicador de carga
+  const loadingHTML = `
+    <div class="modal-title">📄 Cargando presupuesto…</div>
+    <div style="text-align:center;padding:30px;color:var(--text-muted);">
+      <div style="font-size:14px;">Obteniendo datos...</div>
+    </div>
+  `;
+  openModal(loadingHTML);
+
+  // Obtener el presupuesto
+  db.collection('presupuestos').doc(id).get()
+    .then(doc => {
+      if (!doc.exists) {
+        closeModal();
+        alert('Presupuesto no encontrado');
+        return;
+      }
+      const presupuesto = { id: doc.id, ...doc.data() };
+
+      // Obtener datos del paciente y profesional en paralelo
+      const promises = [];
+      let pacienteData = null;
+      let profesionalData = null;
+
+      if (presupuesto.paciente_id) {
+        promises.push(
+          db.collection('pacientes').doc(presupuesto.paciente_id).get()
+            .then(d => { pacienteData = d.exists ? d.data() : null; })
+        );
+      }
+      if (presupuesto.profesional_id) {
+        promises.push(
+          db.collection('profesionales').doc(presupuesto.profesional_id).get()
+            .then(d => { profesionalData = d.exists ? d.data() : null; })
+        );
+      }
+
+      return Promise.all(promises).then(() => {
+        // Construir HTML del modal
+        const html = renderDetallePresupuesto(presupuesto, pacienteData, profesionalData);
+        // Reemplazar contenido del modal (ya abierto)
+        const modalContent = document.querySelector('#modal-container .modal-content');
+        if (modalContent) {
+          modalContent.innerHTML = html;
+        } else {
+          // Si por alguna razón no existe, abrir de nuevo
+          closeModal();
+          openModal(html);
+        }
+      });
+    })
+    .catch(err => {
+      closeModal();
+      alert('❌ Error al cargar el presupuesto: ' + err.message);
+    });
 };
 
-// --- Editar presupuesto ---
+// ============================================================
+// RENDER DETALLE PRESUPUESTO
+// ============================================================
+function renderDetallePresupuesto(presupuesto, pacienteData, profesionalData) {
+  // Mapeo de estados a badges
+  const estadoBadges = {
+    'pendiente': 'badge-amber',
+    'aprobado': 'badge-green',
+    'rechazado': 'badge-red',
+    'vencido': 'badge-gray'
+  };
+  const estadoTextos = {
+    'pendiente': 'Pendiente',
+    'aprobado': 'Aprobado',
+    'rechazado': 'Rechazado',
+    'vencido': 'Vencido'
+  };
+
+  const estado = presupuesto.estado || 'pendiente';
+  const estadoClase = estadoBadges[estado] || 'badge-gray';
+  const estadoTexto = estadoTextos[estado] || estado;
+
+  // Fechas formateadas
+  const fechaEmision = presupuesto.fecha_emision ? formatDate(presupuesto.fecha_emision) : '—';
+  const fechaVencimiento = presupuesto.fecha_vencimiento ? formatDate(presupuesto.fecha_vencimiento) : '—';
+
+  // Datos del paciente
+  const pacienteNombre = pacienteData
+    ? `${pacienteData.nombre || ''} ${pacienteData.apellido || ''}`.trim() || 'Sin nombre'
+    : (presupuesto.paciente || '—');
+  const pacienteDNI = pacienteData?.dni || '';
+
+  // Datos del profesional
+  const profesionalNombre = profesionalData
+    ? `${profesionalData.nombre || ''} ${profesionalData.apellido || ''}`.trim() || 'Sin nombre'
+    : (presupuesto.profesional || '—');
+  const profesionalMatricula = profesionalData?.matricula || '';
+
+  // Ítems
+  const items = presupuesto.items || [];
+  let itemsHTML = '';
+  if (items.length === 0) {
+    itemsHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted);">Sin ítems registrados</td></tr>`;
+  } else {
+    items.forEach(item => {
+      const desc = item.descripcion || '';
+      const diente = item.diente || '';
+      const cantidad = item.cantidad || 1;
+      const precio = item.precio || 0;
+      const subtotal = item.subtotal || (precio * cantidad);
+      itemsHTML += `
+        <tr>
+          <td>${desc}</td>
+          <td style="text-align:center;font-size:12px;color:var(--text-muted);">${diente}</td>
+          <td style="text-align:center;">${cantidad}</td>
+          <td style="text-align:right;">$${Number(precio).toLocaleString()}</td>
+          <td style="text-align:right;font-weight:600;">$${Number(subtotal).toLocaleString()}</td>
+        </tr>
+      `;
+    });
+  }
+
+  // Total
+  const total = presupuesto.total || 0;
+
+  // Botones de cambio de estado (excepto el actual, que se muestra como badge)
+  const estadosPosibles = ['pendiente', 'aprobado', 'rechazado', 'vencido'];
+  let botonesEstadoHTML = '';
+  estadosPosibles.forEach(est => {
+    if (est === estado) {
+      botonesEstadoHTML += `
+        <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg);border-radius:6px;">
+          <span class="badge ${estadoBadges[est]}">${estadoTextos[est]}</span>
+          <span style="font-size:11px;color:var(--text-muted);">(actual)</span>
+        </div>
+      `;
+    } else {
+      botonesEstadoHTML += `
+        <form onsubmit="event.preventDefault(); cambiarEstadoPresupuesto('${presupuesto.id}', '${est}')">
+          <button type="submit" class="btn btn-sm btn-block btn-secondary">
+            ${estadoTextos[est]}
+          </button>
+        </form>
+      `;
+    }
+  });
+
+  return `
+    <div style="padding:4px 0;">
+      <!-- Encabezado -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+        <div>
+          <div style="font-size:20px;font-weight:800;color:var(--text);">${presupuesto.numero || 'PRES-' + presupuesto.id.slice(0,6).toUpperCase()}</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap;">
+            <span class="badge ${estadoClase}">${estadoTexto}</span>
+            <span style="font-size:13px;color:var(--text-muted);">· Emitido el ${fechaEmision}</span>
+            <span style="font-size:13px;color:var(--text-muted);">· Vence ${fechaVencimiento}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="closeModal()" class="btn btn-secondary">Cerrar</button>
+          <button onclick="window.print()" class="btn btn-secondary">Imprimir</button>
+        </div>
+      </div>
+
+      <!-- Grid: Paciente / Profesional -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+        <div class="card" style="padding:14px 16px;">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;">Paciente</div>
+          <div style="font-size:16px;font-weight:700;margin-top:2px;">${pacienteNombre}</div>
+          ${pacienteDNI ? `<div style="font-size:12px;color:var(--text-muted);">DNI: ${pacienteDNI}</div>` : ''}
+        </div>
+        <div class="card" style="padding:14px 16px;">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;">Profesional</div>
+          <div style="font-size:16px;font-weight:700;margin-top:2px;">${profesionalNombre}</div>
+          ${profesionalMatricula ? `<div style="font-size:12px;color:var(--text-muted);">Matrícula: ${profesionalMatricula}</div>` : ''}
+        </div>
+      </div>
+
+      <!-- Tabla de ítems -->
+      <div class="card" style="margin-bottom:20px;overflow-x:auto;">
+        <table class="table" style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:left;">Descripción</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:center;">Diente</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:center;">Cant.</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Precio</th>
+              <th style="padding:10px 12px;background:var(--bg);font-weight:600;color:var(--text-muted);border-bottom:2px solid var(--border);text-align:right;">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHTML}
+          </tbody>
+          <tfoot>
+            <tr style="border-top:2px solid var(--border);">
+              <td colspan="4" style="text-align:right;font-size:14px;font-weight:700;">TOTAL</td>
+              <td style="text-align:right;font-size:18px;font-weight:700;color:var(--primary);">
+                $${Number(total).toLocaleString()}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Lateral: Cambio de estado (dentro del modal) -->
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;">
+        <div></div> <!-- espacio vacío -->
+        <div class="card" style="padding:16px;">
+          <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">Cambiar estado</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            ${botonesEstadoHTML}
+          </div>
+        </div>
+      </div>
+
+      <!-- Información de creación -->
+      <div style="margin-top:12px;font-size:11px;color:var(--text-muted);text-align:right;">
+        Creado el ${presupuesto.created_at ? formatDate(presupuesto.created_at) : '—'}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// CAMBIAR ESTADO DEL PRESUPUESTO (desde el detalle)
+// ============================================================
+window.cambiarEstadoPresupuesto = function(id, nuevoEstado) {
+  if (!confirm(`¿Cambiar estado a "${nuevoEstado}"?`)) return;
+
+  db.collection('presupuestos').doc(id).update({
+    estado: nuevoEstado,
+    updated_at: new Date().toISOString()
+  })
+  .then(() => {
+    showToast(`✅ Estado actualizado a ${nuevoEstado}.`);
+    // Cerrar el modal y refrescar la lista
+    closeModal();
+    // Recargar la lista para reflejar el cambio
+    if (typeof aplicarFiltrosPresupuestos === 'function') {
+      aplicarFiltrosPresupuestos();
+    }
+  })
+  .catch(err => {
+    alert('❌ Error al actualizar estado: ' + err.message);
+  });
+};
+
+// ============================================================
+// FUNCIÓN AUXILIAR: FORMATO DE FECHA
+// ============================================================
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+// ============================================================
+// EDICIÓN Y ELIMINACIÓN (ya existentes, se mantienen)
+// ============================================================
 window.editarPresupuesto = function(id) {
   db.collection('presupuestos').doc(id).get().then(doc => {
     if (!doc.exists) return alert('Presupuesto no encontrado');
@@ -308,7 +559,6 @@ window.editarPresupuesto = function(id) {
   }).catch(err => alert('Error: ' + err.message));
 };
 
-// --- Guardar edición ---
 window.guardarEdicionPresupuesto = function(id) {
   const numero = $('f-pres-edit-numero').value.trim();
   const pacienteId = $('f-pres-edit-paciente').value;
@@ -345,7 +595,6 @@ window.guardarEdicionPresupuesto = function(id) {
     .catch(err => alert('❌ Error: ' + err.message));
 };
 
-// --- Eliminar presupuesto ---
 window.eliminarPresupuesto = function(id) {
   if (!confirm('¿Eliminar este presupuesto?')) return;
   db.collection('presupuestos').doc(id).delete()
@@ -421,9 +670,6 @@ window.openModalNuevoPresupuesto = function() {
   });
 };
 
-// ============================================================
-// GUARDAR PRESUPUESTO
-// ============================================================
 window.guardarPresupuesto = function() {
   const numero = $('f-pres-numero').value.trim();
   const pacienteId = $('f-pres-paciente').value;
