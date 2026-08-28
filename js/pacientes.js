@@ -2,10 +2,6 @@
 // PACIENTES - VISTA EXACTA AL EJEMPLO DE DENTALSOFT
 // ============================================================
 
-// Variables de estado para filtros
-let filterBusqueda = '';
-let filterEstado = '';
-
 // ============================================================
 // RENDER PACIENTES PRINCIPAL
 // ============================================================
@@ -101,6 +97,20 @@ function renderPacientes() {
       @media (min-width: 769px) {
         .pac-mob-list { display: none !important; }
       }
+      /* Estilos para avatar */
+      .avatar-paciente {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12px;
+        flex-shrink: 0;
+        background: var(--teal-light, #ccfbf1);
+        color: var(--teal, #0f766e);
+      }
     `;
     document.head.appendChild(style);
   }
@@ -191,19 +201,20 @@ function renderTablaPacientes(pacientes) {
     const email = p.email || '';
     const obraSocial = p.obra_social || '—';
     const ultimaConsulta = p.ultima_consulta || '—';
+    const codigo = p.codigo || 'PAC-' + String(p.id).padStart(4, '0');
 
     html += `
       <tr>
         <td>
           <div style="display:flex;align-items:center;gap:10px">
-            <div class="avatar" style="background:var(--teal-light);color:var(--teal);font-size:12px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">
+            <div class="avatar-paciente">
               ${iniciales || 'P'}
             </div>
             <div>
               <a href="#" style="font-weight:600;color:var(--text);" onclick="verPaciente('${p.id}')">
                 ${nombre}
               </a>
-              <div style="font-size:11px;color:var(--text-muted)">${p.codigo || 'PAC-' + String(p.id).padStart(4, '0')}</div>
+              <div style="font-size:11px;color:var(--text-muted)">${codigo}</div>
             </div>
           </div>
         </td>
@@ -216,8 +227,8 @@ function renderTablaPacientes(pacientes) {
         <td style="font-size:12px;color:var(--text-muted)">${ultimaConsulta}</td>
         <td><span class="badge ${estadoBadge}">${estadoTexto}</span></td>
         <td style="white-space:nowrap">
-          <button class="btn btn-secondary btn-sm" onclick="verPaciente('${p.id}')">Ver</button>
-          <button class="btn btn-secondary btn-sm" onclick="editarPaciente('${p.id}')">Editar</button>
+          <a href="#" class="btn btn-secondary btn-sm" onclick="verPaciente('${p.id}')">Ver</a>
+          <a href="#" class="btn btn-secondary btn-sm" onclick="editarPaciente('${p.id}')">Editar</a>
           <button type="button" class="btn btn-sm" style="color:var(--danger,#e53e3e);border-color:var(--danger,#e53e3e);background:transparent;margin-left:4px"
                   onclick="confirmarEliminar('${p.id}', '${nombre.replace(/'/g, "\\'")}')">
             Eliminar
@@ -257,7 +268,7 @@ function renderMobilePacientes(pacientes) {
     html += `
       <a href="#" onclick="verPaciente('${p.id}')"
          style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #f1f5f9;text-decoration:none;color:inherit;">
-        <div class="avatar" style="background:var(--teal-light);color:var(--teal);font-size:12px;flex-shrink:0;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;">
+        <div class="avatar-paciente">
           ${iniciales || 'P'}
         </div>
         <div style="flex:1;min-width:0">
@@ -325,8 +336,9 @@ window.ejecutarEliminar = function() {
 
 // --- Ver paciente ---
 window.verPaciente = function(id) {
+  // Redirigir a la página de detalle o abrir modal
   alert('Ver detalle del paciente ID: ' + id);
-  // Aquí puedes redirigir a una página de detalle o abrir un modal
+  // window.location.href = '#paciente/' + id;
 };
 
 // ============================================================
