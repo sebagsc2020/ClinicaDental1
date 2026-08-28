@@ -6,7 +6,7 @@
   <title>Clínica Dental · Panel Completo</title>
 
   <style>
-    /* ===== Variables y reset ===== */
+    /* ===== Variables y reset (base) ===== */
     :root {
       --primary: #355063;
       --primary-dark: #1e2d3a;
@@ -117,8 +117,6 @@
     .sidebar .sidebar-item.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
     .sidebar .sidebar-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
     .sidebar .sidebar-item .sb-txt { flex: 1; }
-
-    /* ─── Submenús colapsables (MEJORADO) ─── */
     .sidebar-group-row {
       display: flex;
       align-items: stretch;
@@ -149,9 +147,8 @@
       transition: max-height 0.25s ease;
     }
     .sidebar-subitems.open {
-      max-height: 200px; /* suficiente para los subítems */
+      max-height: 200px;
     }
-    /* ────────────────────────────────────── */
 
     /* ===== Main ===== */
     .main { flex: 1; padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 60px); }
@@ -163,13 +160,11 @@
     }
     .page-title { font-size: 22px; font-weight: 700; }
     .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
-
     .card {
       background: var(--white); border: 1px solid var(--border);
       border-radius: var(--radius); padding: 20px;
       box-shadow: var(--shadow); margin-bottom: 20px;
     }
-
     .btn {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 8px 16px; border-radius: var(--radius);
@@ -195,94 +190,24 @@
     .form-control:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(66,133,244,0.15); }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-
-    /* Badges base */
-    .badge {
-      display: inline-block; padding: 2px 10px; border-radius: 20px;
-      font-size: 12px; font-weight: 600;
-    }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
     .badge-green { background: #dcfce7; color: #15803d; }
     .badge-blue { background: #dbeafe; color: #1d4ed8; }
     .badge-red { background: #fee2e2; color: #b91c1c; }
     .badge-amber { background: #fef3c7; color: #b45309; }
     .badge-gray { background: #f1f5f9; color: #4b5563; }
     .badge-teal { background: #ccfbf1; color: #0f766e; }
-
-    /* Badges de estado (activo/inactivo) */
     .badge-estado-activo   { background: #dcfce7; color: #15803d; }
     .badge-estado-inactivo { background: #f1f5f9; color: #4b5563; }
-
-    /* Etiquetas adicionales (Agenda virtual, Requiere laboratorio) */
-    .badge-etiqueta {
-      font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-    }
+    .badge-etiqueta { font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
     .badge-etiqueta.azul   { background: #dbeafe; color: #1d4ed8; }
     .badge-etiqueta.ambar  { background: #fef3c7; color: #b45309; }
 
-    /* Pills de categoría */
-    .pill-categoria {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-      color: #1e2d3a;
-      cursor: pointer;
-      transition: 0.15s;
-      text-decoration: none;
-      background: none;
-    }
-    .pill-categoria:hover { background: #f1f5f9; }
-    .pill-categoria .contador {
-      background: #f1f5f9;
-      padding: 1px 6px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 11px;
-    }
-    .pill-categoria.activa {
-      background: #4285F4;
-      border-color: #4285F4;
-      color: #fff;
-    }
-    .pill-categoria.activa .contador { background: rgba(255,255,255,0.2); color: #fff; }
-
-    /* Tabla */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; padding: 10px 12px; background: var(--bg); font-weight: 600; color: var(--text-muted); border-bottom: 2px solid var(--border); }
-    td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background: #fafcff; }
-
-    .tabs {
-      display: flex; flex-wrap: wrap; gap: 4px;
-      border-bottom: 2px solid var(--border);
-      margin-bottom: 12px;
-    }
-    .tab {
-      padding: 10px 18px; font-size: 13px; font-weight: 600;
-      color: var(--text-muted); cursor: pointer;
-      border-bottom: 2px solid transparent; margin-bottom: -2px;
-      transition: 0.15s; background: none; border-top: none; border-left: none; border-right: none;
-    }
+    .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 12px; }
+    .tab { padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
     .tab:hover { color: var(--text); }
     .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-    .avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 13px; flex-shrink: 0;
-    }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
     .flex { display: flex; align-items: center; gap: 8px; }
     .gap-4 { gap: 4px; }
     .mt-2 { margin-top: 8px; }
@@ -304,7 +229,7 @@
       .topnav .nav-clinic { display: none; }
     }
 
-    /* ===== Vistas (inicialmente ocultas) ===== */
+    /* ===== Vistas ===== */
     .view { display: none; }
     .view.active { display: block; }
 
@@ -324,23 +249,12 @@
     .modal-box .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
     .modal-box .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 
-    /* Estilos para tratamientos en el modal */
-    .trt-grupo { margin-bottom: 4px; }
-    .trt-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; border-top: 1px solid var(--border); }
-    .trt-item:hover { background: var(--bg); }
-    .trt-item .os-split-label { display: none; font-size: 11px; color: var(--text-muted); margin-top: 1px; }
-    .trt-item .os-pct-badge { display: none; font-size: 10px; font-weight: 700; color: #0891b2; white-space: nowrap; }
-
-    /* Estilos para tarjetas de obras sociales */
-    .os-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--border);
-    }
+    /* ===== ESTILOS PROPIOS DE LA AGENDA ===== */
+    .ds-reprog-mode #cal-wrap { outline: 3px solid #f59e0b; outline-offset: -3px; border-radius: 12px; }
     @media (max-width: 768px) {
-      .os-card-header { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+      #cal-wrap[data-num-dias="2"] > div { grid-template-columns: 52px 1fr !important; }
+      #cal-wrap[data-num-dias="2"] [data-col-idx="1"] { display: none !important; }
+      .dia-subtitle-extra { display: none; }
     }
   </style>
 </head>
@@ -395,8 +309,6 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Clínica</div>
-
-      <!-- Obras sociales con submenú (colapsable) -->
       <div class="sidebar-group">
         <div class="sidebar-group-row">
           <button class="sidebar-item" onclick="toggleGroup('grp-os')" title="Obras sociales" style="flex:1;background:none;border:none;cursor:pointer;text-align:left">
@@ -418,8 +330,6 @@
           </a>
         </div>
       </div>
-
-      <!-- Inventario con submenú (colapsable) -->
       <div class="sidebar-group">
         <div class="sidebar-group-row">
           <button class="sidebar-item" onclick="toggleGroup('grp-inventario')" title="Inventario" style="flex:1;background:none;border:none;cursor:pointer;text-align:left">
@@ -441,8 +351,6 @@
           </a>
         </div>
       </div>
-
-      <!-- Resto de botones -->
       <button class="sidebar-item" data-view="tratamientos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg><span class="sb-txt">Tratamientos</span></button>
       <button class="sidebar-item" data-view="especialidades"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5S7 9.76 7 7a5 5 0 0 1 5-5z"/><path d="M3 21c0-4.42 4.03-8 9-8s9 3.58 9 8"/><path d="M15 7h2m-1-1v2"/></svg><span class="sb-txt">Especialidades</span></button>
       <button class="sidebar-item" data-view="web"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span class="sb-txt">Web</span></button>
@@ -454,7 +362,65 @@
   <!-- Main Content -->
   <main class="main">
     <div id="view-dashboard" class="view active"></div>
-    <div id="view-agenda" class="view"></div>
+
+    <!-- ===== VISTA AGENDA (estructura completa) ===== -->
+    <div id="view-agenda" class="view">
+      <!-- Encabezado -->
+      <div class="page-header">
+        <div>
+          <div class="page-title">Agenda</div>
+          <div class="page-subtitle" id="agenda-subtitle">Semana del <span id="semana-label">...</span></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button onclick="cambiarSemana(-1)" class="btn btn-secondary btn-sm">← Anterior</button>
+          <button onclick="irHoy()" class="btn btn-secondary btn-sm">Hoy</button>
+          <button onclick="cambiarSemana(1)" class="btn btn-secondary btn-sm">Siguiente →</button>
+          <a href="/crear-turno?fecha=2026-08-28" class="btn btn-primary btn-sm">+ Nuevo turno</a>
+          <button onclick="document.getElementById('modal-bloqueo').style.display='flex'" class="btn btn-secondary btn-sm">🔒 Bloquear</button>
+        </div>
+      </div>
+
+      <!-- Panel de reprogramación -->
+      <div id="reprog-panel" style="display:none;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 14px;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">📅 Reprogramar turno</div>
+          <div id="rp-paciente" style="font-size:13px;font-weight:700;color:#1e2d3a"></div>
+          <div id="rp-info" style="font-size:11px;color:#64748b;margin-top:1px"></div>
+        </div>
+        <div style="font-size:11px;color:#92400e;background:rgba(245,158,11,.15);padding:5px 10px;border-radius:6px;white-space:nowrap">
+          Hacé click en la celda donde querés mover el turno
+        </div>
+        <button onclick="exitReprogramarMode()" class="btn btn-secondary btn-sm" style="white-space:nowrap;flex-shrink:0">✕ Cancelar</button>
+      </div>
+
+      <!-- Panel de atención en curso -->
+      <div id="atencion-panel" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 16px;margin-bottom:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="background:#16a34a;color:#fff;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;">🟢 EN ATENCIÓN</span>
+          <span id="ap-paciente" style="font-weight:700;font-size:14px;"></span>
+          <span id="ap-hora" style="font-size:13px;color:#64748b;"></span>
+        </div>
+        <button id="ap-btn" class="btn btn-sm btn-secondary">Finalizar atención</button>
+      </div>
+
+      <!-- Contenedor de la agenda -->
+      <div id="cal-wrap" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;"></div>
+
+      <!-- Leyenda -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:center;">
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#6cd9f4"></div>Pendiente</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#395ff3"></div>Confirmado</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#f59e0b"></div>En recepción</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#d853f3"></div>En atención</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#16a34a"></div>Finalizado</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#9ca3af"></div>Cancelado</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#dc2626"></div>Ausente</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#dc2626;border:1px solid #991b1b"></div>Urgencia</div>
+      </div>
+    </div>
+    <!-- ===== FIN VISTA AGENDA ===== -->
+
+    <!-- Otras vistas (vacías por ahora) -->
     <div id="view-pacientes" class="view"></div>
     <div id="view-profesionales" class="view"></div>
     <div id="view-liquidaciones" class="view"></div>
@@ -474,18 +440,150 @@
   </main>
 </div>
 
-<!-- Modal genérico -->
+<!-- ===== MODALES DE LA AGENDA ===== -->
+
+<!-- Popup de turno -->
+<div id="turno-popup" style="display:none;position:fixed;z-index:4000;width:300px;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.2);overflow:hidden;">
+  <div id="tp-header" style="padding:14px 16px 10px;color:#fff">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div id="tp-paciente" style="font-weight:700;font-size:14px"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+          <span id="tp-hora" style="font-size:12px;opacity:.9"></span>
+          <span id="tp-dur" style="font-size:11px;opacity:.7;background:rgba(255,255,255,.2);padding:1px 6px;border-radius:10px"></span>
+        </div>
+      </div>
+      <button onclick="closePopup()" style="background:rgba(255,255,255,.2);border:none;cursor:pointer;border-radius:6px;color:#fff;padding:3px 7px;font-size:13px">✕</button>
+    </div>
+    <div id="tp-trat" style="font-size:12px;opacity:.85;margin-top:4px"></div>
+    <div id="tp-doc" style="font-size:11px;opacity:.7;margin-top:2px"></div>
+  </div>
+  <div style="padding:12px 16px;display:flex;flex-direction:column;gap:6px">
+    <div id="tp-urgencia-badge" style="display:none;background:#fef2f2;color:#b91c1c;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;margin-bottom:4px">⚡ SOBRETURNO DE URGENCIA</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px" id="tp-estados"></div>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <a id="tp-editar" href="#" class="btn btn-secondary btn-sm" style="flex:1;text-align:center">✎ Editar</a>
+      <button id="tp-reprogramar" onclick="iniciarReprogramar()" class="btn btn-secondary btn-sm" style="flex:1">↻ Reprogramar</button>
+      <button id="tp-eliminar" onclick="confirmarEliminarTurno()" class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;flex-shrink:0" title="Eliminar turno">🗑</button>
+    </div>
+    <div id="tp-trts" style="display:none;border-top:1px solid var(--border);margin-top:4px;padding-top:8px;font-size:11px"></div>
+    <a id="tp-pago" href="#" class="btn btn-sm" style="display:none;text-align:center;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;margin-top:2px">💰 Registrar pago en Caja</a>
+    <div id="tp-wa-wrap" style="position:relative;display:none">
+      <button id="tp-wa-btn" type="button" onclick="toggleWaMenu(event)" class="btn btn-sm" style="width:100%;text-align:center;background:#e7f9ef;color:#075e54;border:1px solid #b7e4c7;margin-top:2px">📲 Enviar WhatsApp manual</button>
+      <div id="tp-wa-menu" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:4px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.15);overflow:hidden;z-index:10"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal eliminar -->
+<div id="confirm-eliminar-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)cerrarEliminar()">
+  <div style="background:#fff;border-radius:16px;padding:28px 28px 20px;max-width:380px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.22)">
+    <div style="font-size:16px;font-weight:700;color:#dc2626;margin-bottom:10px">🗑 Eliminar turno</div>
+    <p style="font-size:13px;color:#64748b;margin:0 0 6px">¿Estás seguro que querés eliminar el turno de</p>
+    <p id="ce-paciente" style="font-size:14px;font-weight:700;color:#1e2d3a;margin:0 0 20px"></p>
+    <p style="font-size:12px;color:#94a3b8;margin:0 0 20px">Esta acción no se puede deshacer.</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="cerrarEliminar()" class="btn btn-secondary">Cancelar</button>
+      <button onclick="ejecutarEliminar()" class="btn" style="background:#dc2626;color:#fff;border:none">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal resize -->
+<div id="confirm-resize-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)cancelarResize()">
+  <div style="background:#fff;border-radius:16px;padding:28px 28px 20px;max-width:380px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.22)">
+    <div style="font-size:16px;font-weight:700;color:#1e2d3a;margin-bottom:20px">⏱ Confirmar cambio de duración</div>
+    <div style="display:grid;grid-template-columns:1fr 28px 1fr;gap:8px;align-items:center;margin-bottom:16px">
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Antes</div>
+        <div id="cr-old-dur" style="font-size:30px;font-weight:800;color:#dc2626;line-height:1"></div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">minutos</div>
+      </div>
+      <div style="text-align:center;font-size:18px;color:var(--text-muted)">→</div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Nuevo</div>
+        <div id="cr-new-dur" style="font-size:30px;font-weight:800;color:#16a34a;line-height:1"></div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">minutos</div>
+      </div>
+    </div>
+    <div id="cr-paciente" style="font-size:13px;color:#64748b;text-align:center;margin-bottom:18px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="cancelarResize()" class="btn btn-secondary">Cancelar</button>
+      <button onclick="confirmarResize()" class="btn btn-primary">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal mover -->
+<div id="confirm-mover-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)cancelarMover()">
+  <div style="background:#fff;border-radius:16px;padding:28px 28px 20px;max-width:440px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.22)">
+    <div style="font-size:16px;font-weight:700;color:#1e2d3a;margin-bottom:20px">📅 Confirmar reprogramación</div>
+    <div style="display:grid;grid-template-columns:1fr 28px 1fr;gap:8px;align-items:start;margin-bottom:22px">
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px">
+        <div style="font-size:10px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Antes</div>
+        <div id="cm-old-fecha" style="font-size:13px;font-weight:700;color:#1e2d3a"></div>
+        <div id="cm-old-hora" style="font-size:22px;font-weight:800;color:#dc2626;margin:2px 0"></div>
+        <div id="cm-old-pac" style="font-size:11px;color:#64748b"></div>
+        <div id="cm-old-doc" style="font-size:11px;color:#94a3b8"></div>
+      </div>
+      <div style="text-align:center;padding-top:28px;font-size:18px;color:var(--text-muted)">→</div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px">
+        <div style="font-size:10px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Nuevo</div>
+        <div id="cm-new-fecha" style="font-size:13px;font-weight:700;color:#1e2d3a"></div>
+        <div id="cm-new-hora" style="font-size:22px;font-weight:800;color:#16a34a;margin:2px 0"></div>
+        <div id="cm-new-pac" style="font-size:11px;color:#64748b"></div>
+        <div id="cm-new-doc" style="font-size:11px;color:#94a3b8"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="cancelarMover()" class="btn btn-secondary">Cancelar</button>
+      <button onclick="confirmarMover()" class="btn btn-primary">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal conflicto atención -->
+<div id="modal-conflicto-atencion" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)cerrarConflictoAtencion()">
+  <div style="background:#fff;border-radius:16px;padding:32px 28px 24px;max-width:400px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.22);text-align:center">
+    <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:#fff7ed;margin-bottom:16px">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div id="cac-titulo" style="font-size:17px;font-weight:700;color:#1e2d3a;margin-bottom:10px">Ya estás atendiendo un turno</div>
+    <p style="font-size:13px;color:#64748b;margin:0 0 4px"><span id="cac-prefijo"></span><strong style="color:#1e2d3a" id="cac-actual"></strong>.</p>
+    <p style="font-size:13px;color:#64748b;margin:0 0 24px">¿Querés finalizarlo y comenzar a atender a <strong style="color:#1e2d3a" id="cac-nuevo"></strong>?</p>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button onclick="cerrarConflictoAtencion()" class="btn btn-secondary">Cancelar</button>
+      <button onclick="finalizarYAtender()" class="btn" style="background:#7c3aed;color:#fff;border:none">Finalizar y atender</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal bloquear (placeholder) -->
+<div id="modal-bloqueo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:5000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:480px;max-width:95vw;box-shadow:0 12px 40px rgba(0,0,0,.2)">
+    <div style="font-size:16px;font-weight:700;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+      🔒 Bloquear horario
+      <button onclick="document.getElementById('modal-bloqueo').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:18px;color:#94a3b8">✕</button>
+    </div>
+    <p class="text-muted">Funcionalidad en construcción (puedes implementarla con Firestore).</p>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button onclick="document.getElementById('modal-bloqueo').style.display='none'" class="btn btn-secondary">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal genérico (para otras vistas) -->
 <div class="modal-overlay" id="modal-generic"><div class="modal-box" id="modal-generic-content"></div></div>
 
-<!-- Toast notificaciones (placeholder) -->
+<!-- Toast -->
 <div id="notif" style="position:fixed;bottom:20px;right:20px;z-index:9999;"></div>
 
-<!-- ===== FIREBASE SDK ===== -->
+<!-- ===== FIREBASE SDK (compat) ===== -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-<!-- ===== TUS ARCHIVOS JS EXTERNOS ===== -->
+<!-- ===== ARCHIVOS JS ===== -->
 <script src="js/config.js"></script>
 <script src="js/navigation.js"></script>
 <script src="js/dashboard.js"></script>
@@ -507,11 +605,10 @@
 <script src="js/whatsapp.js"></script>
 <script src="js/configuracion.js"></script>
 
-<!-- ===== SCRIPT DE INICIALIZACIÓN Y TOGGLEGROUP ===== -->
+<!-- ===== INICIALIZACIÓN ===== -->
 <script>
-  // ─── Función toggleGroup (mejorada) ───
+  // Función toggleGroup (ya definida en navigation.js, pero la mantenemos aquí por si acaso)
   function toggleGroup(id) {
-    // Si el sidebar está colapsado, expandirlo primero
     if (document.documentElement.classList.contains('sidebar-collapsed')) {
       setSidebarCollapsed(false);
       return;
@@ -524,28 +621,20 @@
     if (btn) btn.classList.toggle('open', !open);
   }
 
-  // ─── Función para colapsar/expandir el sidebar completo ───
   function setSidebarCollapsed(collapsed) {
     document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
     localStorage.setItem('ds_sidebar_collapsed', collapsed ? '1' : '0');
-    var btn = document.getElementById('sb-toggle');
-    if (btn) btn.title = collapsed ? 'Expandir menú' : 'Colapsar menú';
   }
 
-  function toggleSidebarCollapse() {
-    setSidebarCollapsed(!document.documentElement.classList.contains('sidebar-collapsed'));
-  }
-
-  // ─── Restaurar estado del sidebar ───
   (function() {
     if (localStorage.getItem('ds_sidebar_collapsed') === '1') {
       document.documentElement.classList.add('sidebar-collapsed');
     }
   })();
 
-  // ─── Inicialización ───
+  // Navegación inicial
   document.addEventListener('DOMContentLoaded', function() {
-    // Configurar navegación desde sidebar y topnav (usando data-view)
+    // Asignar eventos a los items del menú
     document.querySelectorAll('.sidebar .sidebar-item[data-view], .topnav .nav-links a[data-view]').forEach(function(el) {
       el.addEventListener('click', function(e) {
         e.preventDefault();
@@ -554,7 +643,7 @@
       });
     });
 
-    // Cerrar modal al hacer clic fuera
+    // Cerrar modal genérico
     document.getElementById('modal-generic').addEventListener('click', function(e) {
       if (e.target === this) closeModal();
     });
@@ -563,6 +652,5 @@
     navigateTo('dashboard');
   });
 </script>
-
 </body>
 </html>
