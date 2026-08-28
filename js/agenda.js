@@ -1,5 +1,5 @@
 // ============================================================
-// AGENDA.JS (compat, sin importaciones)
+// AGENDA.JS (compat, sin dependencia de autenticación)
 // ============================================================
 
 // ─── Configuración ────────────────────────────────────────────
@@ -272,7 +272,7 @@ function cargarTurnosSemana(fechaInicio) {
     unsubscribeTurnos = null;
   }
 
-  const db = firebase.firestore(); // Obtener instancia local
+  const db = firebase.firestore();
   const inicioStr = formatearFecha(fechaInicio);
   const fin = new Date(fechaInicio);
   fin.setDate(fin.getDate() + 7);
@@ -886,32 +886,40 @@ window.renderAgenda = function() {
 };
 
 function initAgenda() {
+  // Cargar turnos siempre (sin esperar autenticación)
+  cargarTurnosSemana(semanaInicio);
+
+  // Intentar cargar atención en curso solo si hay usuario autenticado
   firebase.auth().onAuthStateChanged(function(user) {
     if (user) {
       odontologoActual = user.uid;
-      esOdontologo = false;
-      cargarTurnosSemana(semanaInicio);
+      esOdontologo = false; // Ajusta según rol
       cargarAtencionActual();
-      try {
-        const stored = JSON.parse(sessionStorage.getItem('ds_reprog'));
-        if (stored) {
-          _reprogData = stored;
-          document.getElementById('rp-paciente').textContent = _reprogData.paciente;
-          let info = _reprogData.hora;
-          if (_reprogData.fecha) {
-            const d = new Date(_reprogData.fecha + 'T00:00:00');
-            info = DIAS_SEMANA[d.getDay()] + ' ' + d.getDate() + ' ' + MESES_ES[d.getMonth()] + ' · ' + _reprogData.hora;
-          }
-          if (_reprogData.doc) info += ' · ' + _reprogData.doc;
-          document.getElementById('rp-info').textContent = info;
-          document.getElementById('reprog-panel').style.display = 'flex';
-          document.body.classList.add('ds-reprog-mode');
-        }
-      } catch(e) {}
     } else {
-      console.warn('Usuario no autenticado');
+      // No hay usuario, no cargamos atención en curso
+      odontologoActual = null;
+      TURNO_EN_ATENCION = null;
+      actualizarPanelAtencion();
     }
   });
+
+  // Restaurar modo reprogramación desde sessionStorage
+  try {
+    const stored = JSON.parse(sessionStorage.getItem('ds_reprog'));
+    if (stored) {
+      _reprogData = stored;
+      document.getElementById('rp-paciente').textContent = _reprogData.paciente;
+      let info = _reprogData.hora;
+      if (_reprogData.fecha) {
+        const d = new Date(_reprogData.fecha + 'T00:00:00');
+        info = DIAS_SEMANA[d.getDay()] + ' ' + d.getDate() + ' ' + MESES_ES[d.getMonth()] + ' · ' + _reprogData.hora;
+      }
+      if (_reprogData.doc) info += ' · ' + _reprogData.doc;
+      document.getElementById('rp-info').textContent = info;
+      document.getElementById('reprog-panel').style.display = 'flex';
+      document.body.classList.add('ds-reprog-mode');
+    }
+  } catch(e) {}
 }
 
 // Si el DOM ya está cargado, esperar un poco para que navigation.js cargue
