@@ -1,5 +1,5 @@
 // ============================================================
-// CONFIGURACIÓN DE FIREBASE (ya la tienes, la mantengo)
+// CONFIGURACIÓN DE FIREBASE (importaciones)
 // ============================================================
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -7,20 +7,17 @@ import {
   getFirestore,
   collection,
   doc,
-  getDocs,
-  getDoc,
-  addDoc,
   updateDoc,
   deleteDoc,
   query,
   where,
   orderBy,
   onSnapshot,
-  Timestamp,
   serverTimestamp
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
+// Tu configuración de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCsTQoWZnMmcYwt2vjRQUPNUOKbHj3ZKqA",
   authDomain: "clinicadental1.firebaseapp.com",
@@ -31,22 +28,22 @@ const firebaseConfig = {
   measurementId: "G-74CV5LL9F7"
 };
 
+// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
 // ============================================================
-// CONFIGURACIÓN DE LA AGENDA (igual que en el HTML original)
+// CONFIGURACIÓN DE LA AGENDA (igual que el HTML original)
 // ============================================================
-const HORA_INICIO = 8;          // 8:00 AM
-const HORA_FIN = 20;            // 8:00 PM
-const PX_POR_HORA = 128;        // 128px por hora (coincide con el HTML)
-const SLOT_MINUTOS = 15;        // slots de 15 minutos
+const HORA_INICIO = 8;
+const HORA_FIN = 20;
+const PX_POR_HORA = 128;
+const SLOT_MINUTOS = 15;
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const MESES_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
-// Mapeo de estados (etiquetas y colores) – mismos que en el HTML
 const ESTADOS_LABELS = {
   pendiente: 'Pendiente',
   confirmado: 'Confirmado',
@@ -66,7 +63,6 @@ const ESTADOS_COLORS = {
   ausente: '#dc2626'
 };
 
-// Plantillas de WhatsApp (igual que en el HTML)
 const PLANTILLAS_WA = {
   confirmacion: {
     label: '✅ Confirmación de turno',
@@ -81,25 +77,21 @@ const PLANTILLAS_WA = {
     mensaje: `🦷 Hola {paciente}!\n\nEsperamos que tu consulta en {clinica} haya sido excelente 😀\n\n⭐ ¿Podés dejarnos una reseña en Google?\nTu opinión nos ayuda muchísimo y permite que más personas conozcan nuestro trabajo.\n\n🔗 {link_resena}\n\n¡Muchas gracias por confiar en nosotros! 💙`
   }
 };
-
-const DS_TENANT_NOMBRE = "Clínica Dental Demo"; // Nombre de tu clínica
+const DS_TENANT_NOMBRE = "Clínica Dental Demo";
 
 // ============================================================
-// VARIABLES GLOBALES DE ESTADO
+// VARIABLES DE ESTADO
 // ============================================================
-let turnos = [];                 // Todos los turnos de la semana actual
-let odontologoActual = null;     // UID del odontólogo autenticado
-let esOdontologo = false;        // Flag (se puede ajustar según rol)
+let turnos = [];
+let odontologoActual = null;
+let esOdontologo = false;
 let fechaActual = new Date();
 let semanaInicio = obtenerLunes(fechaActual);
 
-// Variables para drag & drop
 let dragTurnoId = null;
-let dragDuracion = 0;
-let dragOriginal = null;         // { fecha, hora, nombre, doc }
+let dragOriginal = null;
 let pendingMover = null;
 
-// Variables para resize
 let _rzEl = null;
 let _rzStartY = 0;
 let _rzOrigDur = 0;
@@ -107,21 +99,16 @@ let _rzPending = 0;
 let _rzMoved = false;
 let _rzPaciente = '';
 
-// Reprogramación
-let _reprogData = null;          // datos del turno a reprogramar
+let _reprogData = null;
+let TURNO_EN_ATENCION = null;
 
-// Atención en curso
-let TURNO_EN_ATENCION = null;    // { id, paciente, odontologo }
-
-// Listeners de Firestore
 let unsubscribeTurnos = null;
 let unsubscribeAtencion = null;
 
-// Variables para la vista (se setean al cargar)
-let _sseModoDia = false;
-let _sseCurrentLunes = formatearFecha(semanaInicio);
-let _sseOdontologoId = 0;
-let _sseSucursalId = 0;
+let currentPopupData = null;
+let _delUrl = '';
+let _cacNuevoId = null;
+let _cacNuevoPaciente = null;
 
 // ============================================================
 // FUNCIONES AUXILIARES
@@ -143,14 +130,6 @@ function formatearHora(hora) {
   const hh = String(Math.floor(hora)).padStart(2, '0');
   const mm = String(Math.round((hora % 1) * 60)).padStart(2, '0');
   return `${hh}:${mm}`;
-}
-
-function horaDesdeSlot(slot) {
-  return HORA_INICIO + (slot * SLOT_MINUTOS) / 60;
-}
-
-function slotDesdeHora(hora) {
-  return Math.round((hora - HORA_INICIO) * 60 / SLOT_MINUTOS);
 }
 
 function snapToSlot(y) {
@@ -182,7 +161,6 @@ function _esMobile() {
 }
 
 function showToast(msg, type) {
-  // Si existe la función global notify (del dentalsoft.js) la usamos, sino alert
   if (typeof notify === 'function') {
     notify(msg, type || 'warning');
   } else {
@@ -191,13 +169,12 @@ function showToast(msg, type) {
 }
 
 // ============================================================
-// RENDERIZADO DE LA AGENDA (genera el HTML igual al original)
+// RENDERIZADO DE LA AGENDA
 // ============================================================
 function renderizarAgenda() {
   const wrap = document.getElementById('cal-wrap');
   if (!wrap) return;
 
-  // Obtener la semana actual (lunes a domingo)
   const fechas = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(semanaInicio);
@@ -205,9 +182,7 @@ function renderizarAgenda() {
     fechas.push(formatearFecha(d));
   }
 
-  // Construir el HTML de la agenda
   let html = `<div style="display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:2px solid var(--border)">`;
-  // Cabecera
   html += `<div></div>`;
   for (let i = 0; i < 7; i++) {
     const fecha = fechas[i];
@@ -224,7 +199,6 @@ function renderizarAgenda() {
   }
   html += `</div>`;
 
-  // Cuerpo: columnas de horas y celdas
   html += `<div style="display:grid;grid-template-columns:52px repeat(7,1fr);overflow-y:auto;max-height:1556px" id="cal-body">`;
 
   // Columna de horas
@@ -242,7 +216,7 @@ function renderizarAgenda() {
     const claseCol = esHoy ? ' style="background:#fafeff"' : '';
     html += `<div class="cal-col" data-fecha="${fecha}" data-col-idx="${i}" style="position:relative;height:1536px;border-left:1px solid var(--border);${claseCol}">`;
 
-    // Fondo alternado (cada SLOT_MINUTOS)
+    // Fondo alternado
     const totalSlots = (HORA_FIN - HORA_INICIO) * 60 / SLOT_MINUTOS;
     for (let slot = 0; slot < totalSlots; slot++) {
       const top = slot * (PX_POR_HORA * SLOT_MINUTOS / 60);
@@ -251,16 +225,16 @@ function renderizarAgenda() {
       }
     }
 
-    // Líneas de hora (cada hora)
+    // Líneas de hora
     for (let h = HORA_INICIO; h <= HORA_FIN; h++) {
       const top = (h - HORA_INICIO) * PX_POR_HORA;
       const border = h === HORA_INICIO ? 'transparent' : '#dde8f0';
       html += `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:1px solid ${border};pointer-events:none;z-index:1"></div>`;
     }
-    // Líneas de sub-slot (cada SLOT_MINUTOS)
+    // Líneas de sub-slot
     for (let slot = 1; slot < totalSlots; slot++) {
       const top = slot * (PX_POR_HORA * SLOT_MINUTOS / 60);
-      if (slot % 4 !== 0) { // cada 15 min, pero no las horas exactas
+      if (slot % 4 !== 0) {
         html += `<div style="position:absolute;top:${top}px;left:0;right:0;border-top:1px dashed #e8edf2;pointer-events:none;z-index:1"></div>`;
       }
     }
@@ -268,20 +242,8 @@ function renderizarAgenda() {
     // Zona click para crear turno
     html += `<div class="day-create-link" data-fecha="${fecha}" data-odontologo="0" style="position:absolute;inset:0;z-index:2;cursor:pointer" title="Crear turno"></div>`;
 
-    // Turnos de este día
+    // Turnos
     const turnosDelDia = turnos.filter(t => t.fecha === fecha);
-    // Agrupar por hora (para calcular solapamientos)
-    const grupos = {};
-    turnosDelDia.forEach(t => {
-      const key = t.hora.toFixed(2);
-      if (!grupos[key]) grupos[key] = [];
-      grupos[key].push(t);
-    });
-    // Para cada grupo, calcular columnas (simplificado: asumimos que no se solapan en el mismo slot)
-    // En el HTML original, se usa data-orig-right-pct para manejar solapamientos, pero aquí simplificamos
-    // asignando un ancho completo a cada turno (se superponen si coinciden)
-    // Podemos mejorar con un algoritmo de columnas, pero por ahora dejamos que se superpongan.
-
     turnosDelDia.forEach(turno => {
       const durSlots = Math.round(turno.duracion / SLOT_MINUTOS);
       const top = (turno.hora - HORA_INICIO) * PX_POR_HORA;
@@ -290,7 +252,6 @@ function renderizarAgenda() {
       const esCancelado = (turno.estado === 'cancelado' || turno.estado === 'ausente');
       const esUrgencia = turno.urgencia || false;
 
-      // Construir el data-popup (objeto JSON)
       const popupData = {
         id: turno.id,
         paciente: turno.pacienteNombre || 'Paciente',
@@ -332,7 +293,6 @@ function renderizarAgenda() {
         </div>
       </div>`;
 
-      // Botón "+" para crear turno en el mismo slot
       html += `<div class="quick-add-btn" style="position:absolute;right:calc(0% + 1px);top:${top}px;height:${height}px;width:0;overflow:hidden;z-index:4;background:#f1f5f9;border-left:1px solid #cbd5e1;border-radius:0 5px 5px 0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;cursor:pointer;transition:width .18s ease,opacity .15s ease;">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" style="pointer-events:none;flex-shrink:0">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -340,15 +300,12 @@ function renderizarAgenda() {
       </div>`;
     });
 
-    html += `</div>`; // fin cal-col
+    html += `</div>`;
   }
 
-  html += `</div>`; // fin cal-body
-  html += `</div>`; // fin cal-wrap
-
+  html += `</div>`;
   wrap.innerHTML = html;
 
-  // Reasignar eventos
   attachAgendaListeners();
   updateNowLine();
 }
@@ -387,7 +344,6 @@ function cargarTurnosSemana(fechaInicio) {
       });
     });
     renderizarAgenda();
-    // También actualizar contadores de turnos en cabeceras (opcional)
   }, (error) => {
     console.error('Error en listener de turnos:', error);
     showToast('Error al cargar turnos', 'error');
@@ -423,17 +379,13 @@ function cargarAtencionActual() {
   });
 }
 
-// ============================================================
-// PANEL DE ATENCIÓN EN CURSO
-// ============================================================
 function actualizarPanelAtencion() {
   const panel = document.getElementById('atencion-panel');
   if (!panel) return;
-
   if (TURNO_EN_ATENCION) {
     panel.style.display = 'inline-flex';
     document.getElementById('ap-paciente').textContent = TURNO_EN_ATENCION.paciente;
-    document.getElementById('ap-hora').textContent = ''; // podrías mostrar más datos
+    document.getElementById('ap-hora').textContent = '';
     document.getElementById('ap-btn').onclick = function() {
       finalizarAtencion(TURNO_EN_ATENCION.id);
     };
@@ -456,10 +408,10 @@ function finalizarAtencion(id) {
 }
 
 // ============================================================
-// EVENTOS Y LISTENERS (se re-ejecutan tras cada renderizado)
+// EVENTOS Y LISTENERS
 // ============================================================
 function attachAgendaListeners() {
-  // ---------- CLICK EN TURNO: POPUP ----------
+  // Click en turno
   document.querySelectorAll('.turno-block').forEach(el => {
     el.addEventListener('click', function(e) {
       e.preventDefault();
@@ -469,11 +421,10 @@ function attachAgendaListeners() {
     });
   });
 
-  // ---------- DRAG & DROP ----------
+  // Drag & drop
   document.querySelectorAll('.turno-block').forEach(el => {
     el.addEventListener('dragstart', function(e) {
       dragTurnoId = this.dataset.id;
-      dragDuracion = parseInt(this.dataset.dur || 30);
       const pop = JSON.parse(this.dataset.popup.replace(/&quot;/g, '"'));
       dragOriginal = {
         fecha: pop.fecha || '',
@@ -523,13 +474,12 @@ function attachAgendaListeners() {
     });
   });
 
-  // ---------- CLICK EN CELDA VACÍA (crear turno) ----------
+  // Click en celda vacía
   document.querySelectorAll('.day-create-link').forEach(el => {
     el.addEventListener('click', function(e) {
       const rect = this.getBoundingClientRect();
       const y = e.clientY - rect.top;
       const snap = snapToSlot(y);
-      // Si estamos en modo reprogramación, usar ese turno
       if (_reprogData) {
         dragOriginal = {
           fecha: _reprogData.fecha,
@@ -546,7 +496,7 @@ function attachAgendaListeners() {
     });
   });
 
-  // ---------- RESIZE ----------
+  // Resize
   document.querySelectorAll('.resize-handle').forEach(handle => {
     handle.addEventListener('mousedown', function(e) {
       e.preventDefault();
@@ -564,7 +514,7 @@ function attachAgendaListeners() {
     handle.addEventListener('click', function(e) { e.stopPropagation(); });
   });
 
-  // ---------- BOTÓN "+" (quick add) ----------
+  // Botón "+"
   document.querySelectorAll('.turno-block').forEach(el => {
     const btn = el.nextElementSibling;
     if (!btn || !btn.classList.contains('quick-add-btn')) return;
@@ -601,7 +551,6 @@ function attachAgendaListeners() {
   });
 }
 
-// Funciones de resize (mousemove/mouseup)
 function _rzMove(e) {
   if (!_rzEl) return;
   _rzMoved = true;
@@ -642,7 +591,6 @@ function mostrarPopupTurno(d, elemento) {
   const delBtn = document.getElementById('tp-eliminar');
   if (delBtn) { delBtn.dataset.url = d.del_url; delBtn.dataset.paciente = d.paciente; }
 
-  // Tratamientos
   const trtsDiv = document.getElementById('tp-trts');
   const hayTrts = d.tratamientos && d.tratamientos.length > 0;
   if (hayTrts) {
@@ -665,7 +613,6 @@ function mostrarPopupTurno(d, elemento) {
     trtsDiv.style.display = 'none';
   }
 
-  // Botón pago
   const pagoBtn = document.getElementById('tp-pago');
   if (d.pago_url) {
     pagoBtn.style.display = 'block';
@@ -684,12 +631,10 @@ function mostrarPopupTurno(d, elemento) {
     pagoBtn.style.display = 'none';
   }
 
-  // WhatsApp
   const waWrap = document.getElementById('tp-wa-wrap');
   document.getElementById('tp-wa-menu').style.display = 'none';
   waWrap.style.display = (d.telefono && Object.keys(PLANTILLAS_WA).length > 0) ? 'block' : 'none';
 
-  // Estados
   const estadosDiv = document.getElementById('tp-estados');
   estadosDiv.innerHTML = '';
   const estadosList = ['pendiente','confirmado','en_recepcion','en_atencion','finalizado','cancelado','ausente'];
@@ -712,7 +657,6 @@ function mostrarPopupTurno(d, elemento) {
     estadosDiv.appendChild(btn);
   });
 
-  // Posicionar popup
   const rect = elemento.getBoundingClientRect();
   const pw = 300, ph = 280;
   let left = rect.right + 8;
@@ -735,10 +679,8 @@ function closePopup() {
 // FUNCIONES GLOBALES (llamadas desde onclick en el HTML)
 // ============================================================
 
-// --- Cambiar estado ---
-function cambiarEstado(turnoId, estado) {
+window.cambiarEstado = function(turnoId, estado) {
   if (estado === 'en_atencion' && TURNO_EN_ATENCION && TURNO_EN_ATENCION.id !== turnoId) {
-    // El conflicto se maneja en el popup, pero si se llama directo, también
     const turno = turnos.find(t => t.id === turnoId);
     if (turno) abrirConflictoAtencion(turnoId, turno.pacienteNombre);
     return;
@@ -753,39 +695,38 @@ function cambiarEstado(turnoId, estado) {
     console.error(err);
     showToast('Error al cambiar estado', 'error');
   });
-}
+};
 
-// --- Eliminar turno ---
-function confirmarEliminarTurno() {
+window.confirmarEliminarTurno = function() {
   const btn = document.getElementById('tp-eliminar');
   const url = btn.dataset.url;
   const paciente = btn.dataset.paciente;
   document.getElementById('ce-paciente').textContent = paciente;
   document.getElementById('confirm-eliminar-overlay').style.display = 'flex';
   _delUrl = url;
-}
-let _delUrl = '';
-function cerrarEliminar() {
+};
+
+window.cerrarEliminar = function() {
   document.getElementById('confirm-eliminar-overlay').style.display = 'none';
   _delUrl = '';
-}
-function ejecutarEliminar() {
+};
+
+window.ejecutarEliminar = function() {
   if (!_delUrl) return;
-  const id = _delUrl.split('/').pop(); // extraer ID de la URL
+  const id = _delUrl.split('/').pop();
   deleteDoc(doc(db, 'turnos', id))
     .then(() => {
       showToast('Turno eliminado', 'success');
-      cerrarEliminar();
+      window.cerrarEliminar();
       closePopup();
     })
     .catch(err => {
       console.error(err);
       showToast('Error al eliminar', 'error');
     });
-}
+};
 
-// --- WhatsApp ---
-function toggleWaMenu(e) {
+window.toggleWaMenu = function(e) {
   e.preventDefault();
   e.stopPropagation();
   const menu = document.getElementById('tp-wa-menu');
@@ -798,13 +739,13 @@ function toggleWaMenu(e) {
     item.style.cssText = 'display:block;width:100%;text-align:left;padding:9px 12px;background:#fff;border:none;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer';
     item.onmouseenter = () => item.style.background = '#f8fafc';
     item.onmouseleave = () => item.style.background = '#fff';
-    item.onclick = (ev) => { ev.stopPropagation(); enviarWaManual(tipo); menu.style.display = 'none'; };
+    item.onclick = (ev) => { ev.stopPropagation(); window.enviarWaManual(tipo); menu.style.display = 'none'; };
     menu.appendChild(item);
   });
   menu.style.display = 'block';
-}
+};
 
-function enviarWaManual(tipo) {
+window.enviarWaManual = function(tipo) {
   const d = currentPopupData;
   if (!d || !d.telefono) return;
   const tpl = PLANTILLAS_WA[tipo];
@@ -823,10 +764,9 @@ function enviarWaManual(tipo) {
   const base = _esMobile() ? 'https://api.whatsapp.com/send' : 'https://web.whatsapp.com/send';
   const url = base + '?phone=' + tel + '&text=' + encodeURIComponent(mensaje);
   window.open(url, '_blank');
-}
+};
 
-// --- Reprogramación ---
-function iniciarReprogramar() {
+window.iniciarReprogramar = function() {
   if (!currentPopupData) return;
   _reprogData = {
     turnoId: currentPopupData.id,
@@ -839,7 +779,6 @@ function iniciarReprogramar() {
   };
   sessionStorage.setItem('ds_reprog', JSON.stringify(_reprogData));
   closePopup();
-  // Mostrar panel de reprogramación
   document.getElementById('rp-paciente').textContent = _reprogData.paciente;
   let info = _reprogData.hora;
   if (_reprogData.fecha) {
@@ -850,17 +789,16 @@ function iniciarReprogramar() {
   document.getElementById('rp-info').textContent = info;
   document.getElementById('reprog-panel').style.display = 'flex';
   document.body.classList.add('ds-reprog-mode');
-}
+};
 
-function exitReprogramarMode() {
+window.exitReprogramarMode = function() {
   sessionStorage.removeItem('ds_reprog');
   _reprogData = null;
   document.getElementById('reprog-panel').style.display = 'none';
   document.body.classList.remove('ds-reprog-mode');
-}
+};
 
-// --- Confirmar mover (drag & drop y reprogramación) ---
-function showConfirmMover(turnoId, fecha, hora) {
+window.showConfirmMover = function(turnoId, fecha, hora) {
   pendingMover = { turnoId, fecha, hora };
   const orig = dragOriginal || {};
   document.getElementById('cm-old-fecha').textContent = orig.fecha ? formatFecha(orig.fecha) : '';
@@ -872,13 +810,12 @@ function showConfirmMover(turnoId, fecha, hora) {
   document.getElementById('cm-new-pac').textContent = orig.nombre || '';
   document.getElementById('cm-new-doc').textContent = orig.doc || '';
   document.getElementById('confirm-mover-overlay').style.display = 'flex';
-}
+};
 
-function confirmarMover() {
+window.confirmarMover = function() {
   document.getElementById('confirm-mover-overlay').style.display = 'none';
   if (!pendingMover) return;
   const { turnoId, fecha, hora } = pendingMover;
-  // Convertir hora string a número (ej. "14:30" -> 14.5)
   const [hh, mm] = hora.split(':').map(Number);
   const horaNum = hh + mm/60;
   updateDoc(doc(db, 'turnos', turnoId), {
@@ -890,23 +827,21 @@ function confirmarMover() {
     pendingMover = null;
     dragTurnoId = null;
     dragOriginal = null;
-    // Salir del modo reprogramación si está activo
-    exitReprogramarMode();
+    window.exitReprogramarMode();
   }).catch(err => {
     console.error(err);
     showToast('Error al mover', 'error');
   });
-}
+};
 
-function cancelarMover() {
+window.cancelarMover = function() {
   document.getElementById('confirm-mover-overlay').style.display = 'none';
   pendingMover = null;
   dragTurnoId = null;
   dragOriginal = null;
-}
+};
 
-// --- Confirmar resize ---
-function confirmarResize() {
+window.confirmarResize = function() {
   document.getElementById('confirm-resize-overlay').style.display = 'none';
   if (!_rzEl) return;
   const id = _rzEl.dataset.id;
@@ -921,19 +856,15 @@ function confirmarResize() {
     console.error(err);
     showToast('Error al redimensionar', 'error');
   });
-}
+};
 
-function cancelarResize() {
+window.cancelarResize = function() {
   document.getElementById('confirm-resize-overlay').style.display = 'none';
   if (_rzEl) _rzEl.style.height = Math.max((_rzOrigDur / 60) * PX_POR_HORA - 2, 20) + 'px';
   _rzEl = null;
-}
+};
 
-// --- Conflicto de atención ---
-let _cacNuevoId = null;
-let _cacNuevoPaciente = null;
-
-function abrirConflictoAtencion(nuevoId, nuevoPaciente) {
+window.abrirConflictoAtencion = function(nuevoId, nuevoPaciente) {
   _cacNuevoId = nuevoId;
   _cacNuevoPaciente = nuevoPaciente;
   const elActual = document.getElementById('cac-actual');
@@ -949,26 +880,24 @@ function abrirConflictoAtencion(nuevoId, nuevoPaciente) {
   document.getElementById('cac-nuevo').textContent = nuevoPaciente;
   document.getElementById('modal-conflicto-atencion').style.display = 'flex';
   closePopup();
-}
+};
 
-function cerrarConflictoAtencion() {
+window.cerrarConflictoAtencion = function() {
   document.getElementById('modal-conflicto-atencion').style.display = 'none';
   _cacNuevoId = null;
   _cacNuevoPaciente = null;
-}
+};
 
-function finalizarYAtender() {
+window.finalizarYAtender = function() {
   document.getElementById('modal-conflicto-atencion').style.display = 'none';
   const idFinalizar = TURNO_EN_ATENCION.id;
   const nuevoId = _cacNuevoId;
   _cacNuevoId = null;
   _cacNuevoPaciente = null;
-  // Finalizar el actual
   updateDoc(doc(db, 'turnos', idFinalizar), {
     estado: 'finalizado',
     updatedAt: serverTimestamp()
   }).then(() => {
-    // Poner el nuevo en atención
     return updateDoc(doc(db, 'turnos', nuevoId), {
       estado: 'en_atencion',
       updatedAt: serverTimestamp()
@@ -979,7 +908,7 @@ function finalizarYAtender() {
     console.error(err);
     showToast('Error al cambiar atención', 'error');
   });
-}
+};
 
 // ============================================================
 // LÍNEA DE HORA ACTUAL
@@ -995,24 +924,20 @@ function updateNowLine() {
 setInterval(updateNowLine, 60000);
 
 // ============================================================
-// INICIALIZACIÓN
+// INICIALIZACIÓN (expuesta como renderAgenda)
 // ============================================================
 function init() {
   onAuthStateChanged(auth, (user) => {
     if (user) {
       odontologoActual = user.uid;
-      // Aquí podrías consultar el rol del usuario (esOdontologo)
-      // Por ahora lo dejamos en false, pero puedes cambiarlo según tu lógica
-      esOdontologo = false;
-      // Cargar datos
+      esOdontologo = false; // Cambia según tu lógica de roles
       cargarTurnosSemana(semanaInicio);
       cargarAtencionActual();
-      // Restaurar modo reprogramación desde sessionStorage
+      // Restaurar modo reprogramación
       try {
         const stored = JSON.parse(sessionStorage.getItem('ds_reprog'));
         if (stored) {
           _reprogData = stored;
-          // Mostrar panel
           document.getElementById('rp-paciente').textContent = _reprogData.paciente;
           let info = _reprogData.hora;
           if (_reprogData.fecha) {
@@ -1026,11 +951,39 @@ function init() {
         }
       } catch(e) {}
     } else {
-      // Usuario no autenticado - redirigir al login o mostrar mensaje
       console.warn('Usuario no autenticado');
     }
   });
 }
 
-// Ejecutar al cargar
-document.addEventListener('DOMContentLoaded', init);
+// Exponer la función para que navigation.js pueda llamarla
+window.renderAgenda = function() {
+  // Si ya está inicializado, solo refrescar
+  if (unsubscribeTurnos) {
+    renderizarAgenda();
+  } else {
+    init();
+  }
+};
+
+// Si el DOM ya está cargado, inicializar automáticamente
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    // No llamamos a init aquí, esperamos que navigation.js llame a renderAgenda
+    // Pero si no se llama, podemos hacerlo de forma segura después de un tiempo
+    // Para evitar duplicados, comprobamos si ya hay listeners
+    if (!unsubscribeTurnos) {
+      // Podemos iniciar en segundo plano
+      setTimeout(() => {
+        if (!unsubscribeTurnos) init();
+      }, 100);
+    }
+  });
+} else {
+  // Si el DOM ya está cargado y no se ha iniciado, iniciar
+  if (!unsubscribeTurnos) {
+    setTimeout(() => {
+      if (!unsubscribeTurnos) init();
+    }, 100);
+  }
+}
