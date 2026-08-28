@@ -1,10 +1,6 @@
 // ============================================================
 // OBRAS SOCIALES - SPA (Single Page Application)
 // ============================================================
-
-// ============================================================
-// RENDER LISTA DE OBRAS SOCIALES
-// ============================================================
 function renderObrasSociales() {
   const el = document.getElementById('view-obras_sociales');
   if (!el) return;
@@ -15,16 +11,10 @@ function renderObrasSociales() {
         <div class="page-title">Obras sociales</div>
         <div class="page-subtitle" id="os-count">Cargando...</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="renderNuevaObraSocial()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Nueva obra social
-        </button>
-        <button class="btn btn-secondary" onclick="renderNuevaLiquidacionOS()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
-          Nueva liquidación
-        </button>
-      </div>
+      <button class="btn btn-primary" onclick="renderNuevaObraSocial()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nueva obra social
+      </button>
     </div>
     <div id="os-list-container" style="display:flex;flex-direction:column;gap:12px;">
       <p class="text-muted">Cargando obras sociales...</p>
@@ -592,39 +582,6 @@ window.eliminarPlan = function(osId, planId) {
       }
     })
     .catch(err => alert('❌ Error: ' + err.message));
-};
-
-// ============================================================
-// RENDER: NUEVA LIQUIDACIÓN (redirige a liquidaciones OS)
-// ============================================================
-window.renderNuevaLiquidacionOS = function() {
-  // Si existe la función renderLiquidacionesOS, la invocamos
-  if (typeof renderLiquidacionesOS === 'function') {
-    renderLiquidacionesOS();
-    // También podríamos pasar un parámetro para indicar que queremos nueva liquidación
-    // Pero asumimos que la vista de liquidaciones tiene su propio botón "Nueva liquidación"
-    if (typeof setActiveMenuItem === 'function') {
-      setActiveMenuItem('Liquidaciones OS');
-    }
-  } else {
-    // Fallback: mostrar mensaje
-    const el = document.getElementById('view-obras_sociales');
-    if (el) {
-      el.innerHTML = `
-        <div class="page-header">
-          <div>
-            <div class="page-title">Nueva liquidación</div>
-            <div class="page-subtitle">Función en desarrollo</div>
-          </div>
-          <button class="btn btn-secondary" onclick="renderObrasSociales()">← Volver</button>
-        </div>
-        <div class="card">
-          <p class="text-muted">La funcionalidad de liquidaciones estará disponible próximamente.</p>
-          <button class="btn btn-secondary" onclick="renderObrasSociales()">Volver a obras sociales</button>
-        </div>
-      `;
-    }
-  }
 };
 
 // ============================================================
