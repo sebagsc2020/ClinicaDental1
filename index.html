@@ -6,171 +6,48 @@
   <title>Clínica Dental · Panel Completo</title>
 
   <style>
-    /* ===== Variables y reset (base) ===== */
-    :root {
-      --primary: #355063;
-      --primary-dark: #1e2d3a;
-      --accent: #4285F4;
-      --accent-dark: #2b6ed7;
-      --accent-light: #e8f0fe;
-      --text: #1e2d3a;
-      --text-muted: #64748b;
-      --bg: #f1f5f9;
-      --border: #e2e8f0;
-      --white: #ffffff;
-      --danger: #dc2626;
-      --success: #16a34a;
-      --warning: #f59e0b;
-      --radius: 8px;
-      --shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
+    :root { --primary: #355063; --primary-dark: #1e2d3a; --accent: #4285F4; --accent-dark: #2b6ed7; --accent-light: #e8f0fe; --text: #1e2d3a; --text-muted: #64748b; --bg: #f1f5f9; --border: #e2e8f0; --white: #ffffff; --danger: #dc2626; --success: #16a34a; --warning: #f59e0b; --radius: 8px; --shadow: 0 2px 8px rgba(0,0,0,0.08); }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    /* ===== Topnav ===== */
-    .topnav {
-      background: var(--primary);
-      color: #fff;
-      padding: 0 20px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
+    .topnav { background: var(--primary); color: #fff; padding: 0 20px; height: 60px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; position: sticky; top: 0; z-index: 100; }
     .topnav .logo { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
     .topnav .logo span { font-weight: 300; }
     .topnav .nav-links { display: flex; gap: 8px; margin-left: 24px; }
-    .topnav .nav-links a {
-      color: rgba(255,255,255,0.7);
-      text-decoration: none;
-      font-size: 14px;
-      padding: 6px 12px;
-      border-radius: var(--radius);
-      transition: 0.2s;
-    }
-    .topnav .nav-links a:hover,
-    .topnav .nav-links a.active { background: rgba(255,255,255,0.15); color: #fff; }
+    .topnav .nav-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: var(--radius); transition: 0.2s; }
+    .topnav .nav-links a:hover, .topnav .nav-links a.active { background: rgba(255,255,255,0.15); color: #fff; }
     .topnav .nav-right { display: flex; align-items: center; gap: 16px; }
     .topnav .nav-clinic { font-size: 13px; opacity: 0.8; }
-    .topnav .nav-avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: var(--accent); display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 13px; color: #fff;
-    }
+    .topnav .nav-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; }
     .topnav .user-menu-trigger { display: flex; align-items: center; gap: 8px; cursor: pointer; }
     .topnav .nav-user-text { text-align: right; line-height: 1.2; }
     .topnav .nav-user-text div:last-child { font-size: 11px; opacity: 0.6; }
-    .topnav .user-dropdown {
-      display: none; position: absolute; right: 0; top: 100%;
-      background: #fff; border-radius: var(--radius);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-      min-width: 180px; padding: 8px 0; margin-top: 4px;
-    }
-    .topnav .user-dropdown a {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 16px; color: var(--text); text-decoration: none; font-size: 13px;
-    }
+    .topnav .user-dropdown { display: none; position: absolute; right: 0; top: 100%; background: #fff; border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.15); min-width: 180px; padding: 8px 0; margin-top: 4px; }
+    .topnav .user-dropdown a { display: flex; align-items: center; gap: 8px; padding: 8px 16px; color: var(--text); text-decoration: none; font-size: 13px; }
     .topnav .user-dropdown a:hover { background: var(--bg); }
     .topnav .user-dropdown a.danger { color: var(--danger); }
     .user-menu-wrap { position: relative; }
-
-    /* ===== Layout ===== */
     .app-layout { display: flex; flex: 1; }
-
-    /* ===== Sidebar ===== */
-    .sidebar {
-      width: 240px;
-      background: var(--white);
-      border-right: 1px solid var(--border);
-      padding: 16px 0;
-      flex-shrink: 0;
-      overflow-y: auto;
-      height: calc(100vh - 60px);
-      position: sticky;
-      top: 60px;
-    }
+    .sidebar { width: 240px; background: var(--white); border-right: 1px solid var(--border); padding: 16px 0; flex-shrink: 0; overflow-y: auto; height: calc(100vh - 60px); position: sticky; top: 60px; }
     .sidebar .sidebar-section { margin-bottom: 24px; }
-    .sidebar .sidebar-label {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.6px; color: var(--text-muted);
-      padding: 0 16px 8px;
-    }
-    .sidebar .sidebar-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 16px; color: var(--text); text-decoration: none;
-      font-size: 14px; border-radius: var(--radius);
-      margin: 0 6px; cursor: pointer; transition: 0.15s;
-      border: none; background: none; width: calc(100% - 12px); text-align: left;
-    }
+    .sidebar .sidebar-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); padding: 0 16px 8px; }
+    .sidebar .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: var(--text); text-decoration: none; font-size: 14px; border-radius: var(--radius); margin: 0 6px; cursor: pointer; transition: 0.15s; border: none; background: none; width: calc(100% - 12px); text-align: left; }
     .sidebar .sidebar-item:hover { background: var(--bg); }
     .sidebar .sidebar-item.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
     .sidebar .sidebar-item .icon { width: 18px; height: 18px; flex-shrink: 0; }
     .sidebar .sidebar-item .sb-txt { flex: 1; }
-    .sidebar-group-row {
-      display: flex;
-      align-items: stretch;
-    }
-    .sidebar-group-row > .sidebar-item {
-      flex: 1;
-      min-width: 0;
-    }
-    .sidebar-chevron {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0 8px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      flex-shrink: 0;
-    }
-    .sidebar-chevron svg {
-      transition: transform 0.2s ease;
-    }
-    .sidebar-chevron.open svg {
-      transform: rotate(180deg);
-    }
-    .sidebar-subitems {
-      overflow: hidden;
-      max-height: 0;
-      transition: max-height 0.25s ease;
-    }
-    .sidebar-subitems.open {
-      max-height: 200px;
-    }
-
-    /* ===== Main ===== */
+    .sidebar-group-row { display: flex; align-items: stretch; }
+    .sidebar-group-row > .sidebar-item { flex: 1; min-width: 0; }
+    .sidebar-chevron { background: none; border: none; cursor: pointer; padding: 0 8px; color: var(--text-muted); display: flex; align-items: center; flex-shrink: 0; }
+    .sidebar-chevron svg { transition: transform 0.2s ease; }
+    .sidebar-chevron.open svg { transform: rotate(180deg); }
+    .sidebar-subitems { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+    .sidebar-subitems.open { max-height: 200px; }
     .main { flex: 1; padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 60px); }
-
-    /* ===== Componentes ===== */
-    .page-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
-    }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
     .page-title { font-size: 22px; font-weight: 700; }
     .page-subtitle { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
-    .card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 20px;
-      box-shadow: var(--shadow); margin-bottom: 20px;
-    }
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 16px; border-radius: var(--radius);
-      font-size: 13px; font-weight: 600; border: 1px solid transparent;
-      cursor: pointer; transition: 0.15s; text-decoration: none; line-height: 1.4;
-    }
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 600; border: 1px solid transparent; cursor: pointer; transition: 0.15s; text-decoration: none; line-height: 1.4; }
     .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
     .btn-primary:hover { background: var(--accent-dark); }
     .btn-secondary { background: var(--bg); color: var(--text); border-color: var(--border); }
@@ -179,91 +56,25 @@
     .btn-danger:hover { background: #b91c1c; }
     .btn-sm { padding: 4px 10px; font-size: 12px; }
     .btn-block { width: 100%; justify-content: center; }
-
     .form-group { margin-bottom: 14px; }
     .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-    .form-control {
-      width: 100%; padding: 8px 12px;
-      border: 1px solid var(--border); border-radius: var(--radius);
-      font-size: 13px; background: var(--white); transition: 0.15s;
-    }
+    .form-control { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; background: var(--white); transition: 0.15s; }
     .form-control:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(66,133,244,0.15); }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    .badge-green { background: #dcfce7; color: #15803d; }
-    .badge-blue { background: #dbeafe; color: #1d4ed8; }
-    .badge-red { background: #fee2e2; color: #b91c1c; }
-    .badge-amber { background: #fef3c7; color: #b45309; }
-    .badge-gray { background: #f1f5f9; color: #4b5563; }
-    .badge-teal { background: #ccfbf1; color: #0f766e; }
-    .badge-estado-activo   { background: #dcfce7; color: #15803d; }
-    .badge-estado-inactivo { background: #f1f5f9; color: #4b5563; }
-    .badge-etiqueta { font-size: 10px; padding: 2px 8px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
-    .badge-etiqueta.azul   { background: #dbeafe; color: #1d4ed8; }
-    .badge-etiqueta.ambar  { background: #fef3c7; color: #b45309; }
-
-    .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 12px; }
-    .tab { padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
-    .tab:hover { color: var(--text); }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
-    .flex { display: flex; align-items: center; gap: 8px; }
-    .gap-4 { gap: 4px; }
-    .mt-2 { margin-top: 8px; }
-    .mb-2 { margin-bottom: 8px; }
-    .text-muted { color: var(--text-muted); }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .w-full { width: 100%; }
-
-    /* ===== Responsive ===== */
-    @media (max-width: 768px) {
-      .sidebar { width: 60px; padding: 12px 0; }
-      .sidebar .sb-txt { display: none; }
-      .sidebar .sidebar-item { justify-content: center; padding: 10px; }
-      .sidebar .sidebar-label { text-align: center; font-size: 0; }
-      .main { padding: 16px; }
-      .form-grid { grid-template-columns: 1fr; }
-      .topnav .nav-links { display: none; }
-      .topnav .nav-clinic { display: none; }
-    }
-
-    /* ===== Vistas ===== */
     .view { display: none; }
     .view.active { display: block; }
-
-    /* ===== Modal ===== */
-    .modal-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.45); align-items: center; justify-content: center;
-      z-index: 9999; padding: 20px;
-    }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
     .modal-overlay.active { display: flex; }
-    .modal-box {
-      background: #fff; border-radius: var(--radius);
-      max-width: 700px; width: 100%; padding: 24px;
-      max-height: 90vh; overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-    }
-    .modal-box .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
-    .modal-box .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-
-    /* ===== ESTILOS PROPIOS DE LA AGENDA ===== */
+    .modal-box { background: #fff; border-radius: var(--radius); max-width: 700px; width: 100%; padding: 24px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
     .ds-reprog-mode #cal-wrap { outline: 3px solid #f59e0b; outline-offset: -3px; border-radius: 12px; }
-    @media (max-width: 768px) {
-      #cal-wrap[data-num-dias="2"] > div { grid-template-columns: 52px 1fr !important; }
-      #cal-wrap[data-num-dias="2"] [data-col-idx="1"] { display: none !important; }
-      .dia-subtitle-extra { display: none; }
-    }
+    @media (max-width: 768px) { .sidebar { width: 60px; padding: 12px 0; } .sidebar .sb-txt { display: none; } .sidebar .sidebar-item { justify-content: center; padding: 10px; } .main { padding: 16px; } .form-grid { grid-template-columns: 1fr; } .topnav .nav-links { display: none; } }
   </style>
 </head>
 <body>
 
-<!-- ===== TOP NAV ===== -->
+<!-- TOP NAV -->
 <nav class="topnav">
   <div style="display:flex;align-items:center;gap:12px;">
-    <button class="topnav-hamburger" onclick="toggleSidebar()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;display:none;">☰</button>
     <div class="logo">Dental<span>Soft</span></div>
     <div class="nav-links">
       <a href="#" class="active" data-view="dashboard">Dashboard</a>
@@ -281,91 +92,48 @@
         <div class="nav-user-text"><div>Admin Demo</div><div>admin</div></div>
       </div>
       <div class="user-dropdown" id="user-dropdown">
-        <a href="#" data-view="configuracion"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Configuración</a>
-        <a href="#" class="danger" onclick="cerrarSesion()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Cerrar sesión</a>
+        <a href="#" data-view="configuracion">Configuración</a>
+        <a href="#" class="danger" onclick="cerrarSesion()">Cerrar sesión</a>
       </div>
     </div>
   </div>
 </nav>
 
-<!-- ===== LAYOUT ===== -->
+<!-- SIDEBAR Y MAIN -->
 <div class="app-layout">
-  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-section">
       <div class="sidebar-label">Principal</div>
-      <button class="sidebar-item active" data-view="dashboard"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="sb-txt">Dashboard</span></button>
-      <button class="sidebar-item" data-view="agenda"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="sb-txt">Agenda</span></button>
-      <button class="sidebar-item" data-view="pacientes"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="sb-txt">Pacientes</span></button>
-      <button class="sidebar-item" data-view="profesionales"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="sb-txt">Profesionales</span></button>
-      <button class="sidebar-item" data-view="liquidaciones"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="sb-txt">Liquidaciones</span></button>
-      <button class="sidebar-item" data-view="automatizaciones"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="sb-txt">Automatizaciones</span></button>
+      <button class="sidebar-item active" data-view="dashboard">Dashboard</button>
+      <button class="sidebar-item" data-view="agenda">Agenda</button>
+      <button class="sidebar-item" data-view="pacientes">Pacientes</button>
+      <button class="sidebar-item" data-view="profesionales">Profesionales</button>
+      <button class="sidebar-item" data-view="liquidaciones">Liquidaciones</button>
+      <button class="sidebar-item" data-view="automatizaciones">Automatizaciones</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Finanzas</div>
-      <button class="sidebar-item" data-view="caja"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg><span class="sb-txt">Caja</span></button>
-      <button class="sidebar-item" data-view="presupuestos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span class="sb-txt">Presupuestos</span></button>
-      <button class="sidebar-item" data-view="productividad"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="sb-txt">Productividad</span></button>
+      <button class="sidebar-item" data-view="caja">Caja</button>
+      <button class="sidebar-item" data-view="presupuestos">Presupuestos</button>
+      <button class="sidebar-item" data-view="productividad">Productividad</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Clínica</div>
-      <div class="sidebar-group">
-        <div class="sidebar-group-row">
-          <button class="sidebar-item" onclick="toggleGroup('grp-os')" title="Obras sociales" style="flex:1;background:none;border:none;cursor:pointer;text-align:left">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <span class="sb-txt">Obras sociales</span>
-          </button>
-          <button class="sidebar-chevron open" onclick="toggleGroup('grp-os')" title="Ver subitems">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-        </div>
-        <div class="sidebar-subitems open" id="grp-os">
-          <a class="sidebar-item" href="#" data-view="obras_sociales" onclick="event.preventDefault();navigateTo('obras_sociales')" style="padding-left:2.4rem;font-size:12px;background:none!important">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <span class="sb-txt">Listado</span>
-          </a>
-          <a class="sidebar-item" href="#" data-view="liquidaciones_os" onclick="event.preventDefault();navigateTo('liquidaciones_os')" style="padding-left:2.4rem;font-size:12px;background:none!important">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
-            <span class="sb-txt">Liquidaciones</span>
-          </a>
-        </div>
-      </div>
-      <div class="sidebar-group">
-        <div class="sidebar-group-row">
-          <button class="sidebar-item" onclick="toggleGroup('grp-inventario')" title="Inventario" style="flex:1;background:none;border:none;cursor:pointer;text-align:left">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
-            <span class="sb-txt">Inventario</span>
-          </button>
-          <button class="sidebar-chevron open" onclick="toggleGroup('grp-inventario')" title="Ver subitems">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-        </div>
-        <div class="sidebar-subitems open" id="grp-inventario">
-          <a class="sidebar-item" href="#" data-view="inventario" onclick="event.preventDefault();navigateTo('inventario')" style="padding-left:2.4rem;font-size:12px;background:none!important">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
-            <span class="sb-txt">Insumos</span>
-          </a>
-          <a class="sidebar-item" href="#" data-view="proveedores" onclick="event.preventDefault();navigateTo('proveedores')" style="padding-left:2.4rem;font-size:12px;background:none!important">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <span class="sb-txt">Proveedores</span>
-          </a>
-        </div>
-      </div>
-      <button class="sidebar-item" data-view="tratamientos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg><span class="sb-txt">Tratamientos</span></button>
-      <button class="sidebar-item" data-view="especialidades"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5c0 2.76-2.24 5-5 5S7 9.76 7 7a5 5 0 0 1 5-5z"/><path d="M3 21c0-4.42 4.03-8 9-8s9 3.58 9 8"/><path d="M15 7h2m-1-1v2"/></svg><span class="sb-txt">Especialidades</span></button>
-      <button class="sidebar-item" data-view="web"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span class="sb-txt">Web</span></button>
-      <button class="sidebar-item" data-view="whatsapp"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span class="sb-txt">WhatsApp</span></button>
-      <button class="sidebar-item" data-view="configuracion"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="sb-txt">Configuración</span></button>
+      <button class="sidebar-item" data-view="obras_sociales">Obras sociales</button>
+      <button class="sidebar-item" data-view="inventario">Inventario</button>
+      <button class="sidebar-item" data-view="tratamientos">Tratamientos</button>
+      <button class="sidebar-item" data-view="especialidades">Especialidades</button>
+      <button class="sidebar-item" data-view="web">Web</button>
+      <button class="sidebar-item" data-view="whatsapp">WhatsApp</button>
+      <button class="sidebar-item" data-view="configuracion">Configuración</button>
     </div>
   </aside>
 
-  <!-- Main Content -->
   <main class="main">
     <div id="view-dashboard" class="view active"></div>
 
-    <!-- ===== VISTA AGENDA (estructura completa) ===== -->
+    <!-- VISTA AGENDA -->
     <div id="view-agenda" class="view">
-      <!-- Encabezado -->
       <div class="page-header">
         <div>
           <div class="page-title">Agenda</div>
@@ -375,53 +143,35 @@
           <button onclick="cambiarSemana(-1)" class="btn btn-secondary btn-sm">← Anterior</button>
           <button onclick="irHoy()" class="btn btn-secondary btn-sm">Hoy</button>
           <button onclick="cambiarSemana(1)" class="btn btn-secondary btn-sm">Siguiente →</button>
-          <!-- CAMBIO REALIZADO: Se agregó el '#' al inicio del href -->
-          <a href="#/crear-turno?fecha=2026-08-28" class="btn btn-primary btn-sm">+ Nuevo turno</a>
-          <button onclick="document.getElementById('modal-bloqueo').style.display='flex'" class="btn btn-secondary btn-sm">🔒 Bloquear</button>
+          <!-- CAMBIO: Usamos #/crear-turno para que agenda.js abra el modal sin error 404 -->
+          <a href="#/crear-turno" class="btn btn-primary btn-sm">+ Nuevo turno</a>
         </div>
       </div>
 
-      <!-- Panel de reprogramación -->
+      <!-- Paneles de reprogramación y atención en curso (agenda.js los muestra cuando corresponde) -->
       <div id="reprog-panel" style="display:none;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 14px;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
         <div>
           <div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">📅 Reprogramar turno</div>
           <div id="rp-paciente" style="font-size:13px;font-weight:700;color:#1e2d3a"></div>
           <div id="rp-info" style="font-size:11px;color:#64748b;margin-top:1px"></div>
         </div>
-        <div style="font-size:11px;color:#92400e;background:rgba(245,158,11,.15);padding:5px 10px;border-radius:6px;white-space:nowrap">
-          Hacé click en la celda donde querés mover el turno
-        </div>
+        <div style="font-size:11px;color:#92400e;background:rgba(245,158,11,.15);padding:5px 10px;border-radius:6px;white-space:nowrap">Hacé click en la celda donde querés mover el turno</div>
         <button onclick="exitReprogramarMode()" class="btn btn-secondary btn-sm" style="white-space:nowrap;flex-shrink:0">✕ Cancelar</button>
       </div>
-
-      <!-- Panel de atención en curso -->
+      
       <div id="atencion-panel" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 16px;margin-bottom:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <div style="display:flex;align-items:center;gap:12px;">
           <span style="background:#16a34a;color:#fff;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;">🟢 EN ATENCIÓN</span>
           <span id="ap-paciente" style="font-weight:700;font-size:14px;"></span>
-          <span id="ap-hora" style="font-size:13px;color:#64748b;"></span>
         </div>
         <button id="ap-btn" class="btn btn-sm btn-secondary">Finalizar atención</button>
       </div>
 
-      <!-- Contenedor de la agenda -->
+      <!-- Contenedor de la agenda (aquí agenda.js dibuja la semana) -->
       <div id="cal-wrap" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;"></div>
-
-      <!-- Leyenda -->
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:center;">
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#6cd9f4"></div>Pendiente</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#395ff3"></div>Confirmado</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#f59e0b"></div>En recepción</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#d853f3"></div>En atención</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#16a34a"></div>Finalizado</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#9ca3af"></div>Cancelado</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#dc2626"></div>Ausente</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#dc2626;border:1px solid #991b1b"></div>Urgencia</div>
-      </div>
     </div>
-    <!-- ===== FIN VISTA AGENDA ===== -->
 
-    <!-- Otras vistas (vacías por ahora) -->
+    <!-- Vistas secundarias (vacías) -->
     <div id="view-pacientes" class="view"></div>
     <div id="view-profesionales" class="view"></div>
     <div id="view-liquidaciones" class="view"></div>
@@ -441,9 +191,9 @@
   </main>
 </div>
 
-<!-- ===== MODALES DE LA AGENDA ===== -->
+<!-- MODALES -->
 
-<!-- Popup de turno -->
+<!-- Popup de turno (agenda.js lo usa para mostrar los detalles del turno) -->
 <div id="turno-popup" style="display:none;position:fixed;z-index:4000;width:300px;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.2);overflow:hidden;">
   <div id="tp-header" style="padding:14px 16px 10px;color:#fff">
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -460,18 +210,10 @@
     <div id="tp-doc" style="font-size:11px;opacity:.7;margin-top:2px"></div>
   </div>
   <div style="padding:12px 16px;display:flex;flex-direction:column;gap:6px">
-    <div id="tp-urgencia-badge" style="display:none;background:#fef2f2;color:#b91c1c;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;margin-bottom:4px">⚡ SOBRETURNO DE URGENCIA</div>
-    <div style="display:flex;flex-wrap:wrap;gap:4px" id="tp-estados"></div>
     <div style="display:flex;gap:6px;margin-top:4px">
       <a id="tp-editar" href="#" class="btn btn-secondary btn-sm" style="flex:1;text-align:center">✎ Editar</a>
       <button id="tp-reprogramar" onclick="iniciarReprogramar()" class="btn btn-secondary btn-sm" style="flex:1">↻ Reprogramar</button>
       <button id="tp-eliminar" onclick="confirmarEliminarTurno()" class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;flex-shrink:0" title="Eliminar turno">🗑</button>
-    </div>
-    <div id="tp-trts" style="display:none;border-top:1px solid var(--border);margin-top:4px;padding-top:8px;font-size:11px"></div>
-    <a id="tp-pago" href="#" class="btn btn-sm" style="display:none;text-align:center;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;margin-top:2px">💰 Registrar pago en Caja</a>
-    <div id="tp-wa-wrap" style="position:relative;display:none">
-      <button id="tp-wa-btn" type="button" onclick="toggleWaMenu(event)" class="btn btn-sm" style="width:100%;text-align:center;background:#e7f9ef;color:#075e54;border:1px solid #b7e4c7;margin-top:2px">📲 Enviar WhatsApp manual</button>
-      <div id="tp-wa-menu" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:4px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.15);overflow:hidden;z-index:10"></div>
     </div>
   </div>
 </div>
@@ -482,7 +224,6 @@
     <div style="font-size:16px;font-weight:700;color:#dc2626;margin-bottom:10px">🗑 Eliminar turno</div>
     <p style="font-size:13px;color:#64748b;margin:0 0 6px">¿Estás seguro que querés eliminar el turno de</p>
     <p id="ce-paciente" style="font-size:14px;font-weight:700;color:#1e2d3a;margin:0 0 20px"></p>
-    <p style="font-size:12px;color:#94a3b8;margin:0 0 20px">Esta acción no se puede deshacer.</p>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button onclick="cerrarEliminar()" class="btn btn-secondary">Cancelar</button>
       <button onclick="ejecutarEliminar()" class="btn" style="background:#dc2626;color:#fff;border:none">Eliminar</button>
@@ -490,32 +231,7 @@
   </div>
 </div>
 
-<!-- Modal resize -->
-<div id="confirm-resize-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)cancelarResize()">
-  <div style="background:#fff;border-radius:16px;padding:28px 28px 20px;max-width:380px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.22)">
-    <div style="font-size:16px;font-weight:700;color:#1e2d3a;margin-bottom:20px">⏱ Confirmar cambio de duración</div>
-    <div style="display:grid;grid-template-columns:1fr 28px 1fr;gap:8px;align-items:center;margin-bottom:16px">
-      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:10px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Antes</div>
-        <div id="cr-old-dur" style="font-size:30px;font-weight:800;color:#dc2626;line-height:1"></div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px">minutos</div>
-      </div>
-      <div style="text-align:center;font-size:18px;color:var(--text-muted)">→</div>
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:10px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Nuevo</div>
-        <div id="cr-new-dur" style="font-size:30px;font-weight:800;color:#16a34a;line-height:1"></div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px">minutos</div>
-      </div>
-    </div>
-    <div id="cr-paciente" style="font-size:13px;color:#64748b;text-align:center;margin-bottom:18px"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="cancelarResize()" class="btn btn-secondary">Cancelar</button>
-      <button onclick="confirmarResize()" class="btn btn-primary">Confirmar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal mover -->
+<!-- Modal mover (drag & drop) -->
 <div id="confirm-mover-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)cancelarMover()">
   <div style="background:#fff;border-radius:16px;padding:28px 28px 20px;max-width:440px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.22)">
     <div style="font-size:16px;font-weight:700;color:#1e2d3a;margin-bottom:20px">📅 Confirmar reprogramación</div>
@@ -525,7 +241,6 @@
         <div id="cm-old-fecha" style="font-size:13px;font-weight:700;color:#1e2d3a"></div>
         <div id="cm-old-hora" style="font-size:22px;font-weight:800;color:#dc2626;margin:2px 0"></div>
         <div id="cm-old-pac" style="font-size:11px;color:#64748b"></div>
-        <div id="cm-old-doc" style="font-size:11px;color:#94a3b8"></div>
       </div>
       <div style="text-align:center;padding-top:28px;font-size:18px;color:var(--text-muted)">→</div>
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px">
@@ -533,7 +248,6 @@
         <div id="cm-new-fecha" style="font-size:13px;font-weight:700;color:#1e2d3a"></div>
         <div id="cm-new-hora" style="font-size:22px;font-weight:800;color:#16a34a;margin:2px 0"></div>
         <div id="cm-new-pac" style="font-size:11px;color:#64748b"></div>
-        <div id="cm-new-doc" style="font-size:11px;color:#94a3b8"></div>
       </div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -543,27 +257,10 @@
   </div>
 </div>
 
-<!-- Modal conflicto atención -->
-<div id="modal-conflicto-atencion" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)cerrarConflictoAtencion()">
-  <div style="background:#fff;border-radius:16px;padding:32px 28px 24px;max-width:400px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.22);text-align:center">
-    <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:#fff7ed;margin-bottom:16px">
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    </div>
-    <div id="cac-titulo" style="font-size:17px;font-weight:700;color:#1e2d3a;margin-bottom:10px">Ya estás atendiendo un turno</div>
-    <p style="font-size:13px;color:#64748b;margin:0 0 4px"><span id="cac-prefijo"></span><strong style="color:#1e2d3a" id="cac-actual"></strong>.</p>
-    <p style="font-size:13px;color:#64748b;margin:0 0 24px">¿Querés finalizarlo y comenzar a atender a <strong style="color:#1e2d3a" id="cac-nuevo"></strong>?</p>
-    <div style="display:flex;gap:8px;justify-content:center">
-      <button onclick="cerrarConflictoAtencion()" class="btn btn-secondary">Cancelar</button>
-      <button onclick="finalizarYAtender()" class="btn" style="background:#7c3aed;color:#fff;border:none">Finalizar y atender</button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal bloquear (placeholder) -->
 <div id="modal-bloqueo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:5000;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:16px;padding:28px;width:480px;max-width:95vw;box-shadow:0 12px 40px rgba(0,0,0,.2)">
-    <div style="font-size:16px;font-weight:700;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
-      🔒 Bloquear horario
+    <div style="font-size:16px;font-weight:700;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">🔒 Bloquear horario
       <button onclick="document.getElementById('modal-bloqueo').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:18px;color:#94a3b8">✕</button>
     </div>
     <p class="text-muted">Funcionalidad en construcción (puedes implementarla con Firestore).</p>
@@ -573,18 +270,140 @@
   </div>
 </div>
 
-<!-- Modal genérico (para otras vistas) -->
+<!-- ========================================================== -->
+<!-- ===== MODAL NUEVO TURNO (CLON DEL PHP, ADAPTADO A FIREBASE) ===== -->
+<!-- ========================================================== -->
+<div id="modal-nuevo-turno" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9000; align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto;">
+  <div class="card" style="max-width:820px; width:100%; background:#fff; margin-top:20px; box-shadow:0 20px 60px rgba(0,0,0,.25);">
+    
+    <!-- Encabezado del modal -->
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:20px;">
+      <div class="page-title" style="font-size:18px;">Nuevo turno</div>
+      <button onclick="cerrarModalNuevoTurno()" class="btn btn-secondary btn-sm">✕ Cerrar</button>
+    </div>
+
+    <!-- Formulario -->
+    <form id="form-nuevo-turno" onsubmit="event.preventDefault(); guardarNuevoTurno();">
+      <div style="display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start;">
+
+        <!-- Columna Principal (Izquierda) -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- Card: Paciente y Profesional -->
+          <div class="card" style="margin-bottom:0;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:16px;">Paciente y profesional</div>
+            <div class="form-group">
+              <label class="form-label">Paciente *</label>
+              <select name="paciente_id" id="paciente-select" class="form-control" onchange="handleManualInput('paciente')" required>
+                <option value="">— Seleccionar paciente —</option>
+                <option value="manual">✍️ Escribir manualmente</option>
+              </select>
+              <input type="text" id="paciente-manual" style="display:none; margin-top:6px;" class="form-control" placeholder="Nombre del paciente">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Profesional *</label>
+              <select name="odontologo_id" id="odontologo-select" class="form-control" onchange="handleManualInput('odontologo')" required>
+                <option value="">— Seleccionar profesional —</option>
+                <option value="manual">✍️ Escribir manualmente</option>
+              </select>
+              <input type="text" id="odontologo-manual" style="display:none; margin-top:6px;" class="form-control" placeholder="Nombre del profesional">
+            </div>
+          </div>
+
+          <!-- Card: Fecha y Horario -->
+          <div class="card" style="margin-bottom:0;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:16px;">Fecha y horario</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Fecha *</label>
+                <input type="date" name="fecha" id="input-fecha" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hora de inicio *</label>
+                <input type="time" name="hora_inicio" id="input-hora" class="form-control" step="900" value="09:00" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Duración *</label>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <select id="dur-select" class="form-control" style="width:130px" onchange="document.getElementById('dur-input').value=this.value;">
+                    <option value="15">15 min</option>
+                    <option value="30" selected>30 min</option>
+                    <option value="45">45 min</option>
+                    <option value="60">60 min</option>
+                  </select>
+                  <input type="number" name="duracion_minutos" id="dur-input" class="form-control" style="width:72px" min="15" step="1" value="30" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Estado</label>
+                <select name="estado" id="estado-select" class="form-control">
+                  <option value="pendiente" selected>Pendiente</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="en_recepcion">En recepción</option>
+                  <option value="en_atencion">En atención</option>
+                  <option value="finalizado">Finalizado</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Urgencia / Sobreturno -->
+            <div style="margin-top:14px; padding:12px; border-radius:10px; background:#f8fafc; border:1px solid var(--border);">
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                <input type="checkbox" name="es_urgencia" id="check-urgencia" style="width:16px; height:16px;">
+                <div>
+                  <div style="font-weight:700; font-size:13px;">⚡ Urgencia / Sobreturno</div>
+                  <div style="font-size:12px; color:var(--text-muted);">Permite asignar el turno aunque el profesional esté ocupado.</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Card: Clínico (Motivo) -->
+          <div class="card" style="margin-bottom:0;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:16px;">Clínico</div>
+            <div class="form-group">
+              <label class="form-label">Motivo de consulta</label>
+              <textarea name="motivo_consulta" id="input-motivo" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Lateral (Derecha) -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- Botones principales -->
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button type="submit" class="btn btn-primary btn-block">Crear turno</button>
+            <button type="button" onclick="cerrarModalNuevoTurno()" class="btn btn-secondary btn-block" style="text-align:center;">Cancelar</button>
+          </div>
+
+          <!-- Card: Tratamientos -->
+          <div class="card" style="margin-bottom:0;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px;">Tratamientos realizados</div>
+            <div id="tratamientos-lista" style="max-height:240px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; margin-bottom:10px;"></div>
+            <div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px;">
+              <span>Total:</span>
+              <span style="color:var(--primary);">$<span id="trt-total-val">0</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal genérico -->
 <div class="modal-overlay" id="modal-generic"><div class="modal-box" id="modal-generic-content"></div></div>
 
 <!-- Toast -->
 <div id="notif" style="position:fixed;bottom:20px;right:20px;z-index:9999;"></div>
 
-<!-- ===== FIREBASE SDK (compat) ===== -->
+<!-- FIREBASE SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-<!-- ===== ARCHIVOS JS ===== -->
+<!-- ARCHIVOS JS -->
 <script src="js/config.js"></script>
 <script src="js/navigation.js"></script>
 <script src="js/dashboard.js"></script>
@@ -606,52 +425,5 @@
 <script src="js/whatsapp.js"></script>
 <script src="js/configuracion.js"></script>
 
-<!-- ===== INICIALIZACIÓN ===== -->
-<script>
-  // Función toggleGroup (ya definida en navigation.js, pero la mantenemos aquí por si acaso)
-  function toggleGroup(id) {
-    if (document.documentElement.classList.contains('sidebar-collapsed')) {
-      setSidebarCollapsed(false);
-      return;
-    }
-    var el = document.getElementById(id);
-    if (!el) return;
-    var btn = el.previousElementSibling ? el.previousElementSibling.querySelector('.sidebar-chevron') : null;
-    var open = el.classList.contains('open');
-    el.classList.toggle('open', !open);
-    if (btn) btn.classList.toggle('open', !open);
-  }
-
-  function setSidebarCollapsed(collapsed) {
-    document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
-    localStorage.setItem('ds_sidebar_collapsed', collapsed ? '1' : '0');
-  }
-
-  (function() {
-    if (localStorage.getItem('ds_sidebar_collapsed') === '1') {
-      document.documentElement.classList.add('sidebar-collapsed');
-    }
-  })();
-
-  // Navegación inicial
-  document.addEventListener('DOMContentLoaded', function() {
-    // Asignar eventos a los items del menú
-    document.querySelectorAll('.sidebar .sidebar-item[data-view], .topnav .nav-links a[data-view]').forEach(function(el) {
-      el.addEventListener('click', function(e) {
-        e.preventDefault();
-        var view = this.dataset.view;
-        if (view) navigateTo(view);
-      });
-    });
-
-    // Cerrar modal genérico
-    document.getElementById('modal-generic').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
-
-    // Cargar vista inicial
-    navigateTo('dashboard');
-  });
-</script>
 </body>
 </html>
