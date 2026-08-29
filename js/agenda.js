@@ -15,6 +15,13 @@ let turnos = [];
 let semanaInicio = obtenerLunes(new Date());
 let unsubscribeTurnos = null;
 
+// ─── FUNCIÓN CLAVE: Convertir "09:30" a 9.5 para posicionar en la agenda ─────
+function horaStringToNumber(horaStr) {
+    if (typeof horaStr === 'number') return horaStr;
+    const parts = String(horaStr).split(':');
+    return parseInt(parts[0]) + (parseInt(parts[1]) || 0) / 60;
+}
+
 // ─── Funciones básicas ──────────────────────────────────────
 function obtenerLunes(fecha) { const dia = fecha.getDay(); const diff = fecha.getDate() - dia + (dia === 0 ? -6 : 1); return new Date(fecha.getFullYear(), fecha.getMonth(), diff); }
 function formatearFecha(fecha) { const y = fecha.getFullYear(); const m = String(fecha.getMonth() + 1).padStart(2, '0'); const d = String(fecha.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; }
@@ -136,19 +143,16 @@ window.guardarNuevoTurno = function() {
     const esUrgencia = document.getElementById('check-urgencia').checked;
     const motivo = document.getElementById('input-motivo').value;
 
-    const [hh, mm] = horaInicio.split(':').map(Number);
-    const horaNum = hh + (mm / 60);
-
+    // CORRECCIÓN CLAVE: Ahora guardamos "hora" como STRING "HH:MM" (coincide con tu Firestore)
     const tratamientos = [];
     document.querySelectorAll('.trt-check:checked').forEach(cb => {
         tratamientos.push({ id: cb.value, nombre: cb.dataset.nombre, precio: parseFloat(cb.dataset.precio) });
     });
     const total = tratamientos.reduce((sum, t) => sum + t.precio, 0);
 
-    // Guardar en Firestore (compatible con tu estructura actual)
     db.collection('turnos').add({
         fecha: fecha,
-        hora: horaNum,
+        hora: horaInicio, // ¡Guardado como STRING, tal como estaba!
         duracion: duracion,
         estado: estado,
         paciente: paciente,
@@ -216,7 +220,8 @@ function renderizarAgenda() {
     const turnosDelDia = turnos.filter(t => t.fecha === fecha);
     turnosDelDia.forEach(turno => {
       const durSlots = Math.round(turno.duracion / SLOT_MINUTOS);
-      const horaNum = typeof turno.hora === 'number' ? turno.hora : parseFloat(turno.hora);
+      // CORRECCIÓN CLAVE: Usamos la función para convertir "HH:MM" a número decimal
+      const horaNum = horaStringToNumber(turno.hora);
       const top = (horaNum - HORA_INICIO) * PX_POR_HORA;
       const height = durSlots * (PX_POR_HORA * SLOT_MINUTOS / 60);
       const color = ESTADOS_COLORS[turno.estado] || '#355063';
@@ -226,7 +231,7 @@ function renderizarAgenda() {
       const nombrePaciente = turno.paciente || turno.pacienteNombre || 'Paciente';
       const nombreOdontologo = turno.profesional || turno.odontologoNombre || 'Odontólogo';
 
-      html += `<div class="turno-block" draggable="true" data-id="${turno.id}" data-dur="${turno.duracion}" data-fw-fecha="${turno.fecha}" data-fw-hora="${formatearHora(horaNum)}" style="position:absolute;left:calc(0% + 1px);right:calc(0% + 1px);top:${top}px;height:${height}px;background:${color};border-radius:5px;padding:3px 5px;overflow:hidden;z-index:3;cursor:pointer;opacity:${esCancelado ? 0.5 : 1};">
+      html += `<div class="turno-block" draggable="true" data-id="${turno.id}" data-dur="${turno.duracion}" data-fw-fecha="${turno.fecha}" data-fw-hora="${turno.hora}" style="position:absolute;left:calc(0% + 1px);right:calc(0% + 1px);top:${top}px;height:${height}px;background:${color};border-radius:5px;padding:3px 5px;overflow:hidden;z-index:3;cursor:pointer;opacity:${esCancelado ? 0.5 : 1};">
         <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none">${formatearHora(horaNum)} ${nombrePaciente}</div>
         <div style="display:flex;align-items:center;gap:4px;margin-top:1px;pointer-events:none">
           <span style="font-size:9px;font-weight:700;color:#fff;background:${color};border-radius:3px;padding:1px 5px;white-space:nowrap;flex-shrink:0">${ESTADOS_LABELS[turno.estado] || turno.estado}</span>
@@ -297,7 +302,7 @@ function mostrarPopupTurno(turno, elemento) {
   const popup = document.getElementById('turno-popup');
   if (!popup) return;
   
-  const horaNum = typeof turno.hora === 'number' ? turno.hora : parseFloat(turno.hora);
+  const horaNum = horaStringToNumber(turno.hora);
   const color = ESTADOS_COLORS[turno.estado] || '#355063';
   
   document.getElementById('tp-paciente').textContent = turno.paciente || turno.pacienteNombre || 'Paciente';
@@ -335,7 +340,6 @@ function initAgenda() {
   cargarTurnosSemana(semanaInicio);
 }
 
-// Si el DOM ya está cargado, esperar un poco para que navigation.js cargue
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() { if (!unsubscribeTurnos) initAgenda(); }, 300);
