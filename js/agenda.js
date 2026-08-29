@@ -15,21 +15,18 @@ let turnos = [];
 let semanaInicio = obtenerLunes(new Date());
 let unsubscribeTurnos = null;
 
-// ─── FUNCIÓN CLAVE: Convertir "09:30" a 9.5 para posicionar en la agenda ─────
 function horaStringToNumber(horaStr) {
     if (typeof horaStr === 'number') return horaStr;
     const parts = String(horaStr).split(':');
     return parseInt(parts[0]) + (parseInt(parts[1]) || 0) / 60;
 }
 
-// ─── Funciones básicas ──────────────────────────────────────
 function obtenerLunes(fecha) { const dia = fecha.getDay(); const diff = fecha.getDate() - dia + (dia === 0 ? -6 : 1); return new Date(fecha.getFullYear(), fecha.getMonth(), diff); }
 function formatearFecha(fecha) { const y = fecha.getFullYear(); const m = String(fecha.getMonth() + 1).padStart(2, '0'); const d = String(fecha.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; }
 function formatearHora(hora) { const hh = String(Math.floor(hora)).padStart(2, '0'); const mm = String(Math.round((hora % 1) * 60)).padStart(2, '0'); return `${hh}:${mm}`; }
 function snapToSlot(y) { const totalMin = (y / PX_POR_HORA) * 60 + HORA_INICIO * 60; const slot = Math.floor(totalMin / SLOT_MINUTOS); const clampedSlot = Math.max(0, Math.min(slot, (HORA_FIN - HORA_INICIO) * 60 / SLOT_MINUTOS - 1)); const hora = HORA_INICIO + (clampedSlot * SLOT_MINUTOS) / 60; return { hora: formatearHora(hora), top: (hora - HORA_INICIO) * PX_POR_HORA }; }
 function showToast(msg, type) { if (typeof window.showToast === 'function') { window.showToast(msg, type); } else { alert(msg); } }
 
-// ─── SOLUCIÓN 404: Navegación por Hash y MODAL ───────────────
 function navigateToRuta(ruta) { window.location.hash = ruta; }
 
 function handleHashChange() {
@@ -42,7 +39,7 @@ function handleHashChange() {
 }
 window.addEventListener('hashchange', handleHashChange);
 
-// ─── Lógica del Modal Nuevo Turno ────────────────────────────
+// Lógica del Modal
 window.abrirNuevoTurno = function(fecha) {
     if (typeof navigateTo === 'function') navigateTo('agenda');
     const modal = document.getElementById('modal-nuevo-turno');
@@ -64,7 +61,6 @@ window.handleManualInput = function(tipo) {
 
 function cargarOpcionesModal() {
     const db = firebase.firestore();
-    
     db.collection('pacientes').get().then(snapshot => {
         let html = '<option value="">— Seleccionar paciente —</option>';
         snapshot.forEach(doc => {
@@ -74,10 +70,7 @@ function cargarOpcionesModal() {
         });
         html += '<option value="manual">✍️ Escribir manualmente</option>';
         document.getElementById('paciente-select').innerHTML = html;
-    }).catch(err => {
-        console.error("Error cargando pacientes:", err);
-        document.getElementById('paciente-select').innerHTML = '<option value="">Error al cargar</option><option value="manual">✍️ Escribir manualmente</option>';
-    });
+    }).catch(err => console.error("Error cargando pacientes:", err));
     
     db.collection('profesionales').get().then(snapshot => {
         let html = '<option value="">— Seleccionar profesional —</option>';
@@ -88,10 +81,7 @@ function cargarOpcionesModal() {
         });
         html += '<option value="manual">✍️ Escribir manualmente</option>';
         document.getElementById('odontologo-select').innerHTML = html;
-    }).catch(err => {
-        console.error("Error cargando profesionales:", err);
-        document.getElementById('odontologo-select').innerHTML = '<option value="">Error al cargar</option><option value="manual">✍️ Escribir manualmente</option>';
-    });
+    }).catch(err => console.error("Error cargando profesionales:", err));
     
     db.collection('tratamientos').get().then(snapshot => {
         let html = '';
@@ -105,12 +95,8 @@ function cargarOpcionesModal() {
                         <span style="font-size:13px;font-weight:600;">$${precio.toLocaleString()}</span>
                     </label>`;
         });
-        if (!html) html = '<div style="padding:10px;font-size:12px;color:var(--text-muted)">No hay tratamientos cargados en Firestore.</div>';
         document.getElementById('tratamientos-lista').innerHTML = html;
-    }).catch(err => {
-        console.error("Error cargando tratamientos:", err);
-        document.getElementById('tratamientos-lista').innerHTML = '<div style="padding:10px;font-size:12px;color:var(--text-muted)">Error al cargar tratamientos.</div>';
-    });
+    }).catch(err => console.error("Error cargando tratamientos:", err));
 }
 
 window.recalcPrecioModal = function() {
@@ -126,13 +112,8 @@ window.guardarNuevoTurno = function() {
     const selectPaciente = document.getElementById('paciente-select');
     const selectOdontologo = document.getElementById('odontologo-select');
     
-    let paciente = selectPaciente.value === 'manual' 
-        ? document.getElementById('paciente-manual').value 
-        : selectPaciente.selectedOptions[0].textContent;
-    
-    let odontologo = selectOdontologo.value === 'manual' 
-        ? document.getElementById('odontologo-manual').value 
-        : selectOdontologo.selectedOptions[0].textContent;
+    let paciente = selectPaciente.value === 'manual' ? document.getElementById('paciente-manual').value : selectPaciente.selectedOptions[0].textContent;
+    let odontologo = selectOdontologo.value === 'manual' ? document.getElementById('odontologo-manual').value : selectOdontologo.selectedOptions[0].textContent;
     
     if (!paciente || !odontologo) { alert("Debes seleccionar o escribir un paciente y un profesional."); return; }
 
@@ -143,16 +124,16 @@ window.guardarNuevoTurno = function() {
     const esUrgencia = document.getElementById('check-urgencia').checked;
     const motivo = document.getElementById('input-motivo').value;
 
-    // CORRECCIÓN CLAVE: Ahora guardamos "hora" como STRING "HH:MM" (coincide con tu Firestore)
     const tratamientos = [];
     document.querySelectorAll('.trt-check:checked').forEach(cb => {
         tratamientos.push({ id: cb.value, nombre: cb.dataset.nombre, precio: parseFloat(cb.dataset.precio) });
     });
     const total = tratamientos.reduce((sum, t) => sum + t.precio, 0);
 
+    // ¡GUARDA COMO TEXTO (ej: "17:00")!
     db.collection('turnos').add({
         fecha: fecha,
-        hora: horaInicio, // ¡Guardado como STRING, tal como estaba!
+        hora: horaInicio,
         duracion: duracion,
         estado: estado,
         paciente: paciente,
@@ -174,7 +155,7 @@ window.guardarNuevoTurno = function() {
     });
 };
 
-// ─── Renderizado de la agenda ──────────────────────────────
+// Renderizado
 function renderizarAgenda() {
   const wrap = document.getElementById('cal-wrap');
   if (!wrap) return;
@@ -200,55 +181,41 @@ function renderizarAgenda() {
   }
   html += `</div><div style="display:grid;grid-template-columns:52px repeat(7,1fr);overflow-y:auto;max-height:1556px" id="cal-body">`;
   
-  // Columna de horas
   html += `<div style="position:relative;height:1536px">`;
   for (let h = HORA_INICIO; h <= HORA_FIN; h += 1) { const top = (h - HORA_INICIO) * PX_POR_HORA; html += `<div style="position:absolute;top:${top}px;right:6px;font-size:10px;color:var(--text-muted)">${String(h).padStart(2,'0')}:00</div>`; }
   html += `</div>`;
 
-  // Columnas de días
   for (let i = 0; i < 7; i++) {
     const fecha = fechas[i];
     html += `<div class="cal-col" data-fecha="${fecha}" data-col-idx="${i}" style="position:relative;height:1536px;border-left:1px solid var(--border)">`;
-    
-    // Líneas de fondo
     for (let h = HORA_INICIO; h <= HORA_FIN; h++) { html += `<div style="position:absolute;top:${(h - HORA_INICIO) * PX_POR_HORA}px;left:0;right:0;border-top:1px solid #dde8f0;pointer-events:none;z-index:1"></div>`; }
-    
-    // Link para crear
     html += `<div class="day-create-link" data-fecha="${fecha}" data-odontologo="0" style="position:absolute;inset:0;z-index:2;cursor:pointer" title="Crear turno"></div>`;
 
-    // Turnos
     const turnosDelDia = turnos.filter(t => t.fecha === fecha);
     turnosDelDia.forEach(turno => {
       const durSlots = Math.round(turno.duracion / SLOT_MINUTOS);
-      // CORRECCIÓN CLAVE: Usamos la función para convertir "HH:MM" a número decimal
       const horaNum = horaStringToNumber(turno.hora);
       const top = (horaNum - HORA_INICIO) * PX_POR_HORA;
       const height = durSlots * (PX_POR_HORA * SLOT_MINUTOS / 60);
       const color = ESTADOS_COLORS[turno.estado] || '#355063';
       const esCancelado = (turno.estado === 'cancelado' || turno.estado === 'ausente');
-      const esUrgencia = turno.urgencia || false;
-
       const nombrePaciente = turno.paciente || turno.pacienteNombre || 'Paciente';
-      const nombreOdontologo = turno.profesional || turno.odontologoNombre || 'Odontólogo';
 
       html += `<div class="turno-block" draggable="true" data-id="${turno.id}" data-dur="${turno.duracion}" data-fw-fecha="${turno.fecha}" data-fw-hora="${turno.hora}" style="position:absolute;left:calc(0% + 1px);right:calc(0% + 1px);top:${top}px;height:${height}px;background:${color};border-radius:5px;padding:3px 5px;overflow:hidden;z-index:3;cursor:pointer;opacity:${esCancelado ? 0.5 : 1};">
         <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none">${formatearHora(horaNum)} ${nombrePaciente}</div>
         <div style="display:flex;align-items:center;gap:4px;margin-top:1px;pointer-events:none">
           <span style="font-size:9px;font-weight:700;color:#fff;background:${color};border-radius:3px;padding:1px 5px;white-space:nowrap;flex-shrink:0">${ESTADOS_LABELS[turno.estado] || turno.estado}</span>
-          ${turno.tratamiento ? `<span style="font-size:9px;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${turno.tratamiento}</span>` : ''}
         </div>
       </div>`;
     });
 
     html += `</div>`;
   }
-
   html += `</div>`;
   wrap.innerHTML = html;
   attachAgendaListeners();
 }
 
-// ─── Carga de datos desde Firestore ─────────────────────────
 function cargarTurnosSemana(fechaInicio) {
   if (unsubscribeTurnos) { unsubscribeTurnos(); unsubscribeTurnos = null; }
   const db = firebase.firestore();
@@ -269,24 +236,19 @@ function cargarTurnosSemana(fechaInicio) {
     });
     renderizarAgenda();
   }, (error) => {
-    console.error('Error en listener de turnos:', error);
-    showToast('Error al cargar turnos', 'error');
+    console.error('Error crítico en listener de turnos:', error);
+    alert("⚠️ Error de compatibilidad: Revisa que TODOS los turnos en Firebase tengan la hora como texto (ej: '15:00'). No pueden mezclarse números y textos en el campo 'hora'.");
   });
 }
 
-// ─── Eventos y listeners ─────────────────────────────────────
 function attachAgendaListeners() {
-  // Click en turno
   document.querySelectorAll('.turno-block').forEach(el => {
     el.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); e.stopPropagation();
       const turno = turnos.find(t => t.id === this.dataset.id);
       if (turno) mostrarPopupTurno(turno, this);
     });
   });
-
-  // Click en celda vacía para crear
   document.querySelectorAll('.day-create-link').forEach(el => {
     el.addEventListener('click', function(e) {
       const rect = this.getBoundingClientRect();
@@ -297,21 +259,16 @@ function attachAgendaListeners() {
   });
 }
 
-// ─── Popup ────────────────────────────────────────────────────
 function mostrarPopupTurno(turno, elemento) {
   const popup = document.getElementById('turno-popup');
   if (!popup) return;
-  
   const horaNum = horaStringToNumber(turno.hora);
   const color = ESTADOS_COLORS[turno.estado] || '#355063';
-  
   document.getElementById('tp-paciente').textContent = turno.paciente || turno.pacienteNombre || 'Paciente';
   document.getElementById('tp-hora').textContent = `${formatearHora(horaNum)} – ${formatearHora(horaNum + turno.duracion/60)}`;
   document.getElementById('tp-dur').textContent = turno.duracion + ' min';
-  document.getElementById('tp-trat').textContent = turno.tratamiento || '';
   document.getElementById('tp-doc').textContent = turno.profesional || turno.odontologoNombre || 'Odontólogo';
   document.getElementById('tp-header').style.background = color;
-
   const rect = elemento.getBoundingClientRect();
   popup.style.left = (rect.right + 8) + 'px';
   popup.style.top = (rect.top) + 'px';
@@ -320,7 +277,6 @@ function mostrarPopupTurno(turno, elemento) {
 
 function closePopup() { document.getElementById('turno-popup').style.display = 'none'; }
 
-// ─── Navegación entre semanas ────────────────────────────────
 window.cambiarSemana = function(delta) {
   semanaInicio.setDate(semanaInicio.getDate() + delta * 7);
   cargarTurnosSemana(semanaInicio);
@@ -331,7 +287,6 @@ window.irHoy = function() {
   cargarTurnosSemana(semanaInicio);
 };
 
-// ─── Inicialización ──────────────────────────────────────────
 window.renderAgenda = function() {
   if (unsubscribeTurnos) { renderizarAgenda(); } else { initAgenda(); }
 };
@@ -341,9 +296,7 @@ function initAgenda() {
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() { if (!unsubscribeTurnos) initAgenda(); }, 300);
-  });
+  document.addEventListener('DOMContentLoaded', function() { setTimeout(function() { if (!unsubscribeTurnos) initAgenda(); }, 300); });
 } else {
   setTimeout(function() { if (!unsubscribeTurnos) initAgenda(); }, 300);
 }
