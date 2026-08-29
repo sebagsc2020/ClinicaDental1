@@ -6,7 +6,6 @@
   <title>Clínica Dental · Panel Completo</title>
 
   <style>
-    /* ... (Aquí va todo tu CSS original exactamente igual, no lo modifiqué) ... */
     :root { --primary: #355063; --primary-dark: #1e2d3a; --accent: #4285F4; --accent-dark: #2b6ed7; --accent-light: #e8f0fe; --text: #1e2d3a; --text-muted: #64748b; --bg: #f1f5f9; --border: #e2e8f0; --white: #ffffff; --danger: #dc2626; --success: #16a34a; --warning: #f59e0b; --radius: 8px; --shadow: 0 2px 8px rgba(0,0,0,0.08); }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
@@ -53,6 +52,8 @@
     .btn-primary:hover { background: var(--accent-dark); }
     .btn-secondary { background: var(--bg); color: var(--text); border-color: var(--border); }
     .btn-secondary:hover { background: #e2e8f0; }
+    .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .btn-danger:hover { background: #b91c1c; }
     .btn-sm { padding: 4px 10px; font-size: 12px; }
     .btn-block { width: 100%; justify-content: center; }
     .form-group { margin-bottom: 14px; }
@@ -71,10 +72,9 @@
 </head>
 <body>
 
-<!-- TOP NAV Y SIDEBAR (Igual que tu original) -->
+<!-- TOP NAV -->
 <nav class="topnav">
   <div style="display:flex;align-items:center;gap:12px;">
-    <button class="topnav-hamburger" onclick="toggleSidebar()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;display:none;">☰</button>
     <div class="logo">Dental<span>Soft</span></div>
     <div class="nav-links">
       <a href="#" class="active" data-view="dashboard">Dashboard</a>
@@ -99,7 +99,9 @@
   </div>
 </nav>
 
+<!-- LAYOUT -->
 <div class="app-layout">
+  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-section">
       <div class="sidebar-label">Principal</div>
@@ -110,8 +112,25 @@
       <button class="sidebar-item" data-view="liquidaciones">Liquidaciones</button>
       <button class="sidebar-item" data-view="automatizaciones">Automatizaciones</button>
     </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Finanzas</div>
+      <button class="sidebar-item" data-view="caja">Caja</button>
+      <button class="sidebar-item" data-view="presupuestos">Presupuestos</button>
+      <button class="sidebar-item" data-view="productividad">Productividad</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Clínica</div>
+      <button class="sidebar-item" data-view="obras_sociales">Obras sociales</button>
+      <button class="sidebar-item" data-view="inventario">Inventario</button>
+      <button class="sidebar-item" data-view="tratamientos">Tratamientos</button>
+      <button class="sidebar-item" data-view="especialidades">Especialidades</button>
+      <button class="sidebar-item" data-view="web">Web</button>
+      <button class="sidebar-item" data-view="whatsapp">WhatsApp</button>
+      <button class="sidebar-item" data-view="configuracion">Configuración</button>
+    </div>
   </aside>
 
+  <!-- Main Content -->
   <main class="main">
     <div id="view-dashboard" class="view active"></div>
 
@@ -126,108 +145,30 @@
           <button onclick="cambiarSemana(-1)" class="btn btn-secondary btn-sm">← Anterior</button>
           <button onclick="irHoy()" class="btn btn-secondary btn-sm">Hoy</button>
           <button onclick="cambiarSemana(1)" class="btn btn-secondary btn-sm">Siguiente →</button>
-          <!-- CAMBIO CRUCIAL: Se cambió href a # para eliminar el 404 -->
           <a href="#/crear-turno" class="btn btn-primary btn-sm">+ Nuevo turno</a>
           <button onclick="document.getElementById('modal-bloqueo').style.display='flex'" class="btn btn-secondary btn-sm">🔒 Bloquear</button>
         </div>
       </div>
-
-      <!-- Paneles de reprogramación, atención, cal-wrap y leyenda (tu HTML original) -->
-      <div id="reprog-panel" style="display:none;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 14px;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
-        <div>
-          <div style="font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">📅 Reprogramar turno</div>
-          <div id="rp-paciente" style="font-size:13px;font-weight:700;color:#1e2d3a"></div>
-          <div id="rp-info" style="font-size:11px;color:#64748b;margin-top:1px"></div>
-        </div>
-        <div style="font-size:11px;color:#92400e;background:rgba(245,158,11,.15);padding:5px 10px;border-radius:6px;white-space:nowrap">Hacé click en la celda donde querés mover el turno</div>
-        <button onclick="exitReprogramarMode()" class="btn btn-secondary btn-sm" style="white-space:nowrap;flex-shrink:0">✕ Cancelar</button>
-      </div>
-      
-      <div id="atencion-panel" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 16px;margin-bottom:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span style="background:#16a34a;color:#fff;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;">🟢 EN ATENCIÓN</span>
-          <span id="ap-paciente" style="font-weight:700;font-size:14px;"></span>
-        </div>
-        <button id="ap-btn" class="btn btn-sm btn-secondary">Finalizar atención</button>
-      </div>
-
       <div id="cal-wrap" style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;"></div>
-
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:center;">
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#6cd9f4"></div>Pendiente</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#395ff3"></div>Confirmado</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#16a34a"></div>Finalizado</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:3px;background:#dc2626"></div>Ausente</div>
-      </div>
     </div>
   </main>
 </div>
 
-<!-- MODALES (Tu HTML original + el nuevo Modal de Crear Turno) -->
+<!-- MODALES -->
+<!-- Popup de turno -->
+<div id="turno-popup" style="display:none;position:fixed;z-index:4000;width:300px;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.2);overflow:hidden;"></div>
+<!-- Modal eliminar -->
+<div id="confirm-eliminar-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;align-items:center;justify-content:center;padding:20px"></div>
+<!-- Modal bloquear -->
+<div id="modal-bloqueo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:5000;align-items:center;justify-content:center"></div>
 
-<!-- Popup de turno (original) -->
-<div id="turno-popup" style="display:none;position:fixed;z-index:4000;width:300px;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.2);overflow:hidden;">
-  <div id="tp-header" style="padding:14px 16px 10px;color:#fff">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div>
-        <div id="tp-paciente" style="font-weight:700;font-size:14px"></div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
-          <span id="tp-hora" style="font-size:12px;opacity:.9"></span>
-          <span id="tp-dur" style="font-size:11px;opacity:.7;background:rgba(255,255,255,.2);padding:1px 6px;border-radius:10px"></span>
-        </div>
-      </div>
-      <button onclick="closePopup()" style="background:rgba(255,255,255,.2);border:none;cursor:pointer;border-radius:6px;color:#fff;padding:3px 7px;font-size:13px">✕</button>
-    </div>
-    <div id="tp-trat" style="font-size:12px;opacity:.85;margin-top:4px"></div>
-    <div id="tp-doc" style="font-size:11px;opacity:.7;margin-top:2px"></div>
-  </div>
-  <div style="padding:12px 16px;display:flex;flex-direction:column;gap:6px">
-    <div style="display:flex;gap:6px;margin-top:4px">
-      <a id="tp-editar" href="#" class="btn btn-secondary btn-sm" style="flex:1;text-align:center">✎ Editar</a>
-      <button id="tp-reprogramar" onclick="iniciarReprogramar()" class="btn btn-secondary btn-sm" style="flex:1">↻ Reprogramar</button>
-      <button id="tp-eliminar" onclick="confirmarEliminarTurno()" class="btn btn-sm" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;flex-shrink:0" title="Eliminar turno">🗑</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal eliminar (original) -->
-<div id="confirm-eliminar-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)cerrarEliminar()">
-  <div style="background:#fff;border-radius:16px;padding:28px 28px 20px;max-width:380px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.22)">
-    <div style="font-size:16px;font-weight:700;color:#dc2626;margin-bottom:10px">🗑 Eliminar turno</div>
-    <p style="font-size:13px;color:#64748b;margin:0 0 6px">¿Estás seguro que querés eliminar el turno de</p>
-    <p id="ce-paciente" style="font-size:14px;font-weight:700;color:#1e2d3a;margin:0 0 20px"></p>
-    <p style="font-size:12px;color:#94a3b8;margin:0 0 20px">Esta acción no se puede deshacer.</p>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="cerrarEliminar()" class="btn btn-secondary">Cancelar</button>
-      <button onclick="ejecutarEliminar()" class="btn" style="background:#dc2626;color:#fff;border:none">Eliminar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal bloquear (original) -->
-<div id="modal-bloqueo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:5000;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:16px;padding:28px;width:480px;max-width:95vw;box-shadow:0 12px 40px rgba(0,0,0,.2)">
-    <div style="font-size:16px;font-weight:700;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
-      🔒 Bloquear horario
-      <button onclick="document.getElementById('modal-bloqueo').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:18px;color:#94a3b8">✕</button>
-    </div>
-    <p class="text-muted">Funcionalidad en construcción (puedes implementarla con Firestore).</p>
-    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
-      <button onclick="document.getElementById('modal-bloqueo').style.display='none'" class="btn btn-secondary">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ========================================================== -->
-<!-- ===== NUEVO MODAL PARA CREAR TURNOS (AÑADIDO AQUÍ) ===== -->
-<!-- ========================================================== -->
+<!-- NUEVO MODAL PARA CREAR TURNOS -->
 <div id="modal-nuevo-turno" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9000; align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto;">
   <div class="card" style="max-width:800px; width:100%; background:#fff; margin-top:30px; box-shadow:0 20px 60px rgba(0,0,0,.25);">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:20px;">
       <div class="page-title" style="font-size:18px;">Nuevo turno</div>
       <button onclick="cerrarModalNuevoTurno()" class="btn btn-secondary btn-sm">✕ Cerrar</button>
     </div>
-
     <form id="form-nuevo-turno" onsubmit="event.preventDefault(); guardarNuevoTurno();">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
         <div class="form-group" style="grid-column:1/-1;">
@@ -246,7 +187,6 @@
           </select>
           <input type="text" id="odontologo-manual" style="display:none; margin-top:6px;" class="form-control" placeholder="Nombre del profesional">
         </div>
-        
         <div class="form-group">
           <label class="form-label">Fecha *</label>
           <input type="date" name="fecha" id="input-fecha" class="form-control" required>
@@ -255,7 +195,6 @@
           <label class="form-label">Hora de inicio *</label>
           <input type="time" name="hora_inicio" id="input-hora" class="form-control" step="900" value="09:00" required>
         </div>
-        
         <div class="form-group">
           <label class="form-label">Duración *</label>
           <div style="display:flex; align-items:center; gap:6px;">
@@ -268,7 +207,6 @@
             <input type="number" name="duracion_minutos" id="dur-input" class="form-control" style="width:72px" min="15" step="1" value="30" required>
           </div>
         </div>
-        
         <div class="form-group">
           <label class="form-label">Estado</label>
           <select name="estado" id="estado-select" class="form-control">
@@ -276,31 +214,25 @@
             <option value="confirmado">Confirmado</option>
           </select>
         </div>
-
         <div style="grid-column:1/-1; margin-bottom:14px; padding:12px; border-radius:10px; background:#f8fafc; border:1px solid var(--border);">
           <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
             <input type="checkbox" name="es_urgencia" id="check-urgencia" style="width:16px; height:16px;">
             <div><div style="font-weight:700; font-size:13px;">⚡ Urgencia / Sobreturno</div></div>
           </label>
         </div>
-
         <div class="form-group" style="grid-column:1/-1;">
           <label class="form-label">Motivo de consulta</label>
           <textarea name="motivo_consulta" id="input-motivo" class="form-control" rows="2"></textarea>
         </div>
       </div>
-
       <div style="border-top:1px solid var(--border); padding-top:16px; margin-top:10px;">
         <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px;">Tratamientos realizados</div>
-        <div id="tratamientos-lista" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; margin-bottom:10px;">
-          <!-- Cargado por JS -->
-        </div>
+        <div id="tratamientos-lista" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; margin-bottom:10px;"></div>
         <div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px;">
           <span>Total seleccionado:</span>
           <span style="color:var(--primary);">$<span id="trt-total-val">0</span></span>
         </div>
       </div>
-
       <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
         <button type="button" onclick="cerrarModalNuevoTurno()" class="btn btn-secondary">Cancelar</button>
         <button type="submit" class="btn btn-primary">Crear turno</button>
@@ -309,10 +241,9 @@
   </div>
 </div>
 
-<!-- Modal genérico (original) -->
+<!-- Modal genérico -->
 <div class="modal-overlay" id="modal-generic"><div class="modal-box" id="modal-generic-content"></div></div>
-
-<!-- Toast (original) -->
+<!-- Toast -->
 <div id="notif" style="position:fixed;bottom:20px;right:20px;z-index:9999;"></div>
 
 <!-- FIREBASE SDK -->
@@ -342,44 +273,5 @@
 <script src="js/whatsapp.js"></script>
 <script src="js/configuracion.js"></script>
 
-<!-- INICIALIZACIÓN -->
-<script>
-  function toggleGroup(id) {
-    if (document.documentElement.classList.contains('sidebar-collapsed')) { setSidebarCollapsed(false); return; }
-    var el = document.getElementById(id);
-    if (!el) return;
-    var btn = el.previousElementSibling ? el.previousElementSibling.querySelector('.sidebar-chevron') : null;
-    var open = el.classList.contains('open');
-    el.classList.toggle('open', !open);
-    if (btn) btn.classList.toggle('open', !open);
-  }
-
-  function setSidebarCollapsed(collapsed) {
-    document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
-    localStorage.setItem('ds_sidebar_collapsed', collapsed ? '1' : '0');
-  }
-
-  (function() {
-    if (localStorage.getItem('ds_sidebar_collapsed') === '1') {
-      document.documentElement.classList.add('sidebar-collapsed');
-    }
-  })();
-
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.sidebar .sidebar-item[data-view], .topnav .nav-links a[data-view]').forEach(function(el) {
-      el.addEventListener('click', function(e) {
-        e.preventDefault();
-        var view = this.dataset.view;
-        if (view) navigateTo(view);
-      });
-    });
-
-    document.getElementById('modal-generic').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
-
-    navigateTo('dashboard');
-  });
-</script>
 </body>
 </html>
