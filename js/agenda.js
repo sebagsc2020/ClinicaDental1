@@ -123,6 +123,31 @@ function showToast(msg, type) {
   }
 }
 
+// ─── SOLUCIÓN 404: Navegación por Hash ────────────────────────
+function navigateToRuta(ruta) {
+    // Solo cambiamos el hash, nunca la URL base
+    window.location.hash = ruta; 
+}
+
+// Función para manejar la ruta actual al cargar o cambiar el hash
+function handleHashChange() {
+    const hash = window.location.hash;
+    if (hash.startsWith('#/crear-turno')) {
+        // Extraer fecha de la URL
+        const params = new URLSearchParams(hash.split('?')[1]);
+        const fecha = params.get('fecha') || formatearFecha(new Date());
+        
+        console.log("Solicitud de nuevo turno para:", fecha);
+        
+        // ⚠️ IMPORTANTE: Aquí debes colocar el código para abrir tu MODAL o VISTA de creación de turno.
+        // Si tienes un modal con id "modal-nuevo-turno", por ejemplo:
+        // document.getElementById('modal-nuevo-turno').style.display = 'flex';
+        // O si quieres mostrar la vista de agenda y llenar un formulario, hazlo aquí.
+    }
+}
+// Escuchar cambios de hash (cuando se navega manualmente)
+window.addEventListener('hashchange', handleHashChange);
+
 // ─── Renderizado de la agenda ──────────────────────────────
 function renderizarAgenda() {
   const wrap = document.getElementById('cal-wrap');
@@ -222,8 +247,9 @@ function renderizarAgenda() {
         estado: turno.estado || 'pendiente',
         color: color,
         urgencia: esUrgencia,
-        edit_url: `/editar-turno?id=${turno.id}`,
-        reprog_url: `/crear-turno?fecha=${turno.fecha}&odontologo=${turno.odontologoId || ''}`,
+        // CAMBIO REALIZADO: Se agregó el '#' para evitar el 404
+        edit_url: `#/editar-turno?id=${turno.id}`,
+        reprog_url: `#/crear-turno?fecha=${turno.fecha}&odontologo=${turno.odontologoId || ''}`,
         del_url: `/eliminar-turno/${turno.id}`,
         pago_url: turno.tratamiento ? `/caja/registrar?turno_id=${turno.id}` : '',
         tratamientos: turno.tratamientos || [],
@@ -434,8 +460,8 @@ function attachAgendaListeners() {
         return;
       }
       const fecha = this.dataset.fecha;
-      const url = `/crear-turno?fecha=${fecha}&hora=${snap.hora}`;
-      window.location.href = url;
+      // CAMBIO REALIZADO: Se reemplazó window.location.href por navigateToRuta
+      navigateToRuta(`/crear-turno?fecha=${fecha}&hora=${snap.hora}`);
     });
   });
 
@@ -488,8 +514,8 @@ function attachAgendaListeners() {
     btn.addEventListener('mouseleave', collapse);
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      const url = `/crear-turno?fecha=${el.dataset.fwFecha}&hora=${el.dataset.fwHora}&odontologo=${el.dataset.fwOdo}`;
-      window.location.href = url;
+      // CAMBIO REALIZADO: Se reemplazó window.location.href por navigateToRuta
+      navigateToRuta(`/crear-turno?fecha=${el.dataset.fwFecha}&hora=${el.dataset.fwHora}&odontologo=${el.dataset.fwOdo}`);
     });
   });
 }
